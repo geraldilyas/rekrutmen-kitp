@@ -42,7 +42,7 @@ const Navbar: React.FC = () => {
             <button className="text-[#0D278D] font-semibold text-sm hover:opacity-80 transition-opacity">Masuk</button>
             <button className="bg-[#0D278D] text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/20 hover:scale-105 transition-transform">
               Daftar
-            </Link>
+            </button>
 
           </div>
         </div>
