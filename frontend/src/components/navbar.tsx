@@ -1,46 +1,75 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+
+// Pastikan import ini sesuai dengan ekstensi gambar logo kamu (.png / .svg / .jpg)
+import logoBbwsms from '../assets/logobbwsms.png';
 
 const Navbar: React.FC = () => {
-  const [active, setActive] = useState('Beranda');
+  // Menggunakan useLocation untuk mendeteksi rute halaman saat ini
+  const location = useLocation();
 
-  const menuItems = ['Beranda', 'Lowongan', 'Pengumuman', 'Arsip'];
+  // Ubah array string menjadi array of objects yang berisi nama dan path rute
+  const menuItems = [
+    { name: 'Beranda', path: '/' },
+    { name: 'Lowongan', path: '/lowongan' },
+    { name: 'Status Lamaran', path: '/status' },
+    { name: 'Pengumuman', path: '/pengumuman' },
+    { name: 'Arsip', path: '/arsip' }
+  ];
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#0D278D] rounded-lg flex items-center justify-center text-[#FEB700] font-bold text-xl">B</div>
-            <span className="font-bold text-[#0D278D] text-xl tracking-tight">Rekrutmen BBWS</span>
-          </div>
+    <nav className="fixed top-0 w-full z-50 bg-white shadow-sm border-b border-gray-100">
+      <div className="w-full px-8 md:px-12">
+        <div className="flex justify-between h-24 items-center">
+          
+          {/* Logo Section - Sekarang kalau diklik mengarah ke Beranda (/) */}
+          <Link to="/" className="flex items-center">
+            <div className="flex items-baseline">
+              <span className="italic font-medium text-[#0D278D] text-xl">
+                REKRUTMEN<span className="text-[#FEB700]">KITP</span>
+              </span>
+            </div>
+            
+            <span className="text-gray-400 text-xs italic font-medium ml-1.5 mr-2.5">
+              by
+            </span>
+            
+            <img 
+              src={logoBbwsms} 
+              alt="Logo BBWS MS" 
+              className="h-12 md:h-14 w-auto object-contain transition-all duration-300" 
+            />
+          </Link>
 
           {/* Menu Items */}
-          <div className="hidden md:flex space-x-8">
-            {menuItems.map((item) => (
-              <button
-                key={item}
-                onClick={() => setActive(item)}
-                className={`relative text-sm font-medium transition-colors ${
-                  active === item ? 'text-[#0D278D]' : 'text-gray-500 hover:text-[#0D278D]'
-                }`}
-              >
-                {item}
-                {active === item && (
-                  <motion.div
-                    layoutId="underline"
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#FEB700]"
-                  />
-                )}
-              </button>
-            ))}
+          <div className="hidden md:flex items-center space-x-10">
+            {menuItems.map((item) => {
+              // Cek apakah item ini adalah halaman yang sedang aktif
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`relative text-base font-medium transition-colors duration-300 group ${
+                    isActive ? 'text-[#FEB700]' : 'text-[#0D278D] hover:text-[#FEB700]'
+                  }`}
+                >
+                  {item.name}
+
+                  {/* Garis bawah HANYA untuk efek HOVER (Sesuai request kamu sebelumnya) */}
+                  <div className="absolute -bottom-2 left-0 right-0 h-[3px] rounded-t-full bg-[#FEB700] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                </Link>
+              );
+            })}
           </div>
 
           {/* Auth Buttons */}
-          <div className="flex items-center gap-4">
-            <button className="text-[#0D278D] font-semibold text-sm hover:opacity-80 transition-opacity">Masuk</button>
-            <button className="bg-[#0D278D] text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/20 hover:scale-105 transition-transform">
+          <div className="flex items-center gap-5">
+            <button className="text-[#0D278D] font-bold text-sm hover:text-[#FEB700] transition-colors">
+              Masuk
+            </button>
+            <button className="bg-[#0D278D] text-white px-7 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20 hover:bg-[#FEB700] hover:text-[#0D278D] hover:scale-105 transition-all duration-300">
               Daftar
             </button>
           </div>
