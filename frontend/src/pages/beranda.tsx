@@ -34,7 +34,7 @@ const tahapanSeleksi = [
   },
 ];
 
-const Home: React.FC = () => {
+const Beranda: React.FC = () => {
   return (
     <div className="bg-white min-h-screen pt-20">
       {/* Hero Section */}
@@ -207,4 +207,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Beranda;

@@ -1,24 +1,27 @@
-import React from 'react';
-import Navbar from './components/navbar'; // Pastikan path sesuai dengan letak file kamu
-import Home from './pages/beranda';      // Sesuai dengan struktur folder di gambar kamu
-import Footer from './components/footer';
-import './App.css';
+import { Routes, Route, Navigate } from "react-router-dom";
+
+import Navbar from "./components/navbar";
+import Footer from "./components/footer";
+
+import Beranda from "./pages/beranda";
+import Login from "./pages/login";
+import Register from "./pages/register";
 
 function App() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* 1. Menampilkan Navbar di paling atas */}
+    <>
       <Navbar />
 
-      {/* 2. Menampilkan Konten Utama (Beranda) */}
-      <main>
-        <Home />
-      </main>
+      <Routes>
+        <Route path="/" element={<Navigate to="/beranda" />} />
+        <Route path="/beranda" element={<Beranda />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
 
-      {/* 3. Menampilkan Footer di paling bawah */}
       <Footer />
-    </div>
-  )
+    </>
+  );
 }
 
-export default App
+export default App;
