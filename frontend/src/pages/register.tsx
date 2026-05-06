@@ -10,7 +10,6 @@ export default function Register() {
     name: "",
     email: "",
     password: "",
-    nik: "",
     role: "user",
   });
 
@@ -78,15 +77,6 @@ export default function Register() {
           className="w-full mb-3 p-3 border rounded-lg"
           onChange={handleChange}
           required
-        />
-        <input
-          type="text"
-          name="nik"
-          placeholder="NIK (16 digit)"
-          className="w-full mb-3 p-3 border rounded-lg"
-          onChange={handleChange}
-          required
-          maxLength={16}
         />
         <input
           type="email"

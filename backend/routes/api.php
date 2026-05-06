@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApplicationController;
+use App\Http\Controllers\Api\Admin\ApplicationAdminController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -39,7 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/jobs', [JobController::class, 'store']);
-    Route::get('/admin/applications', [ApplicationController::class, 'allApplications']);
-    Route::put('/admin/applications/{id}', [ApplicationController::class, 'updateStatus']);
+    Route::get('/admin/applications', [ApplicationAdminController::class, 'index']);
+    Route::get('/admin/applications/{id}', [ApplicationAdminController::class, 'show']);
+    Route::put('/admin/applications/{id}', [ApplicationAdminController::class, 'updateStatus']);
 
 });
