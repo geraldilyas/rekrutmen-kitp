@@ -36,7 +36,10 @@ class ApplicationAdminController extends Controller
     public function show($id)
     {
         $application = Application::with([
-            'user', 'job'])->findOrFail($id);
+            'user', 
+            'job',
+            'documents'
+            ])->findOrFail($id);
 
         return response()->json($application);
     }
@@ -49,8 +52,10 @@ class ApplicationAdminController extends Controller
         ]);
 
         $application = Application::findOrFail($id);
-        $application->status = $request->status;
-        $application->save();
+        
+        $application->update([
+            'status' => $request->status
+        ]);
 
         return response()->json([
             'message' => 'Status berhasil diupdate',
