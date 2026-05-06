@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('application_documents', function (Blueprint $table) {
+        Schema::create('form_fields', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('application_id')->constrained()->cascadeOnDelete();
-            $table->string('type');
-            $table->string('file_path');
-            $table->timestamp('uploaded_at')->nullable();
+
+            $table->string('label'); 
+            $table->string('type'); 
+            $table->boolean('is_required')->default(false);
+            $table->json('options')->nullable();
+            $table->enum('category', ['data_diri', 'berkas', 'tahapan']);
+
             $table->timestamps();
         });
     }
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('application_documents');
+        Schema::dropIfExists('form_fields');
     }
 };

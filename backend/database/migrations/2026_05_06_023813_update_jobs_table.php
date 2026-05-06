@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['admin', 'user'])->default('user');
-        });
+        Schema::table('jobs', function (Blueprint $table) {
+        $table->text('requirements')->nullable();
+        $table->date('deadline')->nullable();
+    });
     }
 
     /**
@@ -21,10 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-        });
+        //
     }
-
-    
 };

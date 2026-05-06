@@ -226,7 +226,7 @@ Tersedia pada folder `/docs`:
 ## 🧑‍💻 Kontribusi
 
 1. Fork repository
-2. Buat branch baru (`feature/nama-fitur`)
+2. Buat branch baru 
 3. Commit perubahan
 4. Push ke branch
 5. Buat Pull Request
