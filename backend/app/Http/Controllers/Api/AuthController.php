@@ -16,19 +16,20 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'nik' => 'required|unique:users'
+            'password' => 'required|min:6'
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => \Hash::make($request->password),
-            'nik' => $request->nik,
             'role' => 'user'
         ]);
 
-        return response()->json($user);
+        return response()->json([
+            'message' => 'Registrasi berhasil',
+            'data' => $user
+        ]);
     }
 
     // LOGIN
