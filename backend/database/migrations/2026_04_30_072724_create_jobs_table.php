@@ -13,15 +13,23 @@ return new class extends Migration
     {
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
+
             $table->string('title');
+
+            $table->enum('category', ['tenaga_pendukung', 'konsultan_individu']);
+
             $table->string('type')->nullable();
             $table->text('description')->nullable();
             $table->text('qualification')->nullable();
             $table->string('duration')->nullable();
             $table->string('location')->nullable();
             $table->string('unit_kerja')->nullable();
+            $table->string('recruiter_name')->nullable();
+            $table->json('form_fields')->nullable();
+
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
+
             $table->timestamps();
         });
     }

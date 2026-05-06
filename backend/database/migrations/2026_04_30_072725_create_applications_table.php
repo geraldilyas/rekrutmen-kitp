@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('job_id')->constrained()->cascadeOnDelete();
-            $table->string('status')->default('pending');
+            $table->enum('status', ['pending',  'diterima', 'ditolak'])
+                  ->default('pending');
             $table->timestamp('applied_at')->nullable();
             $table->timestamps();
         });

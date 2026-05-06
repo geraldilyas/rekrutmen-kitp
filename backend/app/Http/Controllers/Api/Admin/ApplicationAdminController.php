@@ -25,13 +25,18 @@ class ApplicationAdminController extends Controller
             });
         }
 
+        if ($request->has('job_id')) {
+            $query->where('job_id', $request->job_id);
+        }
+
         return response()->json($query->latest()->get());
     }
 
     //  DETAIL lamaran
     public function show($id)
     {
-        $application = Application::with(['user', 'job'])->findOrFail($id);
+        $application = Application::with([
+            'user', 'job'])->findOrFail($id);
 
         return response()->json($application);
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\Admin\ApplicationAdminController;
+use App\Http\Controllers\Api\FormFieldController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -16,6 +17,7 @@ Route::get('/test', function () {
 
 Route::get('/jobs', [JobController::class, 'index']);
 Route::get('/jobs/category/{category}', [JobController::class, 'byCategory']);
+Route::get('/jobs/{id}/form', [JobController::class, 'getForm']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -43,5 +45,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/applications', [ApplicationAdminController::class, 'index']);
     Route::get('/admin/applications/{id}', [ApplicationAdminController::class, 'show']);
     Route::put('/admin/applications/{id}', [ApplicationAdminController::class, 'updateStatus']);
+    Route::post('/form-fields', [FormFieldController::class, 'store']);
+    Route::get('/form-fields', [FormFieldController::class, 'index']);
 
 });

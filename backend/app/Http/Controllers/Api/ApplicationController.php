@@ -11,33 +11,21 @@ class ApplicationController extends Controller
     // POST /apply
     public function apply(Request $request)
     {
-        $request->validate([
-            'job_id' => 'required|exists:jobs,id'
-        ]);
-
-        $user = $request->user();
-
-        $exists = Application::where('user_id', $user->id)
-            ->where('job_id', $request->job_id)
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'message' => 'Anda sudah melamar pada lowongan ini'
-            ], 400);
-        }
-
         $application = Application::create([
-            'user_id' => $user->id,
+            'user_id' => auth()->id(),
             'job_id' => $request->job_id,
             'status' => 'pending',
             'applied_at' => now()
         ]);
 
-        return response()->json([
-            'message' => 'Berhasil melamar',
-            'data' => $application
-        ]);
+        foreach ($request->answers as $item) {
+            $application->answers()->create([
+                'form_field_id' => $item['field_id'],
+                'answer' => $item['value']
+            ]);
+        }
+
+        return response()->json(['message' => 'Berhasil melamar']);
     }
 
 
