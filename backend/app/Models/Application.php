@@ -27,9 +27,14 @@ class Application extends Model
     {
         return $this->hasMany(ApplicationDocument::class);
     }
-    
+
     public function answers()
     {
         return $this->hasMany(ApplicationAnswer::class);
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(ApplicationStatusHistory::class);
     }
 }
