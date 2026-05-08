@@ -1,8 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Plus, MonitorUp, FileCheck, Brain, Award, GraduationCap, Clock, Briefcase, ArrowRight, MessageCircle } from 'lucide-react';
+import { 
+  ChevronRight, Plus, MonitorUp, FileCheck, Brain, 
+  Award, GraduationCap, Clock, Briefcase, ArrowRight, 
+  MessageCircle, Megaphone, Users 
+} from 'lucide-react';
+// import Navbar from '../components/navbar';
+// import Footer from '../components/footer';
 
-// Data untuk Tahapan Seleksi
+// Data untuk Tahapan Seleksi (Tetap 6 Tahap)
 const tahapanSeleksi = [
   {
     id: 1,
@@ -20,13 +26,27 @@ const tahapanSeleksi = [
   },
   {
     id: 3,
-    title: 'Tes Kompetensi',
-    desc: 'Ujian tertulis/CAT dan wawancara teknis sesuai formasi yang dipilih.',
-    icon: Brain,
-    color: 'bg-[#FEB700] text-[#0D278D]',
+    title: 'Pengumuman Administrasi',
+    desc: 'Pengumuman daftar peserta yang lolos verifikasi berkas tahap awal.',
+    icon: Megaphone,
+    color: 'bg-[#0D278D] text-white',
   },
   {
     id: 4,
+    title: 'Tes Kompetensi',
+    desc: 'Ujian tertulis/CAT dan wawancara teknis sesuai formasi yang dipilih.',
+    icon: Brain,
+    color: 'bg-[#0D278D] text-white',
+  },
+  {
+    id: 5,
+    title: 'Wawancara',
+    desc: 'Tahap tatap muka/online untuk pendalaman kompetensi dan karakter.',
+    icon: Users,
+    color: 'bg-[#0D278D] text-white',
+  },
+  {
+    id: 6,
     title: 'Pengumuman Akhir',
     desc: 'Penetapan kelulusan berdasarkan peringkat nilai terbaik.',
     icon: Award,
@@ -158,7 +178,6 @@ const Beranda: React.FC = () => {
               className="group p-8 rounded-[2rem] border border-gray-100 bg-white hover:border-[#FEB700]/30 hover:shadow-[0_20px_40px_-15px_rgba(13,39,141,0.12)] transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                {/* Header Card: Jurusan & Waktu */}
                 <div className="flex justify-between items-center mb-6">
                   <span className="px-4 py-1.5 rounded-xl bg-blue-50/50 text-[#0D278D] text-xs font-bold tracking-wider border border-blue-100">
                     {job.jurusan}
@@ -169,7 +188,6 @@ const Beranda: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Kategori Badge */}
                 <div className="flex items-center gap-2 mb-3">
                   <Briefcase size={16} className={job.kategori === 'Konsultan Individu' ? 'text-[#FEB700]' : 'text-[#0D278D]'} />
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -177,7 +195,6 @@ const Beranda: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Judul & Deskripsi */}
                 <h3 className="text-2xl font-bold text-[#0D278D] mb-4 group-hover:text-[#FEB700] transition-colors leading-tight">
                   {job.posisi}
                 </h3>
@@ -186,7 +203,6 @@ const Beranda: React.FC = () => {
                 </p>
               </div>
 
-              {/* Footer Card: Pendidikan & Action */}
               <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                 <div className="flex items-center gap-2">
                   <GraduationCap size={18} className="text-gray-400 mr-1" />
@@ -206,7 +222,7 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-     {/* Tahapan Seleksi Section - Upgraded Luxury Version */}
+      {/* Tahapan Seleksi Section */}
       <section className="py-32 bg-white relative overflow-hidden border-y border-gray-100">
         {/* Decorative Background Blobs */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -228,64 +244,88 @@ const Beranda: React.FC = () => {
           </div>
 
           <div className="relative">
-            {/* Garis penghubung dashed (hanya desktop) */}
-            <div className="hidden md:block absolute top-12 left-[12%] right-[12%] border-t-2 border-dashed border-[#0D278D]/15 z-0" />
+            {/* --- GARIS PENGHUBUNG KONEKSI (VERTIKAL ZIGZAG) --- */}
+            <div className="hidden lg:block absolute inset-0 z-0 pointer-events-none">
+              {/* 1. Garis Vertikal Turun: Tahap 1 ke 2 (Kolom 1) */}
+              <div className="absolute top-[76px] left-[16.5%] h-[316px] border-l-2 border-dashed border-[#0D278D]/40 z-0" />
+              
+              {/* 2. Garis Horizontal Kanan: Tahap 2 ke 3 (Baris 2) */}
+              <div className="absolute top-[392px] left-[16.5%] right-[50%] border-t-2 border-dashed border-[#0D278D]/40 z-0" />
+              
+              {/* 3. Garis Vertikal Naik: Tahap 3 ke 4 (Kolom 2) */}
+              <div className="absolute top-[76px] left-[50%] h-[316px] border-l-2 border-dashed border-[#0D278D]/40 z-0" />
+              
+              {/* 4. Garis Horizontal Kanan: Tahap 4 ke 5 (Baris 1) */}
+              <div className="absolute top-[76px] left-[50%] right-[16.5%] border-t-2 border-dashed border-[#0D278D]/40 z-0" />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
-              {tahapanSeleksi.map((step, index) => (
-                <motion.div
-                  key={step.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.6, delay: index * 0.2, type: "spring", stiffness: 100 }}
-                  className="flex flex-col items-center text-center group relative p-6 rounded-[2rem] hover:bg-white hover:shadow-[0_20px_40px_-15px_rgba(13,39,141,0.08)] transition-all duration-500"
-                >
-                  {/* Watermark Number Raksasa */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[120px] font-black text-gray-50/60 z-0 group-hover:text-blue-50/60 group-hover:-translate-y-4 transition-all duration-500 pointer-events-none select-none">
-                    {step.id}
-                  </div>
+              {/* 5. Garis Vertikal Turun: Tahap 5 ke 6 (Kolom 3) */}
+              <div className="absolute top-[76px] right-[16.5%] h-[316px] border-r-2 border-dashed border-[#0D278D]/40 z-0" />
+            </div>
 
-                  {/* Icon Container */}
-                  <div className="relative z-10 w-24 h-24 mb-8 rounded-[1.5rem] bg-white shadow-xl shadow-blue-900/5 flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 group-hover:-translate-y-3 transition-all duration-500">
-                    
-                    {/* Inner Colored Circle - Default Biru, Hover Kuning */}
-                    <div className="w-16 h-16 rounded-xl flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-500">
-                      <step.icon size={28} strokeWidth={2} />
-                    </div>
-                    
-                    {/* Floating Badge Number - Default Biru, Hover Kuning */}
-                    <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full font-bold flex items-center justify-center border-[3px] border-white shadow-sm bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all duration-500 group-hover:rotate-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-24 gap-x-8 relative z-10">
+              {tahapanSeleksi.map((step, index) => {
+                
+                // LOGIKA POSISI SPESIFIK GRID DESKTOP
+                // Baris 1: 1 (Kiri), 4 (Tengah), 5 (Kanan)
+                // Baris 2: 2 (Kiri), 3 (Tengah), 6 (Kanan)
+                let lgGridPos = '';
+                if (index === 0) lgGridPos = 'lg:col-start-1 lg:row-start-1'; // 1
+                if (index === 1) lgGridPos = 'lg:col-start-1 lg:row-start-2'; // 2
+                if (index === 2) lgGridPos = 'lg:col-start-2 lg:row-start-2'; // 3
+                if (index === 3) lgGridPos = 'lg:col-start-2 lg:row-start-1'; // 4
+                if (index === 4) lgGridPos = 'lg:col-start-3 lg:row-start-1'; // 5
+                if (index === 5) lgGridPos = 'lg:col-start-3 lg:row-start-2'; // 6
+
+                return (
+                  <motion.div
+                    key={step.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.6, delay: index * 0.1, type: "spring", stiffness: 100 }}
+                    className={`flex flex-col items-center text-center group relative p-6 rounded-[2rem] hover:bg-white hover:shadow-[0_20px_40px_-15px_rgba(13,39,141,0.08)] transition-all duration-500 bg-white/50 backdrop-blur-sm ${lgGridPos}`}
+                  >
+                    {/* Watermark Number Raksasa */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[120px] font-black text-gray-50/60 z-0 group-hover:text-blue-50/60 group-hover:-translate-y-4 transition-all duration-500 pointer-events-none select-none">
                       {step.id}
                     </div>
-                  </div>
 
-                  {/* Teks Content */}
-                  <h3 className="text-xl font-bold text-[#0D278D] mb-3 relative z-10 group-hover:text-[#FEB700] transition-colors duration-300">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed px-2 relative z-10">
-                    {step.desc}
-                  </p>
-                </motion.div>
-              ))}
+                    {/* Icon Container */}
+                    <div className="relative z-10 w-24 h-24 mb-8 rounded-[1.5rem] bg-white shadow-xl shadow-blue-900/5 flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 group-hover:-translate-y-3 transition-all duration-500">
+                      
+                      {/* Box Tes Kompetensi (ID 4) dikasih warna Kuning */}
+                      <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-inner bg-[#0d278d] text-white : 'bg-[#0D278D] text-white'} group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-500`}>
+                        <step.icon size={28} strokeWidth={2} />
+                      </div>
+                      
+                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full font-bold flex items-center justify-center border-[3px] border-white shadow-sm bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all duration-500 group-hover:rotate-12">
+                        {step.id}
+                      </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-[#0D278D] mb-3 relative z-10 group-hover:text-[#FEB700] transition-colors duration-300">
+                      {step.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 leading-relaxed px-2 relative z-10">
+                      {step.desc}
+                    </p>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section - Ultra Premium */}
+      {/* CTA Section */}
       <section className="py-24 px-4 relative">
         <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(13,39,141,0.4)] border border-white/10">
 
-          {/* Dynamic Glow Backgrounds */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB700] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-20 translate-y-1/3 -translate-x-1/3 pointer-events-none" />
           
-          {/* Subtle Texture Overlay */}
           <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
 
-          {/* Content Wrapper dengan animasi membal dari bawah */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -293,7 +333,6 @@ const Beranda: React.FC = () => {
             transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
             className="relative z-10 flex flex-col items-center"
           >
-            {/* Glassmorphism Status Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-8 shadow-xl">
               <span className="w-2 h-2 rounded-full bg-[#FEB700] animate-pulse" />
               <span className="text-white text-xs font-bold tracking-widest uppercase">Pendaftaran Sedang Dibuka</span>
@@ -307,21 +346,16 @@ const Beranda: React.FC = () => {
               Daftarkan diri Anda sekarang dan jadilah bagian dari tim yang berdedikasi menjaga kedaulatan air Indonesia. Kesempatan untuk membangun infrastruktur vital nasional ada di tangan Anda.
             </p>
 
-            {/* Button Group */}
             <div className="flex flex-col sm:flex-row justify-center gap-5 w-full sm:w-auto">
-              
-              {/* Primary Button (Yellow) */}
               <button className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 md:px-12 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(254,183,0,0.6)] flex items-center justify-center gap-3 w-full sm:w-auto">
                 <span>Mulai Pendaftaran</span>
                 <ArrowRight size={20} className="transform group-hover:translate-x-1.5 transition-transform duration-300" />
               </button>
 
-              {/* Secondary Glass Button */}
               <button className="group bg-white/5 border border-white/10 text-white px-8 md:px-12 py-4 rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md flex items-center justify-center gap-3 w-full sm:w-auto shadow-lg">
                 <MessageCircle size={20} className="text-blue-300 group-hover:-translate-y-1 group-hover:text-white transition-all duration-300" />
                 <span>Hubungi Kami</span>
               </button>
-
             </div>
           </motion.div>
         </div>
