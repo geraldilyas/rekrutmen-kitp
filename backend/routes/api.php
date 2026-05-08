@@ -47,5 +47,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/admin/applications/{id}', [ApplicationAdminController::class, 'updateStatus']);
     Route::post('/form-fields', [FormFieldController::class, 'store']);
     Route::get('/form-fields', [FormFieldController::class, 'index']);
-
+    Route::post('/apply', [ApplicationController::class, 'apply']);
 });

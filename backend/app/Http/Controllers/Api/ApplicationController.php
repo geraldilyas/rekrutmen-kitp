@@ -11,6 +11,11 @@ class ApplicationController extends Controller
     // POST /apply
     public function apply(Request $request)
     {
+        $request->validate([
+            'job_id' => 'required|exists:jobs,id',
+            'documents' => 'nullable|array',
+        ]);
+        
         $application = Application::create([
             'user_id' => auth()->id(),
             'job_id' => $request->job_id,
@@ -18,14 +23,21 @@ class ApplicationController extends Controller
             'applied_at' => now()
         ]);
 
-        foreach ($request->answers as $item) {
-            $application->answers()->create([
-                'form_field_id' => $item['field_id'],
-                'answer' => $item['value']
-            ]);
+        if ($request->has('documents') && is_array($request->documents)) {
+            foreach ($request->documents as $doc) {
+                \App\Models\ApplicationDocument::create([
+                    'application_id' => $application->id,
+                    'type' => $doc['type'] ?? null,
+                    'file_path' => $doc['file_path'] ?? null,
+                    'uploaded_at' => now()
+                ]);
+            }
         }
 
-        return response()->json(['message' => 'Berhasil melamar']);
+        return response()->json([
+            'message' => 'Lamaran berhasil dikirim',
+            'data' => $application
+        ]);
     }
 
 
