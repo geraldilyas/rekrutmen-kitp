@@ -25,18 +25,6 @@ class ApplicationController extends Controller
             'applied_at' => now()
         ]);
 
-        $firstStage = JobStage::where('job_id', $request->job_id)
-            ->orderBy('stage_order')
-            ->first();
-
-        if ($firstStage) {
-            ApplicationStageResult::create([
-                'application_id' => $application->id,
-                'job_stage_id' => $firstStage->id,
-                'status' => 'pending',
-            ]);
-        }
-
         if ($request->has('documents') && is_array($request->documents)) {
             foreach ($request->documents as $doc) {
                 \App\Models\ApplicationDocument::create([

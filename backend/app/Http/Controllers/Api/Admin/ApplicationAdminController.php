@@ -6,9 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
-use App\Notifications\ApplicationStatusUpdated;
-use App\Models\JobStage;
-use App\Models\ApplicationStageResult;
 
 class ApplicationAdminController extends Controller
 {
