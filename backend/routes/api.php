@@ -101,7 +101,6 @@ Route::middleware('auth:sanctum')->group(function () {
             'myApplications'
         ]);
     });
-});
 
 
     Route::post('/jobs', [JobController::class, 'store']);
@@ -111,3 +110,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/form-fields', [FormFieldController::class, 'store']);
     Route::get('/form-fields', [FormFieldController::class, 'index']);
     Route::post('/apply', [ApplicationController::class, 'apply']);
+});
