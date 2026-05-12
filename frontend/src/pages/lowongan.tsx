@@ -83,7 +83,7 @@ const Lowongan: React.FC = () => {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#0D278D] to-[#FEB700]">
-              Rekrutmen KI/TP <br className="hidden md:block" />
+              Rekrutmen KITP <br className="hidden md:block" />
               Mesuji Sekampung
             </h1>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
