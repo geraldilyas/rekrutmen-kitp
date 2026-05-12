@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api } from "../services/api";
+import { api } from "../../../services/api";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
@@ -18,35 +18,31 @@ export default function Register() {
   };
 
   const handleRegister = async (e: any) => {
-  e.preventDefault();
-  setErrorMsg([]);
+    e.preventDefault();
+    setErrorMsg([]);
 
-  try {
-    await api.post("/register", form);
-    navigate("/login");
-  } catch (error: any) {
-    console.log("FULL ERROR:", error.response);
+    try {
+      await api.post("/register", form);
+      navigate("/login");
+    } catch (error: any) {
+      console.log("FULL ERROR:", error.response);
 
-    if (error.response?.status === 422) {
-      const errors = error.response.data.errors;
-      const list: string[] = [];
+      if (error.response?.status === 422) {
+        const errors = error.response.data.errors;
+        const list: string[] = [];
 
-      Object.keys(errors).forEach((key) => {
-        list.push(errors[key][0]);
-      });
+        Object.keys(errors).forEach((key) => {
+          list.push(errors[key][0]);
+        });
 
-      setErrorMsg(list);
+        setErrorMsg(list);
+      } else if (error.response?.data?.message) {
+        setErrorMsg([error.response.data.message]);
+      } else {
+        setErrorMsg(["Terjadi kesalahan server. Coba lagi nanti."]);
+      }
     }
-
-    else if (error.response?.data?.message) {
-      setErrorMsg([error.response.data.message]);
-    }
-
-    else {
-      setErrorMsg(["Terjadi kesalahan server. Coba lagi nanti."]);
-    }
-  }
-};
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -61,10 +57,14 @@ export default function Register() {
         {/* Pesan Error */}
         {errorMsg.length > 0 && (
           <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg">
-            <p className="text-red-600 font-semibold text-sm mb-1">Registrasi gagal:</p>
+            <p className="text-red-600 font-semibold text-sm mb-1">
+              Registrasi gagal:
+            </p>
             <ul className="list-disc list-inside">
               {errorMsg.map((msg, i) => (
-                <li key={i} className="text-red-500 text-sm">{msg}</li>
+                <li key={i} className="text-red-500 text-sm">
+                  {msg}
+                </li>
               ))}
             </ul>
           </div>

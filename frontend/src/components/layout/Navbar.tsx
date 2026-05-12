@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import logoBbwsms from "../assets/logobbwsms.png";
+import logoBbwsms from "../../assets/img/logobbwsms.png";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -17,7 +17,6 @@ const Navbar: React.FC = () => {
     <nav className="fixed top-0 w-full z-50 bg-white shadow-sm border-b border-gray-100">
       <div className="w-full px-8 md:px-12">
         <div className="flex justify-between h-20 items-center">
-
           {/* Logo */}
           <Link to="/beranda" className="flex items-center gap-3">
             <img
@@ -50,7 +49,7 @@ const Navbar: React.FC = () => {
                   {/* underline */}
                   <span
                     className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] transition-transform duration-300 ${
-                      isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                      isActive ? "scale-x-100" : "scale-x-0"
                     }`}
                   />
                 </Link>
@@ -74,7 +73,6 @@ const Navbar: React.FC = () => {
               Daftar
             </Link>
           </div>
-
         </div>
       </div>
     </nav>
