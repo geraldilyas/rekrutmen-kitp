@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
+use App\Models\JobStage;
+use App\Models\ApplicationStageResult;
 
 class ApplicationController extends Controller
 {
@@ -22,6 +24,18 @@ class ApplicationController extends Controller
             'status' => 'pending',
             'applied_at' => now()
         ]);
+
+        $firstStage = JobStage::where('job_id', $request->job_id)
+            ->orderBy('stage_order')
+            ->first();
+
+        if ($firstStage) {
+            ApplicationStageResult::create([
+                'application_id' => $application->id,
+                'job_stage_id' => $firstStage->id,
+                'status' => 'pending',
+            ]);
+        }
 
         if ($request->has('documents') && is_array($request->documents)) {
             foreach ($request->documents as $doc) {

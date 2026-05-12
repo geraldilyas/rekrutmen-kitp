@@ -37,4 +37,9 @@ class Application extends Model
     {
         return $this->hasMany(ApplicationStatusHistory::class);
     }
+
+    public function stageResults()
+    {
+        return $this->hasMany(ApplicationStageResult::class);
+    }
 }

@@ -35,4 +35,9 @@ class Job extends Model
             'form_field_id'       
         )->withPivot('order');
     }
+
+    public function stages()
+    {
+        return $this->hasMany(JobStage::class)->orderBy('stage_order');
+    }
 }
