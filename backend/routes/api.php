@@ -1,45 +1,108 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Api\JobController;
+use Illuminate\Support\Facades\Route;
+
+// CONTROLLERS
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\ApplicationController;
-use App\Http\Controllers\Api\Admin\ApplicationAdminController;
 use App\Http\Controllers\Api\FormFieldController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+use App\Http\Controllers\Api\Admin\ApplicationAdminController;
+use App\Http\Controllers\Api\Admin\StatisticsController;
+use App\Http\Controllers\Api\Admin\ReportController;
 
-Route::get('/test', function () {
-    return response()->json(['message' => 'API OK']);
+
+// PUBLIC ROUTES
+
+Route::prefix('auth')->group(function () {
+
+    Route::post('/register', [
+        AuthController::class,
+        'register'
+    ]);
+
+    Route::post('/login', [
+        AuthController::class,
+        'login'
+    ]);
 });
 
-Route::get('/jobs', [JobController::class, 'index']);
-Route::get('/jobs/category/{category}', [JobController::class, 'byCategory']);
-Route::get('/jobs/{id}/form', [JobController::class, 'getForm']);
 
+// JOB PUBLIC ROUTES
+
+Route::prefix('jobs')->group(function () {
+
+    // semua lowongan
+    Route::get('/', [
+        JobController::class,
+        'index'
+    ]);
+
+    // detail lowongan
+    Route::get('/{id}', [
+        JobController::class,
+        'show'
+    ]);
+
+    // lowongan berdasarkan kategori
+    Route::get('/category/{category}', [
+        JobController::class,
+        'byCategory'
+    ]);
+
+    // form fields lowongan
+    Route::get('/{id}/form', [
+        JobController::class,
+        'getForm'
+    ]);
+});
+
+
+// AUTHENTICATED USER ROUTES
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // logout
-    Route::post('/logout', [AuthController::class, 'logout']);
+    //  USER
 
-    Route::get('/me', function (Request $request) {
-        return $request->user();
+    Route::prefix('auth')->group(function () {
+
+        Route::post('/logout', [
+            AuthController::class,
+            'logout'
+        ]);
+
+        Route::get('/me', function (Request $request) {
+
+            $token = $request->bearerToken();
+
+            return response()->json([
+                'user' => $request->user(),
+                'token' => $token
+            ]);
+        });
     });
 
+
+    // APPLICATIONS (USER)
+
+    Route::prefix('applications')->group(function () {
+
+        // apply lamaran
+        Route::post('/', [
+            ApplicationController::class,
+            'apply'
+        ]);
+
+        // riwayat lamaran user
+        Route::get('/my', [
+            ApplicationController::class,
+            'myApplications'
+        ]);
+    });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
-
-    Route::post('/apply', [ApplicationController::class, 'apply']);
-    Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
-
-});
-
-// Admin routes
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/jobs', [JobController::class, 'store']);
     Route::get('/admin/applications', [ApplicationAdminController::class, 'index']);
@@ -48,4 +111,3 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/form-fields', [FormFieldController::class, 'store']);
     Route::get('/form-fields', [FormFieldController::class, 'index']);
     Route::post('/apply', [ApplicationController::class, 'apply']);
-});

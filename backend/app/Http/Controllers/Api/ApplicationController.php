@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
+use App\Models\JobStage;
+use App\Models\ApplicationStageResult;
 
 class ApplicationController extends Controller
 {
