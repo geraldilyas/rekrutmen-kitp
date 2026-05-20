@@ -87,10 +87,10 @@ const Beranda: React.FC = () => {
       <Navbar />
 
       {/* --- HERO SECTION (MODERN, MEWAH, CENTER ALIGNED) --- */}
-      <section className="relative bg-[#0D278D] pt-32 pb-32 overflow-hidden">
+      <section className="relative bg-[#0D278D] pt-28 pb-32 overflow-hidden">
         {/* Luxury Background Accents (Glow & Texture) */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
+        <div className="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FEB700]/15 rounded-full blur-[120px] pointer-events-none z-0" />
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
 
@@ -101,7 +101,7 @@ const Beranda: React.FC = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            <span className="inline-block px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-xs mb-7 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest">
+            <span className="inline-block px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-xs mb-6 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest">
               REKRUTMEN TENAGA NON-PNS 2026
             </span>
 
@@ -279,7 +279,7 @@ const Beranda: React.FC = () => {
                 {/* BUTTON LAMAR - DILENGKAPI KONDISI AUTH */}
                 <button 
                   onClick={() => handleActionPendaftaran(job.id)}
-                  className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2"
+                  className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center "
                 >
                   <span>Lamar</span>
                   <ChevronRight

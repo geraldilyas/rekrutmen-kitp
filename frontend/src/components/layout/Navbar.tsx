@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Briefcase } from "lucide-react"; // Import LogOut icon
+import { LogOut } from "lucide-react"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 
 const Navbar: React.FC = () => {
@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+    <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-inner">
       <div className="w-full px-8 md:px-12">
         <div className="flex justify-between h-20 items-center">
           
@@ -62,9 +62,6 @@ const Navbar: React.FC = () => {
               <span className="font-extrabold text-[#0D278D] text-lg">
                 Rekrutmen KITP
               </span>
-              {/* <span className="text-[11px] text-gray-400 font-medium tracking-wide">
-                BBWS Mesuji Sekampung
-              </span> */}
             </div>
           </Link>
 
@@ -77,7 +74,7 @@ const Navbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`group relative text-sm font-medium  transition-all duration-300 ${
+                  className={`group relative text-sm font-medium transition-all duration-300 ${
                     isActive
                       ? "text-[#FEB700]"
                       : "text-[#0D278D] hover:text-[#FEB700]"
@@ -95,7 +92,7 @@ const Navbar: React.FC = () => {
             })}
           </div>
 
-          {/* ================= AUTH AREA (POSISI SWAP FIXED) ================= */}
+          {/* ================= AUTH AREA ================= */}
           <div className="flex items-center gap-4">
             {!isLoggedIn ? (
               <>
@@ -114,17 +111,17 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                {/* ===== 1. TOMBOL KELUAR (Pindah Kiri + Icon + Luxury Transition) ===== */}
+                {/* ===== 1. TOMBOL KELUAR ===== */}
                 <button
                   onClick={handleLogout}
-                  className="group flex items-center gap-2 bg-transparent text-[#0D278D] border border-[#0D278D] px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer hover:text-white hover:bg-[#0d278d] "
+                  className="group flex items-center gap-2 bg-transparent text-[#0D278D] border border-[#0D278D] px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:text-white hover:bg-[#0d278d] transition-all duration-300"
                 >
                   <LogOut size={16} className="text-[#0D278D] group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
                   <span>Keluar</span>
                 </button>
 
-                {/* ===== 2. PROFILE MINI (Pindah Kanan + Modern Grid Refinement) ===== */}
-                <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60  transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                {/* ===== 2. PROFILE MINI ===== */}
+                <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider">
                     A
                   </div>
@@ -146,4 +143,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar;
+export default Navbar; // <--- Export Navbar utama lo di sini paling bawah aman

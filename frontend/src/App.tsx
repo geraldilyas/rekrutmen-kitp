@@ -19,10 +19,14 @@ import PenyeleksiLayout from "./features/penyeleksi/PenyeleksiLayout";
 import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
 import PenyeleksiApplicantDetail from "./features/penyeleksi/ApplicantDetail";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 function App() {
   return (
     <div className="min-h-screen bg-white">
+      {/* 🚀 FIX 1: ScrollToTop ditaruh di LUAR <Routes> agar bisa mengontrol semua perpindahan halaman */}
+      <ScrollToTop />
+
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />
         <Route path="/login" element={<Login />} />
@@ -47,8 +51,10 @@ function App() {
             </>
           }
         />
+        
+        {/* 🚀 FIX 2: Tambahkan /:id agar rute detail dinamis dan tidak mental balik ke Beranda saat diklik */}
         <Route
-          path="/detail-lowongan"
+          path="/detail-lowongan/:id"
           element={
             <>
               <Navbar />
@@ -57,6 +63,7 @@ function App() {
             </>
           }
         />
+        
         <Route
           path="/status"
           element={
@@ -88,6 +95,7 @@ function App() {
           }
         />
 
+        {/* ADMIN LAYOUT */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="lowongan" element={<JobsManage />} />
@@ -99,12 +107,14 @@ function App() {
           />
         </Route>
 
+        {/* PENYELEKSI LAYOUT */}
         <Route path="/penyeleksi" element={<PenyeleksiLayout />}>
           <Route index element={<PenyeleksiDashboard />} />
           <Route path="jobs" element={<AssignedJobs />} />
           <Route path="jobs/:jobId" element={<PenyeleksiApplicantDetail />} />
         </Route>
 
+        {/* FALLBACK ROUTE */}
         <Route path="*" element={<Navigate to="/beranda" replace />} />
       </Routes>
     </div>

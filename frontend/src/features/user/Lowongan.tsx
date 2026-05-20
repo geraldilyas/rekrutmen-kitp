@@ -121,6 +121,8 @@ const Lowongan: React.FC = () => {
       ? jobsData
       : jobsData.filter((job) => job.kategori === activeFilter);
 
+  
+
   // const newLocal = "flex items-center gap-2 text-sm font-bold text-[#0D278D] border-1 border-[#0D278D] px-5 py-2.5 cursor-pointer rounded-xl hover:bg-[#0D278D] hover:text-white transition-all duration-300";
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
@@ -303,14 +305,14 @@ const Lowongan: React.FC = () => {
 
           {/* BUTTON DENGAN ANIMASI HOVER SAMA PERSIS SEPERTI BERANDA */}
           <button
-            onClick={() => navigate('/detail-lowongan')}
-            className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+            onClick={() => navigate(`/detail-lowongan/${job.id}`)}
+            className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
           >
             <span className="transition-transform duration-300">Lihat Lowongan</span>
             <ChevronRight
               size={18}
               data-framer-appear-id="ignore" /* Mencegah bentrokan layout animation */
-              className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 transition-all duration-300 ease-out shrink-0"
+              className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[18px] group-hover:ml-1.1 transition-all duration-300 ease-out shrink-0"
             />
           </button>
         </div>
