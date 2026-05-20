@@ -6,6 +6,7 @@ import Beranda from "./features/home/pages/Beranda";
 import Login from "./features/auth/pages/Login";
 import Register from "./features/auth/pages/Register";
 import Lowongan from "./features/jobs/pages/Lowongan";
+import DetailLowongan from "./features/jobs/pages/DetailLowongan";
 import Status from "./features/applications/pages/Status";
 import Pengumuman from "./features/announcements/pages/Pengumuman";
 import Arsip from "./features/archives/pages/Arsip";
@@ -43,6 +44,16 @@ function App() {
             <>
               <Navbar />
               <Lowongan />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/detail-lowongan"
+          element={
+            <>
+              <Navbar />
+              <DetailLowongan />
               <Footer />
             </>
           }

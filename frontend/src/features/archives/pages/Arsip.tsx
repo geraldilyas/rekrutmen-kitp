@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, } from "framer-motion";
 import {
   Archive,
-  Calendar,
-  Briefcase,
+  Brain,
   GraduationCap,
   CheckCircle2,
   XCircle,
   Clock,
   History,
+  Users,
+  Filter
 } from "lucide-react";
 import Navbar from "../../../components/layout/Navbar";
-import Footer from "../../../components/layout/Footer";
 
 // Data Dummy Riwayat Arsip Lamaran
 const archiveJobs = [
@@ -53,8 +53,30 @@ const archiveJobs = [
   },
 ];
 
+// --- ANIMATION SYSTEM ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.5},
+  },
+};
+
 const Arsip: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("Semua Riwayat");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filters = ["Semua Riwayat", "Diterima", "Tidak Lulus"];
 
@@ -64,191 +86,234 @@ const Arsip: React.FC = () => {
       : archiveJobs.filter((job) => job.statusAkhir === activeFilter);
 
   return (
-    <div className="bg-gray-50/50 min-h-screen font-['Poppins']">
+    <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
 
-      <main className="pt-32 pb-24">
-        {/* Header Section */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16 text-center">
+      {/* --- HERO SECTION --- */}
+      <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
+
+        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/50 border border-blue-100 mb-6 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-sm">
               <Archive size={16} className="text-[#FEB700]" />
-              <span className="text-[#0D278D] text-sm font-bold tracking-widest uppercase">
+              <span className="text-white text-[11px] font-bold tracking-widest uppercase">
                 Arsip Lamaran
               </span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#0D278D] via-[#0D278D] to-[#FEB700]">
-              Riwayat Perjalanan Karir <br className="hidden md:block" />
-              Anda Bersama Kami
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6">
+              Riwayat Perjalanan{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-[#ffe066]">
+                Karir Anda
+              </span>
             </h1>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
-              Seluruh rekam jejak dan riwayat pendaftaran Anda di Balai Besar
-              Wilayah Sungai tersimpan rapi pada halaman ini.
+
+            <p className="text-blue-100/80 text-[15px] md:text-base max-w-2xl mx-auto leading-relaxed">
+              Pantau kembali rekam jejak lamaran, hasil seleksi akhir, dan histori kontribusi administrasi Anda bersama kami.
             </p>
           </motion.div>
-        </section>
+        </div>
+      </div>
 
-        {/* --- KONTENER UTAMA (FILTER & LIST DISATUKAN) --- */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-6 sm:p-8 md:p-10 border border-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.03)]">
-            {/* Filter Area - Didesain menyatu di bagian atas grid */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 pb-8 border-b border-gray-100 px-2">
-              <div>
-                <h2 className="text-2xl font-bold text-[#0D278D]">
-                  Daftar Riwayat
-                </h2>
-                <p className="text-sm text-gray-500 font-medium mt-1">
-                  Menampilkan{" "}
-                  <span className="text-[#FEB700] font-bold">
-                    {filteredHistory.length}
-                  </span>{" "}
-                  arsip lamaran
-                </p>
-              </div>
+      {/* --- MAIN CONTENT --- */}
+      <motion.main
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* HEADER LIST & FILTER CONTROLS */}
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
+        >
+          <div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D]">
+              Daftar Riwayat
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              Menampilkan <span className="text-[#FEB700] font-bold">{filteredHistory.length}</span> arsip lamaran
+            </p>
+          </div>
 
-              {/* Segmented Control Filter */}
-              <div className="flex items-center gap-1.5 p-1.5 bg-gray-100/70 rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar">
-                {filters.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                      activeFilter === filter
-                        ? "bg-white text-[#0D278D] shadow-md shadow-gray-200/50"
-                        : "text-gray-500 hover:text-[#0D278D]"
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Inline Flex-Flow Filter System */}
+          <div className="flex items-center gap-3 relative ">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold border transition-all duration-300  ${
+                isFilterOpen
+                  ? "bg-[#0D278D] text-white border-[#0D278D]"
+                  : "bg-white text-[#0D278D] border-[#0D278D] hover:bg-[#0D278D] hover:text-white"
+              }`}
+            >
+              <Filter size={18} />
+              <span>{activeFilter}</span>
+            </button>
 
-            {/* List History Arsip */}
-            <motion.div layout className="space-y-6">
-              <AnimatePresence mode="popLayout">
-                {filteredHistory.map((job) => (
+            {/* <div className="absolute left-full ml-3 top-0 flex items-center z-10"> */}
+              <AnimatePresence>
+                {isFilterOpen && (
                   <motion.div
-                    layout
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4 }}
-                    className="bg-white rounded-[2rem] border border-gray-100 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_50px_-15px_rgba(13,39,141,0.12)] hover:border-[#FEB700]/30 transition-all duration-300 overflow-hidden flex flex-col md:flex-row group"
+                     initial={{
+                    width: 0,
+                    opacity: 0,
+                    x: 10,
+                  }}
+                  animate={{
+                    width: "auto",
+                    opacity: 1,
+                    x: 0,
+                  }}
+                  exit={{
+                    width: 0,
+                    opacity: 0,
+                    x: 10,
+                  }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    // transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="overflow-hidden"
                   >
-                    {/* Bagian Info Utama (Kiri) */}
-                    <div className="p-8 flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <span
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 border ${
-                            job.kategori === "Konsultan Individu"
-                              ? "bg-[#FEB700]/10 text-[#FEB700] border-[#FEB700]/20"
-                              : "bg-blue-50 text-[#0D278D] border-blue-100"
+                    <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30   w-max whitespace-nowrap">
+                      {filters.map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => {
+                            setActiveFilter(f);
+                            setIsFilterOpen(false);
+                          }}
+                          className={`px-5 h-[40px] flex items-center justify-center rounded-xl text-[14px] font-bold transition-all duration-300 whitespace-nowrap ${
+                            activeFilter === f
+                              ? "bg-white border border-[#0D278D] text-[#0D278D] shadow-sm"
+                              : "text-gray-500 hover:text-[#0D278D]"
                           }`}
                         >
-                          <Briefcase size={14} /> {job.kategori}
-                        </span>
-                        <span className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 text-[11px] font-bold uppercase tracking-widest">
-                          {job.jurusan}
-                        </span>
-                        <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5 border border-gray-100">
-                          <Clock size={12} /> {job.periode}
-                        </span>
-                      </div>
-
-                      <h3 className="text-2xl font-bold text-[#0D278D] mb-3 group-hover:text-[#FEB700] transition-colors leading-tight">
-                        {job.posisi}
-                      </h3>
-                      <p className="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-2">
-                        {job.deskripsi}
-                      </p>
-
-                      <div className="flex items-center gap-2">
-                        <GraduationCap
-                          size={16}
-                          className="text-gray-400 mr-1"
-                        />
-                        {job.pendidikan.map((edu, index) => (
-                          <span
-                            key={index}
-                            className="w-7 h-7 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] font-black text-[#0D278D]"
-                          >
-                            {edu}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Bagian Status Akhir & Tanggal (Kanan) */}
-                    <div className="bg-[#fafafa] p-8 md:w-72 border-t md:border-t-0 md:border-l border-gray-100 flex flex-col justify-center items-start md:items-center text-left md:text-center shrink-0 group-hover:bg-[#0D278D]/[0.02] transition-colors">
-                      <span className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5 md:justify-center">
-                        <Calendar size={14} /> Tgl Melamar:
-                      </span>
-                      <span className="text-sm font-bold text-[#0D278D] mb-6">
-                        {job.tanggalMelamar}
-                      </span>
-
-                      <div className="w-full h-[1px] bg-gray-200 mb-6 hidden md:block" />
-
-                      <span className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">
-                        Status Akhir:
-                      </span>
-                      <div
-                        className={`w-full px-4 py-3 rounded-xl text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 border ${
-                          job.statusAkhir === "Diterima"
-                            ? "bg-green-50 text-green-600 border-green-100 shadow-sm shadow-green-100"
-                            : "bg-red-50 text-red-600 border-red-100 shadow-sm shadow-red-100"
-                        }`}
-                      >
-                        {job.statusAkhir === "Diterima" ? (
-                          <CheckCircle2 size={18} />
-                        ) : (
-                          <XCircle size={18} />
-                        )}
-                        {job.statusAkhir}
-                      </div>
+                          {f}
+                        </button>
+                      ))}
                     </div>
                   </motion.div>
-                ))}
+                )}
               </AnimatePresence>
-            </motion.div>
+            </div>
+          {/* </div> */}
+        </motion.div>
 
-            {/* Empty State */}
-            <AnimatePresence>
-              {filteredHistory.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-24"
-                >
-                  <div className="bg-gray-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-100">
-                    <History size={40} className="text-gray-300" />
+        {/* ARCHIVE GRID CARDS (Style matched to image_7657d8.png layout) */}
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-1 md:grid-cols-2 gap-8"
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredHistory.map((job) => (
+              <motion.div
+                layout
+                key={job.id}
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="group p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
+              >
+                {/* Meta Header */}
+                <div className="flex justify-between items-start mb-6 gap-2">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
+                    <Clock size={14} className="text-[#FEB700]" />
+                    {job.periode}
+                  </span>
+
+                  <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                             job.kategori === "Konsultan Individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"
+                                                      }`}>
+                                                        {job.kategori === "Konsultan Individu" ? (
+                                                          <Brain size={12} /> 
+                                                        ) : (
+                                                          <Users size={12} />
+                                                        )} 
+                                                        {job.kategori}
+                      </span>
+                </div>
+
+                {/* Job Position Title */}
+                <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight group-hover:text-blue-800 transition-colors">
+                  {job.posisi}
+                </h3>
+
+                {/* Description */}
+                <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
+                  {job.deskripsi}
+                </p>
+
+                {/* Divider Line & Card Footer */}
+                <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50 gap-4">
+                  
+                  {/* Education Circles */}
+                  <div className="flex items-center gap-2">
+                    <GraduationCap size={18} className="text-gray-400 mr-1" />
+                    {job.pendidikan.map((edu, idx) => (
+                      <span
+                        key={idx}
+                        className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
+                      >
+                        {edu}
+                      </span>
+                    ))}
                   </div>
-                  <h3 className="text-[#0D278D] text-xl font-bold">
-                    Riwayat Kosong
-                  </h3>
-                  <p className="text-gray-400 mt-2 text-sm">
-                    Anda belum memiliki riwayat lamaran dengan status ini.
-                  </p>
-                  <button
-                    onClick={() => setActiveFilter("Semua Riwayat")}
-                    className="mt-8 text-[#0D278D] font-bold text-sm underline underline-offset-8 hover:text-[#FEB700] transition-colors"
+
+                  {/* Status Badges Matching Lowongan's Button Area placement */}
+                  <div
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border ${
+                      job.statusAkhir === "Diterima"
+                        ? "bg-green-50 text-green-600 border-green-100 shadow-sm shadow-green-50"
+                        : "bg-red-50 text-red-600 border-red-100 shadow-sm shadow-red-50"
+                    }`}
                   >
-                    Kembali ke Semua Riwayat
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </section>
-      </main>
+                    {job.statusAkhir === "Diterima" ? (
+                      <CheckCircle2 size={15} />
+                    ) : (
+                      <XCircle size={15} />
+                    )}
+                    <span>{job.statusAkhir}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* EMPTY STATE */}
+        <AnimatePresence>
+          {filteredHistory.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-32"
+            >
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-gray-50 border border-gray-100">
+                <History size={28} className="text-gray-300" />
+              </div>
+              <h3 className="text-[#0D278D] font-extrabold text-xl tracking-tight">
+                Riwayat Kosong
+              </h3>
+              <p className="text-gray-400 mt-2 text-sm max-w-sm mx-auto leading-relaxed">
+                Anda belum memiliki riwayat rekaman administrasi lamaran pada kategori ini.
+              </p>
+              <button
+                onClick={() => setActiveFilter("Semua Riwayat")}
+                className="mt-8 text-sm font-bold text-[#0D278D] border-b-2 border-transparent hover:border-[#FEB700] hover:text-[#FEB700] transition-all pb-1"
+              >
+                Kembali ke Semua Riwayat
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.main>
     </div>
   );
 };

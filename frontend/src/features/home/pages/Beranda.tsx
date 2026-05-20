@@ -1,8 +1,8 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
-  Plus,
   MonitorUp,
   FileCheck,
   Brain,
@@ -15,134 +15,109 @@ import {
   Megaphone,
   Users,
 } from "lucide-react";
+import Navbar from "../../../components/layout/Navbar";
 
 // Data untuk Tahapan Seleksi (Tetap 6 Tahap)
 const tahapanSeleksi = [
-  {
-    id: 1,
-    title: "Registrasi Online",
-    desc: "Pendaftaran dan upload dokumen persyaratan melalui portal resmi.",
-    icon: MonitorUp,
-    color: "bg-[#0D278D] text-white",
-  },
-  {
-    id: 2,
-    title: "Seleksi Administrasi",
-    desc: "Verifikasi kelengkapan dan keabsahan dokumen oleh tim panitia.",
-    icon: FileCheck,
-    color: "bg-[#0D278D] text-white",
-  },
-  {
-    id: 3,
-    title: "Pengumuman Administrasi",
-    desc: "Pengumuman daftar peserta yang lolos verifikasi berkas tahap awal.",
-    icon: Megaphone,
-    color: "bg-[#0D278D] text-white",
-  },
-  {
-    id: 4,
-    title: "Tes Kompetensi",
-    desc: "Ujian tertulis/CAT dan wawancara teknis sesuai formasi yang dipilih.",
-    icon: Brain,
-    color: "bg-[#0D278D] text-white",
-  },
-  {
-    id: 5,
-    title: "Wawancara",
-    desc: "Tahap tatap muka/online untuk pendalaman kompetensi dan karakter.",
-    icon: Users,
-    color: "bg-[#0D278D] text-white",
-  },
-  {
-    id: 6,
-    title: "Pengumuman Akhir",
-    desc: "Penetapan kelulusan berdasarkan peringkat nilai terbaik.",
-    icon: Award,
-    color: "bg-[#0D278D] text-white",
-  },
+  { id: 1, title: "Registrasi Online", icon: MonitorUp },
+  { id: 2, title: "Seleksi Administrasi", icon: FileCheck },
+  { id: 3, title: "Pengumuman Administrasi", icon: Megaphone },
+  { id: 4, title: "Tes Kompetensi", icon: Brain },
+  { id: 5, title: "Wawancara", icon: Users },
+  { id: 6, title: "Pengumuman Akhir", icon: Award },
 ];
 
+// --- MASTER STAGGER ANIMATION SYSTEM ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 30, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.6 },
+  },
+};
+
 const Beranda: React.FC = () => {
+  const navigate = useNavigate();
   return (
-    <div className="bg-white min-h-screen pt-20">
-      {/* Hero Section */}
-      <section className="relative bg-[#0D278D] py-20 overflow-hidden">
-        {/* Background Accent */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-[#FEB700]/10 skew-x-12 transform translate-x-20" />
+    <div className="bg-white min-h-screen pt-20 overflow-x-hidden">
+      <Navbar />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="inline-block px-4 py-1 rounded-full bg-[#FEB700] text-[#0D278D] font-bold text-xs mb-6 shadow-sm">
-                REKRUTMEN TENAGA NON-PNS 2026
+      {/* --- HERO SECTION (MODERN, MEWAH, CENTER ALIGNED) --- */}
+      <section className="relative bg-[#0D278D] pt-32 pb-32 overflow-hidden">
+        {/* Luxury Background Accents (Glow & Texture) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FEB700]/15 rounded-full blur-[120px] pointer-events-none z-0" />
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="flex flex-col items-center"
+          >
+            <span className="inline-block px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-xs mb-7 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest">
+              REKRUTMEN TENAGA NON-PNS 2026
+            </span>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-3 leading-tight tracking-tight">
+              Membangun Negeri Melalui <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-yellow-200">
+                Pengelolaan Sumber Daya Air
               </span>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
-                Membangun Negeri Melalui Pengelolaan Sumber Daya Air
-              </h1>
-              <p className="text-blue-100 mb-8 text-lg leading-relaxed">
-                Bergabunglah bersama Balai Besar Wilayah Sungai Kementerian
-                PUPR. Kontribusi nyata untuk pembangunan infrastruktur vital
-                nasional.
-              </p>
-              <div className="flex gap-4">
-                <button className="bg-[#FEB700] text-[#0D278D] px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-xl shadow-yellow-500/20">
-                  Lihat Lowongan Aktif <ChevronRight size={18} />
-                </button>
-                <button className="border border-white/30 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/10 transition-colors">
-                  Panduan Pendaftaran
-                </button>
-              </div>
-            </motion.div>
+            </h1>
+            
+            <p className="text-blue-100/90 mb-7 text-lg md:text-xl leading-relaxed max-w-2xl font-light">
+              Bergabunglah bersama Balai Besar Wilayah Sungai Kementerian
+              PUPR. Kontribusi nyata untuk pembangunan infrastruktur vital nasional.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto justify-center">
+              <button 
+                onClick={() => document.getElementById('lowongan')?.scrollIntoView({ behavior: 'smooth' })}
+                className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 py-4 rounded-2xl font-bold flex items-center cursor-pointer justify-center gap-2 hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(254,183,0,0.5)]"
+              >
+                <span>Lihat Lowongan Aktif</span>
+                <ChevronRight size={18} className="transform group-hover:translate-x-1 transition-transform" />
+              </button>
 
-            {/* Info Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl"
-            >
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-[#FEB700] rounded-xl text-[#0D278D]">
-                    <Plus size={24} />
-                  </div>
-                  <div>
-                    <p className="text-blue-200 text-sm">
-                      Batas Akhir Pendaftaran
-                    </p>
-                    <p className="text-white font-bold text-lg">
-                      15 Oktober 2026
-                    </p>
-                  </div>
-                </div>
-                <div className="h-px bg-white/10" />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-blue-200 text-xs mb-1">
-                      Dokumen Terverifikasi
-                    </p>
-                    <p className="text-white font-bold text-2xl">4,281</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-200 text-xs mb-1">
-                      Posisi Tersedia
-                    </p>
-                    <p className="text-white font-bold text-2xl">12 Formasi</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+              <button 
+                onClick={() => document.getElementById('tahapan')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-white/5 border border-white/20 text-white px-8 py-4 rounded-2xl font-bold hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all duration-300 backdrop-blur-sm shadow-lg"
+              >
+                Panduan Pendaftaran
+              </button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Lowongan Section */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+      {/* --- LOWONGAN SECTION (STAGGER ENTRANCE FLOW) --- */}
+      <motion.section 
+        id="lowongan" 
+        className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+      >
+        <motion.div 
+          variants={itemVariants}
+          className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6"
+        >
           <div>
             <h2 className="text-3xl font-bold text-[#0D278D] mb-2">
               Lowongan Pilihan
@@ -151,60 +126,28 @@ const Beranda: React.FC = () => {
               Temukan posisi yang sesuai dengan keahlian Anda
             </p>
           </div>
-          <button className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group">
+          <button 
+            onClick={() => navigate('/Lowongan')}
+            className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group"
+          >
             Lihat Semua Posisi
             <ChevronRight
               size={18}
               className="transform group-hover:translate-x-1 transition-transform"
             />
           </button>
-        </div>
+        </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {[
-            {
-              id: 1,
-              kategori: "Tenaga Pendukung",
-              jurusan: "Teknik Sipil",
-              waktu: "5 Hari Lagi",
-              posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-              deskripsi:
-                "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial pada kegiatan Percepatan Peningkatan Tata Guna Air Irigasi.",
-              pendidikan: ["S1", "D3"],
-            },
-            {
-              id: 2,
-              kategori: "Tenaga Pendukung",
-              jurusan: "Administrasi",
-              waktu: "Tutup Besok",
-              posisi: "Petugas Administrasi Satker",
-              deskripsi:
-                "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin pada satuan kerja Balai.",
-              pendidikan: ["S1", "D3", "SMA"],
-            },
-            {
-              id: 3,
-              kategori: "Konsultan Individu",
-              jurusan: "IT Support",
-              waktu: "12 Hari Lagi",
-              posisi: "Software Engineer (Full-Stack)",
-              deskripsi:
-                "Mengembangkan dan memelihara sistem informasi manajemen sumber daya air berbasis web dan mobile yang terintegrasi.",
-              pendidikan: ["S1"],
-            },
-            {
-              id: 4,
-              kategori: "Konsultan Individu",
-              jurusan: "Hukum",
-              waktu: "2 Minggu Lagi",
-              posisi: "Staf Advokasi Hukum",
-              deskripsi:
-                "Menangani aspek legalitas lahan, sengketa pemanfaatan wilayah sungai, dan penyusunan draf perjanjian kerja sama.",
-              pendidikan: ["S1", "S2"],
-            },
+            { id: 1, kategori: "Tenaga Pendukung", jurusan: "Teknik Sipil", waktu: "5 Hari Lagi", posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI", deskripsi: "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial pada kegiatan Percepatan Peningkatan Tata Guna Air Irigasi.", pendidikan: ["S1", "D3"] },
+            { id: 2, kategori: "Tenaga Pendukung", jurusan: "Administrasi", waktu: "Tutup Besok", posisi: "Petugas Administrasi Satker", deskripsi: "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin pada satuan kerja Balai.", pendidikan: ["S1", "D3", "SMA"] },
+            { id: 3, kategori: "Konsultan Individu", jurusan: "IT Support", waktu: "12 Hari Lagi", posisi: "Software Engineer (Full-Stack)", deskripsi: "Mengembangkan dan memelihara sistem informasi manajemen sumber daya air berbasis web dan mobile yang terintegrasi.", pendidikan: ["S1"] },
+            { id: 4, kategori: "Konsultan Individu", jurusan: "Hukum", waktu: "2 Basin Lagi", posisi: "Staf Advokasi Hukum", deskripsi: "Menangani aspek legalitas lahan, sengketa pemanfaatan wilayah sungai, dan penyusunan draf perjanjian kerja sama.", pendidikan: ["S1", "S2"] },
           ].map((job) => (
             <motion.div
               key={job.id}
+              variants={itemVariants}
               whileHover={{ y: -8 }}
               className="group p-8 rounded-[2rem] border border-gray-100 bg-white hover:border-[#FEB700]/30 hover:shadow-[0_20px_40px_-15px_rgba(13,39,141,0.12)] transition-all duration-300 flex flex-col justify-between"
             >
@@ -222,11 +165,7 @@ const Beranda: React.FC = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <Briefcase
                     size={16}
-                    className={
-                      job.kategori === "Konsultan Individu"
-                        ? "text-[#FEB700]"
-                        : "text-[#0D278D]"
-                    }
+                    className={job.kategori === "Konsultan Individu" ? "text-[#FEB700]" : "text-[#0D278D]"}
                   />
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     {job.kategori}
@@ -253,7 +192,7 @@ const Beranda: React.FC = () => {
                     </span>
                   ))}
                 </div>
-                <button className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold group-hover:bg-[#0D278D] group-hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2">
+                <button className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold group-hover:bg-[#0D278D] cursor-pointer group-hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2">
                   Lamar
                   <ChevronRight
                     size={16}
@@ -264,18 +203,23 @@ const Beranda: React.FC = () => {
             </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      {/* Tahapan Seleksi Section */}
-      <section className="py-32 bg-white relative overflow-hidden border-y border-gray-100">
-        {/* Decorative Background Blobs */}
+      {/* --- TAHAPAN SELEKSI SECTION (VIEWPORT TRIGGERED) --- */}
+      <section id="tahapan" className="py-32 bg-white relative overflow-hidden border-y border-gray-100">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
           <div className="absolute top-40 -right-40 w-96 h-96 bg-yellow-50 rounded-full blur-3xl opacity-50" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-2xl mx-auto mb-20"
+          >
             <span className="text-[#FEB700] font-bold text-sm tracking-widest uppercase mb-2 block">
               Timeline Pendaftaran
             </span>
@@ -286,79 +230,48 @@ const Beranda: React.FC = () => {
               Proses rekrutmen dilaksanakan secara transparan, akuntabel, dan
               bebas biaya untuk menjaring talenta terbaik bangsa.
             </p>
-          </div>
+          </motion.div>
 
           <div className="relative">
-            {/* --- GARIS PENGHUBUNG KONEKSI (VERTIKAL ZIGZAG) --- */}
-            <div className="hidden lg:block absolute inset-0 z-0 pointer-events-none">
-              {/* 1. Garis Vertikal Turun: Tahap 1 ke 2 (Kolom 1) */}
-              <div className="absolute top-[76px] left-[16.5%] h-[316px] border-l-2 border-dashed border-[#0D278D]/40 z-0" />
+            <motion.div
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ 
+                duration: 1.8, 
+                ease: [0.25, 1, 0.5, 1], 
+                delay: 0.4 
+              }}
+              className="hidden lg:block absolute top-[44px] left-[8.33%] w-[83.34%] border-t-2 border-dashed border-[#0D278D] z-0 origin-left"
+            />
 
-              {/* 2. Garis Horizontal Kanan: Tahap 2 ke 3 (Baris 2) */}
-              <div className="absolute top-[392px] left-[16.5%] right-[50%] border-t-2 border-dashed border-[#0D278D]/40 z-0" />
-
-              {/* 3. Garis Vertikal Naik: Tahap 3 ke 4 (Kolom 2) */}
-              <div className="absolute top-[76px] left-[50%] h-[316px] border-l-2 border-dashed border-[#0D278D]/40 z-0" />
-
-              {/* 4. Garis Horizontal Kanan: Tahap 4 ke 5 (Baris 1) */}
-              <div className="absolute top-[76px] left-[50%] right-[16.5%] border-t-2 border-dashed border-[#0D278D]/40 z-0" />
-
-              {/* 5. Garis Vertikal Turun: Tahap 5 ke 6 (Kolom 3) */}
-              <div className="absolute top-[76px] right-[16.5%] h-[316px] border-r-2 border-dashed border-[#0D278D]/40 z-0" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-24 gap-x-8 relative z-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-y-12 gap-x-4 relative z-10">
               {tahapanSeleksi.map((step, index) => {
-                // LOGIKA POSISI SPESIFIK GRID DESKTOP
-                // Baris 1: 1 (Kiri), 4 (Tengah), 5 (Kanan)
-                // Baris 2: 2 (Kiri), 3 (Tengah), 6 (Kanan)
-                let lgGridPos = "";
-                if (index === 0) lgGridPos = "lg:col-start-1 lg:row-start-1"; // 1
-                if (index === 1) lgGridPos = "lg:col-start-1 lg:row-start-2"; // 2
-                if (index === 2) lgGridPos = "lg:col-start-2 lg:row-start-2"; // 3
-                if (index === 3) lgGridPos = "lg:col-start-2 lg:row-start-1"; // 4
-                if (index === 4) lgGridPos = "lg:col-start-3 lg:row-start-1"; // 5
-                if (index === 5) lgGridPos = "lg:col-start-3 lg:row-start-2"; // 6
-
                 return (
                   <motion.div
                     key={step.id}
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-100px" }}
+                    viewport={{ once: true, margin: "-50px" }}
                     transition={{
-                      duration: 0.6,
+                      duration: 0.5,
                       delay: index * 0.1,
                       type: "spring",
                       stiffness: 100,
                     }}
-                    className={`flex flex-col items-center text-center group relative p-6 rounded-[2rem] hover:bg-white hover:shadow-[0_20px_40px_-15px_rgba(13,39,141,0.08)] transition-all duration-500 bg-white/50 backdrop-blur-sm ${lgGridPos}`}
+                    className="flex flex-col items-center text-center group relative p-2"
                   >
-                    {/* Watermark Number Raksasa */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[120px] font-black text-gray-50/60 z-0 group-hover:text-blue-50/60 group-hover:-translate-y-4 transition-all duration-500 pointer-events-none select-none">
-                      {step.id}
-                    </div>
-
-                    {/* Icon Container */}
-                    <div className="relative z-10 w-24 h-24 mb-8 rounded-[1.5rem] bg-white shadow-xl shadow-blue-900/5 flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 group-hover:-translate-y-3 transition-all duration-500">
-                      {/* Box Tes Kompetensi (ID 4) dikasih warna Kuning */}
-                      <div
-                        className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-inner bg-[#0d278d] text-white : 'bg-[#0D278D] text-white'} group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-500`}
-                      >
-                        <step.icon size={28} strokeWidth={2} />
+                    <div className="relative z-10 w-20 h-20 md:w-22 md:h-22 mb-6 rounded-[1.2rem] bg-white shadow-xl shadow-blue-900/5 flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
+                      <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-500">
+                        <img /> <step.icon size={24} strokeWidth={2} />
                       </div>
-
-                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full font-bold flex items-center justify-center border-[3px] border-white shadow-sm bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all duration-500 group-hover:rotate-12">
+                      <div className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center border-[2.5px] border-white shadow-sm bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all duration-500 group-hover:rotate-12">
                         {step.id}
                       </div>
                     </div>
-
-                    <h3 className="text-xl font-bold text-[#0D278D] mb-3 relative z-10 group-hover:text-[#FEB700] transition-colors duration-300">
+                    <h3 className="text-sm md:text-base font-bold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-300 leading-snug px-1">
                       {step.title}
                     </h3>
-                    <p className="text-sm text-gray-500 leading-relaxed px-2 relative z-10">
-                      {step.desc}
-                    </p>
                   </motion.div>
                 );
               })}
@@ -367,20 +280,19 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* --- CTA SECTION (SPRING POP ENTRANCE) --- */}
       <section className="py-24 px-4 relative">
         <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(13,39,141,0.4)] border border-white/10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB700] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-20 translate-y-1/3 -translate-x-1/3 pointer-events-none" />
-
           <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-            className="relative z-10 flex flex-col items-center"
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.8, type: "spring", bounce: 0.3 }}
+            className="relative z-10 z-0 flex flex-col items-center"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-8 shadow-xl">
               <span className="w-2 h-2 rounded-full bg-[#FEB700] animate-pulse" />
@@ -390,8 +302,7 @@ const Beranda: React.FC = () => {
             </div>
 
             <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight leading-tight">
-              Siap Berkontribusi bagi{" "}
-              <span className="text-[#FEB700]">Negeri?</span>
+              Siap Berkontribusi bagi <span className="text-[#FEB700]">Negeri?</span>
             </h2>
 
             <p className="text-blue-100/80 text-lg mb-12 max-w-2xl mx-auto font-light leading-relaxed">
