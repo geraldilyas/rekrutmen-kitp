@@ -1,0 +1,182 @@
+import React from "react";
+import {
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  MapPin,
+  BadgeCheck,
+  Clock,
+  Shield,
+  CheckCircle2,
+  User as UserIcon,
+} from "lucide-react";
+import type { User } from "../shared/types";
+
+interface Props {
+  users: User[];
+  onEdit: (user: User) => void;
+  onDelete: (id: number) => void;
+  onToggleVerification: (id: number) => void;
+}
+
+const fmt = (d: string | null) =>
+  d
+    ? new Date(d).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "-";
+
+const roleConfig: Record<
+  string,
+  { label: string; color: string; dot: string }
+> = {
+  admin: {
+    label: "Admin",
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+    dot: "bg-purple-500",
+  },
+  penyeleksi: {
+    label: "Penyeleksi",
+    color: "bg-blue-50 text-[#0D278D] border-blue-100",
+    dot: "bg-[#0D278D]",
+  },
+};
+
+const UsersTable: React.FC<Props> = ({
+  users,
+  onEdit,
+  onDelete,
+  onToggleVerification,
+}) => {
+  if (users.length === 0)
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 text-center py-16">
+        <UserIcon size={40} className="mx-auto text-gray-300 mb-3" />
+        <p className="text-gray-500 text-sm">Tidak ada user</p>
+      </div>
+    );
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-50 bg-gray-50/50">
+              <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                User
+              </th>
+              <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                Kontak
+              </th>
+              <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                Aksi
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {users.map((user) => {
+              const role = roleConfig[user.role] || roleConfig.penyeleksi;
+              return (
+                <tr key={user.id} className="hover:bg-gray-50/30">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-[#0D278D] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {user.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                          <Mail size={10} />
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <div className="space-y-1">
+                      {user.phone && (
+                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                          <Phone size={11} />
+                          {user.phone}
+                        </p>
+                      )}
+                      {user.address && (
+                        <p className="text-xs text-gray-500 flex items-start gap-1 line-clamp-1">
+                          <MapPin size={11} className="mt-0.5" />
+                          {user.address}
+                        </p>
+                      )}
+                      {!user.phone && !user.address && (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center align-middle">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border ${role.color}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${role.dot}`}
+                      />
+                      {role.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center align-middle">
+                    <button
+                      onClick={() => onToggleVerification(user.id)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-all hover:scale-105 ${user.email_verified_at ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500 border-gray-200 hover:border-emerald-200 hover:text-emerald-600"}`}
+                    >
+                      {user.email_verified_at ? (
+                        <BadgeCheck size={12} className="text-emerald-600" />
+                      ) : (
+                        <Clock size={12} />
+                      )}
+                      {user.email_verified_at ? "Verified" : "Unverified"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-center align-middle">
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        onClick={() => onEdit(user)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-[#0D278D] hover:bg-blue-50 transition-all"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Hapus "${user.name}"?`))
+                            onDelete(user.id);
+                        }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default UsersTable;
