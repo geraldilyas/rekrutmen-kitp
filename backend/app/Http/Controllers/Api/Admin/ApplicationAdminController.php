@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
+use App\Models\JobStage;
+use App\Models\ApplicationStageResult;
+use App\Notifications\ApplicationStatusUpdated;
 
 class ApplicationAdminController extends Controller
 {
@@ -31,14 +35,10 @@ class ApplicationAdminController extends Controller
         }
 
         if ($request->search) {
-
             $query->whereHas('user', function ($q) use ($request) {
-
                 $q->where('name', 'like', '%' . $request->search . '%')
                 ->orWhere('email', 'like', '%' . $request->search . '%');
-
             });
-
         }
 
         return response()->json($query->latest()->get());
@@ -65,7 +65,9 @@ class ApplicationAdminController extends Controller
             'user',
             'job',
             'documents',
-            'histories'
+            'answers.formField',
+            'histories',
+            'stageResults.stage'
         ])->findOrFail($id);
 
         return response()->json($application);
@@ -74,34 +76,40 @@ class ApplicationAdminController extends Controller
     //  VALIDASI lamaran
     public function updateStatus(Request $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:pending,seleksi,diterima,ditolak',
-            'notes' => 'nullable|string'
+        $validated = $request->validate([
+            'status' => 'required|in:pending,seleksi,Lulus,Tidak Lulus',
+            'notes' => 'nullable|string|max:1000'
         ]);
 
         $application = Application::findOrFail($id);
 
         // update status
         $application->update([
-            'status' => $request->status
+            'status' => $validated['status']
         ]);
 
         // simpan histori
         ApplicationStatusHistory::create([
             'application_id' => $application->id,
-            'status' => $request->status,
-            'notes' => $request->notes,
+            'status' => $validated['status'],
+            'notes' => strip_tags($validated['notes'] ?? ''),
             'created_at' => now()
         ]);
+
+        // Send notification if exists
+        try {
+            if ($application->user) {
+                $application->user->notify(new ApplicationStatusUpdated($application));
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the request
+            \Illuminate\Support\Facades\Log::error("Failed to send notification: " . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Status berhasil diperbarui',
             'data' => $application
         ]);
-
-        $application->user->notify(
-            new ApplicationStatusUpdated($application)
-        );
     }
 
     public function applicationStages($id)
@@ -148,9 +156,10 @@ class ApplicationAdminController extends Controller
 
     public function updateStageResult(Request $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:pending,passed,failed',
-            'notes' => 'nullable|string'
+        $validated = $request->validate([
+            'status' => 'required|in:pending,lulus,tidak_lulus',
+            'score' => 'nullable|numeric|min:0|max:100',
+            'notes' => 'nullable|string|max:1000'
         ]);
 
         DB::beginTransaction();
@@ -164,32 +173,34 @@ class ApplicationAdminController extends Controller
             );
 
             $stageResult->update([
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'processed_at' => now(),
+                'status' => $validated['status'],
+                'score' => $validated['score'],
+                'notes' => strip_tags($validated['notes'] ?? ''),
+                'reviewed_at' => now(),
+                'reviewed_by' => auth()->id()
             ]);
 
             $currentStage = JobStage::findOrFail(
                 $stageResult->job_stage_id
             );
 
-            if ($request->status === 'failed') {
+            if ($validated['status'] === 'tidak_lulus') {
 
                 $application->update([
-                    'status' => 'rejected'
+                    'status' => 'Tidak Lulus'
                 ]);
 
                 ApplicationStatusHistory::create([
                     'application_id' => $application->id,
-                    'status' => 'rejected',
-                    'notes' => $request->notes,
-                    'changed_by' => auth()->id(),
+                    'status' => 'Tidak Lulus',
+                    'notes' => 'Gagal pada tahap: ' . $currentStage->name . '. ' . ($validated['notes'] ?? ''),
+                    'created_at' => now(),
                 ]);
 
                 DB::commit();
 
                 return response()->json([
-                    'message' => 'Pelamar gagal pada tahap ini',
+                    'message' => 'Pelamar dinyatakan Tidak Lulus',
                     'data' => $stageResult
                 ]);
             }
@@ -200,7 +211,7 @@ class ApplicationAdminController extends Controller
                 ->first();
 
 
-            if ($request->status === 'passed' && $nextStage) {
+            if ($validated['status'] === 'lulus' && $nextStage) {
 
                 $existingNextStage = ApplicationStageResult::where(
                     'application_id',
@@ -219,42 +230,59 @@ class ApplicationAdminController extends Controller
                 }
 
                 $application->update([
-                    'status' => 'in_progress'
+                    'status' => 'seleksi'
                 ]);
 
                 ApplicationStatusHistory::create([
                     'application_id' => $application->id,
-                    'status' => 'in_progress',
-                    'notes' => 'Lolos ke tahap berikutnya',
-                    'changed_by' => auth()->id(),
+                    'status' => 'seleksi',
+                    'notes' => 'Lolos tahap ' . $currentStage->name . '. Lanjut ke tahap berikutnya.',
+                    'created_at' => now(),
                 ]);
             }
 
 
-            if ($request->status === 'passed' && !$nextStage) {
+            if ($validated['status'] === 'lulus' && !$nextStage) {
+                // Kalkulasi Skor Akhir jika ini tahap terakhir
+                $allResults = ApplicationStageResult::where('application_id', $application->id)->get();
+                $finalScore = 0;
+                
+                foreach ($allResults as $res) {
+                    $stage = JobStage::find($res->job_stage_id);
+                    $weight = $stage ? $stage->weight : 0;
+                    $finalScore += ($res->score * ($weight / 100));
+                }
 
                 $application->update([
-                    'status' => 'accepted'
+                    'status' => 'Lulus',
+                    'final_score' => $finalScore
                 ]);
 
                 ApplicationStatusHistory::create([
                     'application_id' => $application->id,
-                    'status' => 'accepted',
-                    'notes' => 'Pelamar diterima',
-                    'changed_by' => auth()->id(),
+                    'status' => 'Lulus',
+                    'notes' => 'Pelamar diterima dengan skor akhir: ' . $finalScore,
+                    'created_at' => now(),
                 ]);
             }
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Stage berhasil diupdate',
-                'data' => $stageResult
+                'message' => 'Status tahapan berhasil diperbarui',
+                'data' => $stageResult->load('stage')
             ]);
 
         } catch (\Exception $e) {
 
             DB::rollBack();
+            
+            \Log::error('Error updating stage result: ' . $e->getMessage(), [
+                'id' => $id,
+                'status' => $request->status,
+                'score' => $request->score,
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'message' => 'Terjadi kesalahan',

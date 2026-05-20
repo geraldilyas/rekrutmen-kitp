@@ -54,6 +54,7 @@ class StatisticsController extends Controller
                 'status',
                 DB::raw('count(*) as total')
             )
+            ->with('stage:id,name')
             ->groupBy('job_stage_id', 'status')
             ->get();
 

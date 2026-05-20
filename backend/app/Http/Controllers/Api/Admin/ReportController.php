@@ -3,32 +3,40 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Application;
 use App\Models\Job;
-use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ApplicationsExport;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    public function statistics()
+    /**
+     * List jobs that have passed their deadline (closed).
+     */
+    public function closedJobs()
     {
+        $jobs = Job::where('deadline', '<', Carbon::now())
+            ->withCount('applications')
+            ->get();
+
         return response()->json([
-            'total_jobs' => Job::count(),
-            'total_applications' => Application::count(),
-            'total_users' => User::count(),
-
-            'accepted' => Application::where('status', 'diterima')->count(),
-
-            'rejected' => Application::where('status', 'ditolak')->count(),
+            'message' => 'Closed jobs retrieved successfully',
+            'data' => $jobs
         ]);
     }
 
-    public function exportApplications()
+    /**
+     * Export applications for a specific job.
+     */
+    public function exportApplications($job_id)
     {
+        $job = Job::findOrFail($job_id);
+        
+        $filename = 'pelamar-' . str_replace(' ', '-', strtolower($job->title)) . '-' . date('Y-m-d') . '.xlsx';
+
         return Excel::download(
-            new ApplicationsExport,
-            'applications.xlsx'
+            new ApplicationsExport($job_id),
+            $filename
         );
     }
 }

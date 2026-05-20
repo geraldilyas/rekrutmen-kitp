@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Job extends Model
 {
+        use HasFactory, SoftDeletes;
+
         protected $fillable = [
             'title',
             'type',
@@ -19,7 +23,13 @@ class Job extends Model
             'requirements',
             'deadline',
             'category',
+            'created_by',
         ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function applications()
     {
@@ -39,5 +49,10 @@ class Job extends Model
     public function stages()
     {
         return $this->hasMany(JobStage::class)->orderBy('stage_order');
+    }
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new \App\Models\Scopes\AdminDataScope);
     }
 }

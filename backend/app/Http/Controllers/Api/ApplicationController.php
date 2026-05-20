@@ -5,72 +5,97 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
-use App\Models\JobStage;
-use App\Models\ApplicationStageResult;
+use App\Models\Job;
+use App\Models\ApplicationDocument;
+use App\Models\ApplicationAnswer;
+use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
 {
-    // POST /apply
+    /**
+     * Submit a new application.
+     */
     public function apply(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'job_id' => 'required|exists:jobs,id',
+            'answers' => 'nullable|array',
+            'answers.*.field_id' => 'required|exists:form_fields,id',
+            'answers.*.value' => 'required|string|max:1000',
             'documents' => 'nullable|array',
-        ]);
-        
-        $application = Application::create([
-            'user_id' => auth()->id(),
-            'job_id' => $request->job_id,
-            'status' => 'pending',
-            'applied_at' => now()
+            'documents.*.type' => 'required|string|max:50',
+            'documents.*.file_path' => 'required|string|max:255',
         ]);
 
-        if ($request->has('documents') && is_array($request->documents)) {
-            foreach ($request->documents as $doc) {
-                \App\Models\ApplicationDocument::create([
-                    'application_id' => $application->id,
-                    'type' => $doc['type'] ?? null,
-                    'file_path' => $doc['file_path'] ?? null,
-                    'uploaded_at' => now()
-                ]);
-            }
+        $job = Job::with('formFields')->findOrFail($validated['job_id']);
+
+        // Check if job is currently open
+        $now = now();
+        if ($now->lt($job->start_date) || $now->gt($job->deadline)) {
+            return response()->json([
+                'message' => 'Pendaftaran untuk lowongan ini sedang ditutup.'
+            ], 422);
         }
 
-        return response()->json([
-            'message' => 'Lamaran berhasil dikirim',
-            'data' => $application
-        ]);
+        // Validation: Check if all required fields are present
+        $requiredFieldIds = $job->formFields->where('is_required', true)->pluck('id')->toArray();
+        $submittedFieldIds = collect($validated['answers'] ?? [])->pluck('field_id')->toArray();
+
+        $missingFields = array_diff($requiredFieldIds, $submittedFieldIds);
+
+        if (!empty($missingFields)) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => ['answers' => ['Beberapa field wajib belum diisi.']]
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($validated, $job) {
+            $application = Application::create([
+                'user_id' => auth()->id(),
+                'job_id' => $job->id,
+                'status' => 'pending',
+                'applied_at' => now()
+            ]);
+
+            // Save Answers
+            if (!empty($validated['answers'])) {
+                foreach ($validated['answers'] as $answer) {
+                    ApplicationAnswer::create([
+                        'application_id' => $application->id,
+                        'form_field_id' => $answer['field_id'],
+                        'answer' => strip_tags($answer['value'])
+                    ]);
+                }
+            }
+
+            // Save Documents
+            if (!empty($validated['documents'])) {
+                foreach ($validated['documents'] as $doc) {
+                    ApplicationDocument::create([
+                        'application_id' => $application->id,
+                        'type' => strip_tags($doc['type']),
+                        'file_path' => strip_tags($doc['file_path']),
+                        'uploaded_at' => now()
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'message' => 'Lamaran berhasil dikirim',
+                'data' => $application->load(['answers', 'documents'])
+            ]);
+        });
     }
 
-
-    public function allApplications()
-    {
-        return Application::with(['user', 'job'])->get();
-    }
-
-    // GET myApplications
+    /**
+     * Get applications for the authenticated user.
+     */
     public function myApplications(Request $request)
     {
-        return Application::with(['job'])
+        return Application::with(['job', 'stageResults.stage'])
             ->where('user_id', $request->user()->id)
+            ->latest()
             ->get();
-    }
-
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'status' => 'required|in:pending,diterima,ditolak'
-        ]);
-
-        $application = Application::findOrFail($id);
-
-        $application->update([
-            'status' => $request->status
-        ]);
-
-        return response()->json([
-            'message' => 'Status berhasil diupdate',
-            'data' => $application
-        ]);
     }
 }

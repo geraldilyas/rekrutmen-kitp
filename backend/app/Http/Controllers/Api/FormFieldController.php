@@ -17,18 +17,20 @@ class FormFieldController extends Controller
     // STORE field 
     public function store(Request $request)
     {
-        $request->validate([
-            'label' => 'required',
+        $validated = $request->validate([
+            'label' => 'required|string|max:255',
             'type' => 'required|in:text,textarea,number,date,file,url,select',
             'options' => 'nullable|array',
-            'is_required' => 'boolean'
+            'is_required' => 'boolean',
+            'category' => 'required|in:data_diri,berkas,tahapan'
         ]);
 
         $field = FormField::create([
-            'label' => $request->label,
-            'type' => $request->type,
-            'options' => $request->options,
-            'is_required' => $request->is_required ?? false
+            'label' => strip_tags($validated['label']),
+            'type' => $validated['type'],
+            'options' => $validated['options'],
+            'is_required' => $validated['is_required'] ?? false,
+            'category' => $validated['category']
         ]);
 
         return response()->json([

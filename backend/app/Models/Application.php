@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Application extends Model
 {
+    use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'job_id',
         'status',
-        'applied_at'
+        'final_score',
+        'applied_at',
     ];
 
     public function user()
@@ -33,8 +38,18 @@ class Application extends Model
         return $this->hasMany(ApplicationAnswer::class);
     }
 
+    public function stageResults()
+    {
+        return $this->hasMany(ApplicationStageResult::class);
+    }
+
     public function histories()
     {
         return $this->hasMany(ApplicationStatusHistory::class);
+    }
+
+    protected static function booted()
+    {
+        static::addGlobalScope(new \App\Models\Scopes\ApplicationDataScope);
     }
 }

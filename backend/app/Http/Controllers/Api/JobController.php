@@ -10,57 +10,99 @@ use Illuminate\Http\Request;
 class JobController extends Controller
 {
     // GET ALL JOBS
-    public function index()
+    public function index(Request $request)
     {
-        return Job::with('formFields')->get();
+        $now = now();
+        $upcomingThreshold = now()->addDays(7);
+
+        $query = Job::with(['formFields', 'stages']);
+
+        // Pelamar can see: Active jobs OR Upcoming jobs starting within 7 days
+        if (auth()->check() && auth()->user()->role === 'user' || !auth()->check()) {
+            $query->where(function ($q) use ($now, $upcomingThreshold) {
+                // Active jobs
+                $q->where('start_date', '<=', $now)
+                  ->where('deadline', '>=', $now);
+                
+                // OR Upcoming jobs
+                $q->orWhere(function ($sq) use ($now, $upcomingThreshold) {
+                    $sq->where('start_date', '>', $now)
+                       ->where('start_date', '<=', $upcomingThreshold);
+                });
+            });
+        }
+
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+
+        return $query->latest()->get();
     }
 
     // STORE JOB + FORM DINAMIS
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
             'category' => 'required|in:tenaga_pendukung,konsultan_individu',
-            'description' => 'required',
-            'deadline' => 'required|date',
+            'description' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'deadline' => 'required|date|after_or_equal:end_date',
             'requirements' => 'nullable|string',
             'form_fields' => 'required|array',
             'form_fields.*' => 'exists:form_fields,id',
-            'stages' => 'required|array',
-            'stages.*.name' => 'required|string',
-            'stages.*.stage_order' => 'required|integer',
-            'stages.*.start_date' => 'nullable|date',
-            'stages.*.end_date' => 'nullable|date',
+            'stages' => 'required|array|min:1',
+            'stages.*.name' => 'required|string|max:255',
+            'stages.*.stage_order' => 'required|integer|min:1',
+            'stages.*.start_date' => 'required|date',
+            'stages.*.end_date' => 'required|date|after_or_equal:stages.*.start_date',
+            'stages.*.weight' => 'required|numeric|min:0|max:100',
+            'stages.*.test_link' => 'nullable|url|max:255',
         ]);
+
+        // Validate total weight equals 100%
+        $totalWeight = collect($validated['stages'])->sum('weight');
+        if ($totalWeight != 100) {
+            return response()->json([
+                'message' => 'Total bobot semua tahapan harus 100%',
+                'current_total' => $totalWeight
+            ], 422);
+        }
 
         // simpan job
         $job = Job::create([
-            'title' => $request->title,
-            'category' => $request->category,
-            'description' => $request->description,
-            'requirements' => $request->requirements,
-            'deadline' => $request->deadline,
+            'title' => strip_tags($validated['title']),
+            'category' => $validated['category'],
+            'description' => strip_tags($validated['description'], '<b><i><u><ul><li><ol><p><br>'),
+            'requirements' => strip_tags($validated['requirements'] ?? '', '<b><i><u><ul><li><ol><p><br>'),
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'deadline' => $validated['deadline'],
+            'created_by' => auth()->id(),
         ]);
 
         // attach form fields
-        if ($request->has('form_fields')) {
+        if (!empty($validated['form_fields'])) {
             $syncData = [];
 
-            foreach ($request->form_fields as $index => $fieldId) {
+            foreach ($validated['form_fields'] as $index => $fieldId) {
                 $syncData[$fieldId] = ['order' => $index];
             }
 
             $job->formFields()->sync($syncData);
         }
 
-        if ($request->has('stages')) {
-            foreach ($request->stages as $stage) {
+        if (!empty($validated['stages'])) {
+            foreach ($validated['stages'] as $stage) {
                 JobStage::create([
                     'job_id' => $job->id,
-                    'name' => $stage['name'],
+                    'name' => strip_tags($stage['name']),
                     'stage_order' => $stage['stage_order'],
-                    'start_date' => $stage['start_date'] ?? null,
-                    'end_date' => $stage['end_date'] ?? null,
+                    'start_date' => $stage['start_date'],
+                    'end_date' => $stage['end_date'],
+                    'weight' => $stage['weight'],
+                    'test_link' => $stage['test_link'] ?? null,
                 ]);
             }
         }
@@ -68,7 +110,7 @@ class JobController extends Controller
         return response()->json([
             'message' => 'Lowongan berhasil dibuat',
             'data' => $job->load(['formFields', 'stages'])
-        ]);
+        ], 201);
     }
 
     public function show($id)
@@ -76,13 +118,7 @@ class JobController extends Controller
         $job = \App\Models\Job::with([
             'formFields',
             'stages',
-        ])->find($id);
-
-        if (!$job) {
-            return response()->json([
-                'message' => 'Job not found'
-            ], 404);
-        }
+        ])->findOrFail($id);
 
         return response()->json([
             'message' => 'Job detail retrieved successfully',
@@ -94,24 +130,27 @@ class JobController extends Controller
     {
         $job = Job::findOrFail($id);
 
-        $request->validate([
-            'title' => 'required',
-            'category' => 'required',
-            'description' => 'required',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'category' => 'required|in:tenaga_pendukung,konsultan_individu',
+            'description' => 'required|string',
             'deadline' => 'required|date',
+            'requirements' => 'nullable|string',
+            'form_fields' => 'nullable|array',
+            'form_fields.*' => 'exists:form_fields,id',
         ]);
 
         $job->update([
-            'title' => $request->title,
-            'category' => $request->category,
-            'description' => $request->description,
-            'deadline' => $request->deadline,
-            'requirements' => $request->requirements,
+            'title' => strip_tags($validated['title']),
+            'category' => $validated['category'],
+            'description' => strip_tags($validated['description'], '<b><i><u><ul><li><ol><p><br>'),
+            'deadline' => $validated['deadline'],
+            'requirements' => strip_tags($validated['requirements'] ?? '', '<b><i><u><ul><li><ol><p><br>'),
         ]);
 
         // update dynamic form
         if ($request->has('form_fields')) {
-            $job->formFields()->sync($request->form_fields);
+            $job->formFields()->sync($validated['form_fields']);
         }
 
         return response()->json([
@@ -130,14 +169,6 @@ class JobController extends Controller
         return response()->json([
             'message' => 'Lowongan berhasil dihapus'
         ]);
-    }
-
-    // FILTER BY CATEGORY
-    public function byCategory($category)
-    {
-        return Job::where('category', $category)
-            ->with('formFields')
-            ->get();
     }
 
     // AMBIL FORM UNTUK PELAMAR

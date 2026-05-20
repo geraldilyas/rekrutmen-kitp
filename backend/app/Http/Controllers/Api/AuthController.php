@@ -11,38 +11,50 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     // REGISTER
-   public function register(Request $request)
+    public function register(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6'
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|max:100',
+            'role' => 'required|in:admin,pelamar',
+            'nik' => [
+                'required_if:role,pelamar',
+                'nullable',
+                'string',
+                'digits:16',
+                'unique:users,nik'
+            ]
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => \Hash::make($request->password),
-            'role' => 'user'
+            'name' => strip_tags($validated['name']),
+            'email' => $validated['email'],
+            'password' => \Hash::make($validated['password']),
+            'nik' => $validated['nik'] ?? null,
+            'role' => $validated['role']
         ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Registrasi berhasil',
-            'data' => $user
-        ]);
+            'user' => $user,
+            'token' => $token
+        ], 201);
     }
 
     // LOGIN
     public function login(Request $request)
 {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
+    $validated = $request->validate([
+        'email' => 'required|string|email|max:255',
+        'password' => 'required|string|max:100'
     ]);
 
-    $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $validated['email'])->first();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
+    if (!$user || !Hash::check($validated['password'], $user->password)) {
         return response()->json([
             'message' => 'Email atau password salah'
         ], 401);

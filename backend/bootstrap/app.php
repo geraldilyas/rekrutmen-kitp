@@ -13,11 +13,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+
+        $middleware->append(\App\Http\Middleware\SecureHeaderMiddleware::class);
     })
     ->withExceptions(function ($exceptions) {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
             return response()->json([
                 'message' => 'Unauthenticated'
             ], 401);
+        });
+
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, $request) {
+            return response()->json([
+                'message' => 'Terlalu banyak permintaan. Silakan coba lagi nanti.',
+                'retry_after' => $e->getHeaders()['Retry-After'] ?? null
+            ], 429);
         });
     })->create();

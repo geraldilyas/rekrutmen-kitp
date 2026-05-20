@@ -21,10 +21,10 @@ return new class extends Migration
             $table->integer('stage_order');
 
             // tanggal mulai tahapan
-            $table->date('start_date');
+            $table->date('start_date')->nullable();
 
             // tanggal selesai tahapan
-            $table->date('end_date');
+            $table->date('end_date')->nullable();
 
             // tipe tahapan
             $table->enum('type', [
@@ -33,7 +33,7 @@ return new class extends Migration
                 'test',
                 'interview',
                 'announcement'
-            ]);
+            ])->nullable();
 
             $table->boolean('is_active')->default(true);
 

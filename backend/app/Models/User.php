@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-    use HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
     
     /**
      * The attributes that are mass assignable.
@@ -26,7 +26,24 @@ class User extends Authenticatable
         'password',
         'nik',
         'role',
+        'admin_level',
+        'parent_id',
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_id');
+    }
+
+    public function subordinates()
+    {
+        return $this->hasMany(User::class, 'parent_id');
+    }
+
+    public function createdJobs()
+    {
+        return $this->hasMany(Job::class, 'created_by');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
