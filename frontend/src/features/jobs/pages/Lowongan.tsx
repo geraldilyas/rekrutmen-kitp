@@ -306,7 +306,7 @@ const Lowongan: React.FC = () => {
             onClick={() => navigate('/detail-lowongan')}
             className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
           >
-            <span className="transition-transform duration-300">Lihat Detail</span>
+            <span className="transition-transform duration-300">Lihat Kontol</span>
             <ChevronRight
               size={18}
               data-framer-appear-id="ignore" /* Mencegah bentrokan layout animation */
