@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Filter,
-  Briefcase,
   Calendar,
   ChevronDown,
   CheckCircle2,
@@ -16,9 +14,10 @@ import {
   Search,
   Brain,
   CircleDot,
+  Activity,
+  Filter 
 } from "lucide-react";
 import Navbar from "../../../components/layout/Navbar";
-import Footer from "../../../components/layout/Footer";
 
 // Data Dummy Status Lamaran
 const appliedJobs = [
@@ -27,8 +26,6 @@ const appliedJobs = [
     kategori: "Tenaga Pendukung",
     jurusan: "Teknik Sipil",
     posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-    deskripsi:
-      "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial.",
     pendidikan: ["S1", "D3"],
     tanggal: "12 Mei 2026",
     currentStep: 4,
@@ -40,12 +37,10 @@ const appliedJobs = [
     kategori: "Konsultan Individu",
     jurusan: "IT Support",
     posisi: "Software Engineer (Full-Stack)",
-    deskripsi:
-      "Mengembangkan sistem informasi manajemen sumber daya air berbasis web dan mobile.",
     pendidikan: ["S1"],
     tanggal: "05 Mei 2026",
     currentStep: 6,
-    statusText: "Diterima",
+    statusText: "Lulus",
     isRejected: false,
   },
   {
@@ -53,12 +48,10 @@ const appliedJobs = [
     kategori: "Tenaga Pendukung",
     jurusan: "Administrasi",
     posisi: "Petugas Administrasi Satker",
-    deskripsi:
-      "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin.",
     pendidikan: ["S1", "D3", "SMA"],
     tanggal: "01 Mei 2026",
     currentStep: 6,
-    statusText: "Ditolak",
+    statusText: "Tidak Lulus",
     isRejected: true,
   },
 ];
@@ -72,9 +65,31 @@ const timelineSteps = [
   { id: 6, label: "Hasil Akhir", desc: "Keputusan Final", icon: CheckCircle2 },
 ];
 
+// Master Animasi Entrance Konten Utama (Lebih Lambat & Slow Premium)
+const mainContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const mainItemVariants = {
+  hidden: { y: 25, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.6,  }
+  }
+};
+
 const StatusLamaran: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
@@ -88,300 +103,327 @@ const StatusLamaran: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50/50 min-h-screen font-['Poppins']">
+    <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
 
-      <main className="pt-32 pb-24">
-        {/* Header Section */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16 text-center">
+      {/* --- HERO HEADER DENGAN ANIMASI ENTRANCE --- */}
+      <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] z-10 overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
+            className="flex flex-col items-center"
           >
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-[#0D278D] tracking-tight">
-              Pantau Status Lamaran
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6 shadow-sm backdrop-blur-sm">
+              <Activity size={16} className="text-[#FEB700]" />
+              <span className="text-white text-[11px] font-bold tracking-widest uppercase">
+                Monitoring
+              </span>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
+              Status <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-[#ffe066]">Lamaran</span>
             </h1>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
-              Lihat perkembangan proses seleksi Anda secara transparan dan
-              real-time.
+            <p className="text-blue-100/80 text-[15px] md:text-base font-medium max-w-xl mx-auto leading-relaxed">
+              Pantau seluruh progress rekrutmen Anda secara real-time dan transparan di sini.
             </p>
           </motion.div>
-        </section>
+        </div>
+      </div>
 
-        {/* --- KONTENER UTAMA --- */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            {/* Filter Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-50 pb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-[#0D278D]">
-                  Riwayat Lamaran
-                </h2>
-                <p className="text-sm text-gray-400 mt-1">
-                  Menampilkan{" "}
-                  <span className="text-[#FEB700] font-bold">
-                    {filteredJobs.length}
-                  </span>{" "}
-                  data
-                </p>
-              </div>
+      {/* --- MAIN CONTENT (EDITORIAL SLOW SLIDE) --- */}
+      <motion.main 
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-0"
+        variants={mainContainerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        
+        {/* Header List & Dropdown Filter Floating Absolute */}
+        <motion.div 
+          variants={mainItemVariants}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-8 relative"
+        >
+          <div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] tracking-tight">
+              Riwayat Lamaran
+            </h2>
+            <p className="text-sm text-gray-500 font-medium mt-2">
+              Menampilkan <span className="text-[#FEB700] font-bold">{filteredJobs.length}</span> data
+            </p>
+          </div>
 
-              {/* Segmented Filter */}
-              <div className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-2xl w-fit overflow-x-auto no-scrollbar border border-gray-100">
-                {filters.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
-                      activeFilter === filter
-                        ? "bg-white text-[#0D278D] shadow-sm border border-gray-100"
-                        : "text-gray-500 hover:text-[#0D278D]"
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
-            </div>
+      
+          <div className="flex items-center relative gap-3 relative">
+            
+            {/* Tombol Pemicu / Trigger Filter */}
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-bold border cursor-pointer transition-all duration-300 ${
+                isFilterOpen
+                  ? "bg-[#0D278D] text-white border-[#0D278D]"
+                  : "bg-white text-[#0D278D] border-[#0D278D] hover:bg-[#0D278D] hover:text-white"
+              }`}
+            >
+              <Filter size={18} />
+              <span>{activeFilter}</span>
+            </button>
 
-            {/* List Lamaran */}
-            <motion.div layout className="space-y-5">
-              <AnimatePresence mode="popLayout">
-                {filteredJobs.map((job) => (
+            {/* Wrapper absolute murni (tanpa motion) untuk menjaga vertical alignment tetap di tengah tombol */}
+            {/* <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center z-10 pl-3"> */}
+              <AnimatePresence>
+                {isFilterOpen && (
                   <motion.div
-                    layout
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className={`bg-white rounded-3xl border transition-all duration-300 overflow-hidden ${
-                      expandedId === job.id
-                        ? "border-blue-100 shadow-[0_20px_50px_-15px_rgba(13,39,141,0.12)]"
-                        : "border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
-                    }`}
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "auto", opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30  whitespace-nowrap overflow-hidden" 
                   >
-                    {/* Header Card Lamaran */}
-                    <div
-                      onClick={() => toggleExpand(job.id)}
-                      className="p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
-                    >
-                      <div className="flex-1 w-full">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="px-3 py-1 rounded-md bg-blue-50 text-[#0D278D] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                            <Briefcase size={12} /> {job.kategori}
-                          </span>
-                          <span className="text-gray-400 text-xs font-medium flex items-center gap-1.5">
-                            <Calendar size={12} /> {job.tanggal}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-[#0D278D] mb-2 leading-tight">
-                          {job.posisi}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <GraduationCap size={14} className="text-gray-400" />
-                          <span className="text-xs text-gray-500 font-medium">
-                            {job.pendidikan.join(", ")}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Status Badge & Toggle */}
-                      <div className="flex items-center justify-between w-full md:w-auto gap-4">
-                        <div
-                          className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 ${
-                            job.currentStep === 6
-                              ? job.isRejected
-                                ? "bg-red-50 text-red-600"
-                                : "bg-green-50 text-green-600"
-                              : "bg-blue-50 text-[#0D278D]"
+                    {/* Inner wrapper (w-max) agar isi menu tidak gepeng/terpotong saat animasi lebar (width) berjalan */}
+                    {/* <div className="flex items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] w-max"> */}
+                      {filters.map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => {
+                            setActiveFilter(filter);
+                            setIsFilterOpen(false);
+                          }}
+                          className={`px-5 h-[40px] flex items-center justify-center rounded-xl text-[14px] font-bold cursor-pointer transition-all duration-300 whitespace-nowrap ${
+                            activeFilter === filter
+                              ? "bg-white border border-[#0D278D] text-[#0D278D] shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+                              : "text-gray-500 hover:text-[#0D278D] hover:bg-blue-50/50"
                           }`}
                         >
-                          {job.currentStep === 6 ? (
-                            job.isRejected ? (
-                              <XCircle size={14} />
-                            ) : (
-                              <CheckCircle2 size={14} />
-                            )
-                          ) : (
-                            <Clock size={14} className="animate-spin-slow" />
-                          )}
-                          {job.statusText}
-                        </div>
+                          {filter}
+                        </button>
+                      ))}
+                    {/* </div> */}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 text-gray-400 bg-gray-50 ${expandedId === job.id ? "rotate-180 bg-blue-50 text-[#0D278D]" : ""}`}
+          {/* </div> */}
+          {/* === AKHIR BAGIAN FILTER === */}
+
+        </motion.div>
+
+        {/* List Lamaran */}
+        <motion.div layout className="flex flex-col" variants={mainItemVariants}>
+          <AnimatePresence mode="popLayout">
+            {filteredJobs.map((job) => (
+              <motion.div
+                layout
+                key={job.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="border-b border-gray-100 last:border-0 group relative"
+              >
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-center rounded-r-full z-10" />
+
+                {/* Baris Utama Lamaran */}
+                <div
+                  onClick={() => toggleExpand(job.id)}
+                  className="py-6 px-4 sm:px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer transition-colors duration-300 hover:bg-gray-50/30"
+                >
+                  <div className="flex-1 w-full group-hover:translate-x-2 transition-transform duration-300">
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      <span className="text-[11px] font-medium text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Calendar size={14} className="text-[#FEB700]" /> {job.tanggal}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 hidden md:block" />
+                      <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                             job.kategori === "Konsultan Individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"
+                                                      }`}>
+                                                        {job.kategori === "Konsultan Individu" ? (
+                                                          <Brain size={12} /> 
+                                                        ) : (
+                                                          <Users size={12} />
+                                                        )} 
+                                                        {job.kategori}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl md:text-2xl font-bold text-[#0D278D] mb-5 leading-tight transition-colors">
+                      {job.posisi}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2">
+                      <GraduationCap size={18} className="text-gray-400 mr-1" />
+                      {job.pendidikan.map((edu, index) => (
+                        <span
+                          key={index}
+                          className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[12px] font-bold text-[#0D278D] hover:border-blue-200 transition-colors"
                         >
-                          <ChevronDown size={18} />
-                        </div>
-                      </div>
+                          {edu}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between w-full md:w-auto gap-6 mt-4 md:mt-0">
+                    <div
+                      className={`px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border ${
+                        job.currentStep === 6
+                          ? job.isRejected
+                            ? "bg-red-50 text-red-600 border-red-100"
+                            : "bg-green-50 text-green-600 border-green-100"
+                          : "bg-white text-[#0D278D] border-[#0D278D]"
+                      }`}
+                    >
+                      {job.currentStep === 6 ? (
+                        job.isRejected ? (
+                          <XCircle size={16} />
+                        ) : (
+                          <CheckCircle2 size={16} />
+                        )
+                      ) : (
+                        <Clock size={16} className="animate-spin-slow text-[#FEB700]" />
+                      )}
+                      {job.statusText}
                     </div>
 
-                    {/* Timeline Tracker */}
-                    <AnimatePresence>
-                      {expandedId === job.id && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-gray-50 bg-[#fafafa]"
-                        >
-                          <div className="p-6 md:p-10">
-                            <h4 className="text-sm font-bold text-[#0D278D] mb-8 text-center md:text-left uppercase tracking-wider">
-                              Progress Seleksi
-                            </h4>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        expandedId === job.id 
+                          ? "rotate-180 bg-[#0D278D] text-white shadow-md" 
+                          : "text-gray-400 group-hover:bg-white group-hover:text-[#0D278D] group-hover:shadow-sm"
+                      }`}
+                    >
+                      <ChevronDown size={22} />
+                    </div>
+                  </div>
+                </div>
 
-                            <div className="relative">
-                              {/* --- DESKTOP PROGRESS LINE WRAPPER --- 
-                                  Menggunakan wrapper left & right 8.33% agar lebarnya mentok pas di center icon
-                                  Animasi width jadi 100% relatif terhadap wrapper ini. Anti overlap!
-                              */}
-                              <div className="hidden md:block absolute top-[22px] left-[8.33%] right-[8.33%] z-0">
-                                <div className="h-[4px] w-full bg-gray-200 rounded-full" />
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{
-                                    width: `${((job.currentStep - 1) / 5) * 100}%`,
-                                  }}
-                                  className={`absolute top-0 left-0 h-[4px] rounded-full transition-all duration-700 ease-out ${
-                                    job.isRejected && job.currentStep === 6
-                                      ? "bg-red-500"
-                                      : job.currentStep === 6 && !job.isRejected
-                                        ? "bg-green-500"
-                                        : "bg-[#0D278D]"
-                                  }`}
-                                />
-                              </div>
+                {/* --- TIMELINE TRACKER --- */}
+                <AnimatePresence>
+                  {expandedId === job.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.48, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-4 pb-12 px-4 sm:px-6">
+                        <h4 className="text-[11px] font-bold text-gray-400 mb-12 text-center md:text-left uppercase tracking-[0.2em] flex items-center gap-2 justify-center md:justify-start">
+                          <Activity size={16} className="text-[#FEB700]" />
+                          Timeline Seleksi
+                        </h4>
 
-                              {/* --- MOBILE PROGRESS LINE (Vertical) WRAPPER --- */}
-                              <div className="block md:hidden absolute top-[24px] bottom-[24px] left-[22px] z-0">
-                                <div className="w-[4px] h-full bg-gray-200 rounded-full" />
-                                <motion.div
-                                  initial={{ height: 0 }}
-                                  animate={{
-                                    height: `${((job.currentStep - 1) / 5) * 100}%`,
-                                  }}
-                                  className={`absolute top-0 left-0 w-[4px] rounded-full transition-all duration-700 ease-out ${
-                                    job.isRejected && job.currentStep === 6
-                                      ? "bg-red-500"
-                                      : job.currentStep === 6 && !job.isRejected
-                                        ? "bg-green-500"
-                                        : "bg-[#0D278D]"
-                                  }`}
-                                />
-                              </div>
-
-                              {/* --- NODES (Lingkaran Timeline) --- */}
-                              <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-0 relative z-10 w-full">
-                                {timelineSteps.map((step) => {
-                                  const isPast = job.currentStep > step.id;
-                                  const isCurrent = job.currentStep === step.id;
-                                  const isEndRejected =
-                                    job.currentStep === 6 &&
-                                    job.isRejected &&
-                                    step.id === 6;
-                                  const isEndAccepted =
-                                    job.currentStep === 6 &&
-                                    !job.isRejected &&
-                                    step.id === 6;
-
-                                  // Warna Logika Terpusat
-                                  let circleClass =
-                                    "bg-white border-gray-200 text-gray-300";
-                                  let titleClass = "text-gray-400";
-                                  let IconCmp = isPast
-                                    ? CheckCircle2
-                                    : isCurrent
-                                      ? CircleDot
-                                      : step.icon;
-
-                                  if (isEndAccepted) {
-                                    // DITERIMA (HIJAU)
-                                    circleClass =
-                                      "bg-green-500 border-green-500 text-white shadow-md shadow-green-500/20";
-                                    titleClass = "text-green-600 font-bold";
-                                    IconCmp = CheckCircle2;
-                                  } else if (isPast) {
-                                    // SELESAI TAPI BELUM TAHAP AKHIR (BIRU)
-                                    circleClass =
-                                      "bg-[#0D278D] border-[#0D278D] text-white shadow-md shadow-blue-900/10";
-                                    titleClass = "text-[#0D278D] font-bold";
-                                    IconCmp = CheckCircle2;
-                                  } else if (isCurrent && !isEndRejected) {
-                                    // AKTIF SEDANG BERJALAN (KUNING)
-                                    circleClass =
-                                      "bg-white border-[#FEB700] text-[#FEB700] ring-4 ring-yellow-50 shadow-md";
-                                    titleClass = "text-[#0D278D] font-bold";
-                                    IconCmp = step.icon;
-                                  } else if (isEndRejected) {
-                                    // DITOLAK (MERAH)
-                                    circleClass =
-                                      "bg-red-500 border-red-500 text-white shadow-md shadow-red-500/20";
-                                    titleClass = "text-red-600 font-bold";
-                                    IconCmp = XCircle;
-                                  }
-
-                                  return (
-                                    <div
-                                      key={step.id}
-                                      className="flex flex-row md:flex-col items-center md:items-center gap-4 md:gap-3 w-full md:w-[16.66%] shrink-0"
-                                    >
-                                      {/* Lingkaran (Bulatan) Timeline */}
-                                      <div
-                                        className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center transition-all duration-500 z-10 ${circleClass}`}
-                                      >
-                                        <IconCmp
-                                          size={20}
-                                          strokeWidth={
-                                            isCurrent && !isPast ? 2.5 : 2
-                                          }
-                                        />
-                                      </div>
-
-                                      {/* Teks Keterangan */}
-                                      <div className="text-left md:text-center w-full md:px-2">
-                                        <h3
-                                          className={`text-sm md:text-[13px] ${titleClass}`}
-                                        >
-                                          {step.id === 6 && isEndRejected
-                                            ? "Ditolak"
-                                            : step.id === 6 && isEndAccepted
-                                              ? "Diterima"
-                                              : step.label}
-                                        </h3>
-                                        <p className="text-xs md:text-[11px] text-gray-500 font-medium mt-0.5 md:leading-tight">
-                                          {step.desc}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                        <div className="relative">
+                          <div className="hidden md:block absolute top-[22px] left-[8.33%] right-[8.33%] z-0">
+                            <div className="h-[2px] w-full bg-gray-100" />
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${((job.currentStep - 1) / 5) * 100}%` }}
+                              className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${
+                                job.isRejected && job.currentStep === 6
+                                  ? "bg-red-500"
+                                  : job.currentStep === 6 && !job.isRejected
+                                    ? "bg-green-500"
+                                    : "bg-[#0D278D]"
+                              }`}
+                            />
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
 
-            {/* Empty State */}
-            {filteredJobs.length === 0 && (
-              <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-3xl mt-6">
-                <Search size={40} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-[#0D278D] font-bold text-lg">
-                  Tidak ada lamaran
-                </h3>
-                <p className="text-gray-400 text-sm mt-1">
-                  Anda belum memiliki lamaran di kategori ini.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
+                          <div className="block md:hidden absolute top-[24px] bottom-[24px] left-[22px] z-0">
+                            <div className="w-[2px] h-full bg-gray-100" />
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{ height: `${((job.currentStep - 1) / 5) * 100}%` }}
+                              className={`absolute top-0 left-0 w-[2px] transition-all duration-700 ease-out ${
+                                job.isRejected && job.currentStep === 6
+                                  ? "bg-red-500"
+                                  : job.currentStep === 6 && !job.isRejected
+                                    ? "bg-green-500"
+                                    : "bg-[#0D278D]"
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex flex-col md:flex-row justify-between gap-10 md:gap-0 relative z-10 w-full">
+                            {timelineSteps.map((step) => {
+                              const isPast = job.currentStep > step.id;
+                              const isCurrent = job.currentStep === step.id;
+                              const isEndRejected = job.currentStep === 6 && job.isRejected && step.id === 6;
+                              const isEndAccepted = job.currentStep === 6 && !job.isRejected && step.id === 6;
+
+                              let circleClass = "bg-white border-[2px] border-gray-200 text-gray-300";
+                              let titleClass = "text-gray-400";
+                              let IconCmp = isPast ? CheckCircle2 : isCurrent ? CircleDot : step.icon;
+
+                              if (isEndAccepted) {
+                                circleClass = "bg-green-500 border-[2px] border-green-500 text-white shadow-[0_4px_15px_rgba(34,197,94,0.3)]";
+                                titleClass = "text-green-600 font-bold";
+                                IconCmp = CheckCircle2;
+                              } else if (isPast) {
+                                circleClass = "bg-[#0D278D] border-[2px] border-[#0D278D] text-white shadow-[0_4px_15px_rgba(13,39,141,0.2)]";
+                                titleClass = "text-[#0D278D] font-bold";
+                                IconCmp = CheckCircle2;
+                              } else if (isCurrent && !isEndRejected) {
+                                circleClass = "bg-white border-[2px] border-[#FEB700] text-[#FEB700] ring-4 ring-yellow-50";
+                                titleClass = "text-[#0D278D] font-bold";
+                                IconCmp = step.icon;
+                              } else if (isEndRejected) {
+                                circleClass = "bg-red-500 border-[2px] border-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]";
+                                titleClass = "text-red-600 font-bold";
+                                IconCmp = XCircle;
+                              }
+
+                              return (
+                                <div key={step.id} className="flex flex-row md:flex-col items-center md:items-center gap-5 md:gap-4 w-full md:w-[16.66%] shrink-0">
+                                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 z-10 ${circleClass}`}>
+                                    <IconCmp size={20} strokeWidth={isCurrent && !isPast ? 2.5 : 2} />
+                                  </div>
+
+                                  <div className="text-left md:text-center w-full md:px-2">
+                                    <h3 className={`text-[14px] md:text-[15px] tracking-tight whitespace-nowrap ${titleClass}`}>
+                                      {step.id === 6 && isEndRejected
+                                        ? "Tidak Lulus"
+                                        : step.id === 6 && isEndAccepted
+                                          ? "Lulus"
+                                          : step.label}
+                                    </h3>
+                                    <p className="text-[12px] md:text-[13px] text-gray-500 font-medium mt-1 leading-relaxed md:leading-tight whitespace-nowrap">
+                                      {step.desc}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Empty State */}
+        {filteredJobs.length === 0 && (
+          <motion.div variants={mainItemVariants} className="text-center py-32 mt-6">
+            <Search size={48} className="mx-auto text-gray-200 mb-6" strokeWidth={1.5} />
+            <h3 className="text-[#0D278D] font-extrabold text-2xl tracking-tight">
+              Tidak Ada Lamaran
+            </h3>
+            <p className="text-gray-500 text-[15px] mt-2">
+              Anda belum memiliki riwayat lamaran di kategori ini.
+            </p>
+          </motion.div>
+        )}
+
+      </motion.main>
     </div>
   );
 };

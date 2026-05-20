@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`relative text-sm font-semibold transition-colors ${
+                  className={`group relative text-sm font-semibold transition-colors ${
                     isActive
                       ? "text-[#FEB700]"
                       : "text-[#0D278D] hover:text-[#FEB700]"
@@ -48,8 +48,8 @@ const Navbar: React.FC = () => {
 
                   {/* underline */}
                   <span
-                    className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] transition-transform duration-300 ${
-                      isActive ? "scale-x-100" : "scale-x-0"
+                    className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] transition-transform duration-300 origin-left ${
+                      isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
                     }`}
                   />
                 </Link>
