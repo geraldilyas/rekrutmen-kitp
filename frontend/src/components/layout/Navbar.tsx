@@ -1,11 +1,37 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LogOut, Briefcase } from "lucide-react"; // Import LogOut icon
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const menuItems = [
+  /*
+    ===========================
+    AUTH MODE
+    false = public navbar
+    true  = user sudah login
+    ===========================
+  */
+  const isLoggedIn = true;
+
+  /*
+    ===========================
+    MENU PUBLIC
+    ===========================
+  */
+  const publicMenu = [
+    { name: "Beranda", path: "/beranda" },
+    { name: "Pengumuman", path: "/pengumuman" },
+  ];
+
+  /*
+    ===========================
+    MENU PRIVATE
+    ===========================
+  */
+  const privateMenu = [
     { name: "Beranda", path: "/beranda" },
     { name: "Lowongan", path: "/lowongan" },
     { name: "Status Lamaran", path: "/status" },
@@ -13,23 +39,36 @@ const Navbar: React.FC = () => {
     { name: "Arsip", path: "/arsip" },
   ];
 
+  const menuItems = isLoggedIn ? privateMenu : publicMenu;
+
+  const handleLogout = () => {
+    // nanti hapus token/session disini
+    navigate("/login");
+  };
+
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white shadow-sm border-b border-gray-100">
+    <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
       <div className="w-full px-8 md:px-12">
         <div className="flex justify-between h-20 items-center">
-          {/* Logo */}
-          <Link to="/beranda" className="flex items-center gap-3">
+          
+          {/* ================= LOGO ================= */}
+          <Link to="/beranda" className="flex items-center gap-3 group">
             <img
               src={logoBbwsms}
               alt="Logo BBWS"
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
-            <span className="font-bold text-[#0D278D] text-lg">
-              Rekrutmen KITP
-            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-extrabold text-[#0D278D] text-lg">
+                Rekrutmen KITP
+              </span>
+              {/* <span className="text-[11px] text-gray-400 font-medium tracking-wide">
+                BBWS Mesuji Sekampung
+              </span> */}
+            </div>
           </Link>
 
-          {/* Menu */}
+          {/* ================= MENU ================= */}
           <div className="hidden md:flex items-center space-x-8">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
@@ -38,17 +77,16 @@ const Navbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`group relative text-sm font-semibold transition-colors ${
+                  className={`group relative text-sm font-medium  transition-all duration-300 ${
                     isActive
                       ? "text-[#FEB700]"
                       : "text-[#0D278D] hover:text-[#FEB700]"
                   }`}
                 >
                   {item.name}
-
-                  {/* underline */}
+                  {/* underline animation */}
                   <span
-                    className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] transition-transform duration-300 origin-left ${
+                    className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] rounded-full transition-transform duration-300 origin-left ${
                       isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
                     }`}
                   />
@@ -57,21 +95,50 @@ const Navbar: React.FC = () => {
             })}
           </div>
 
-          {/* Auth */}
+          {/* ================= AUTH AREA (POSISI SWAP FIXED) ================= */}
           <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-[#0D278D] font-semibold text-sm hover:text-[#FEB700]"
-            >
-              Masuk
-            </Link>
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  to="/login"
+                  className="text-[#0D278D] font-semibold text-sm hover:text-[#FEB700] transition-colors duration-300"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-[#0D278D] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#FEB700] hover:text-[#0D278D] transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  Daftar
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* ===== 1. TOMBOL KELUAR (Pindah Kiri + Icon + Luxury Transition) ===== */}
+                <button
+                  onClick={handleLogout}
+                  className="group flex items-center gap-2 bg-transparent text-[#0D278D] border border-[#0D278D] px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer hover:text-white hover:bg-[#0d278d] "
+                >
+                  <LogOut size={16} className="text-[#0D278D] group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <span>Keluar</span>
+                </button>
 
-            <Link
-              to="/register"
-              className="bg-[#0D278D] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#FEB700] hover:text-[#0D278D] transition-all"
-            >
-              Daftar
-            </Link>
+                {/* ===== 2. PROFILE MINI (Pindah Kanan + Modern Grid Refinement) ===== */}
+                <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60  transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider">
+                    A
+                  </div>
+                  <div className="leading-tight pr-1">
+                    <h4 className="text-sm font-bold text-[#0D278D]">
+                      Abelian
+                    </h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                      Pelamar
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

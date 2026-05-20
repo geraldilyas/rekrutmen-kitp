@@ -9,8 +9,9 @@ import {
   Filter,
   Sparkles,
   Users,
-  Brain,
+  Brain
 } from "lucide-react";
+
 import Navbar from "../../components/layout/Navbar";
 
 const jobsData = [
@@ -109,13 +110,18 @@ const Lowongan: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
+  const filters = [
+    "Semua",
+    "Tenaga Pendukung",
+    "Konsultan Individu",
+  ];
 
   const filteredJobs =
     activeFilter === "Semua"
       ? jobsData
       : jobsData.filter((job) => job.kategori === activeFilter);
 
+  // const newLocal = "flex items-center gap-2 text-sm font-bold text-[#0D278D] border-1 border-[#0D278D] px-5 py-2.5 cursor-pointer rounded-xl hover:bg-[#0D278D] hover:text-white transition-all duration-300";
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
@@ -238,78 +244,80 @@ const Lowongan: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* JOB LIST */}
-        <motion.div
-          variants={itemVariants}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredJobs.map((job) => (
-              <motion.div
-                layout
-                key={job.id}
-                variants={itemVariants}
-                initial="hidden"
-                animate="visible"
-                exit={{ opacity: 0, scale: 0.95 }}
-                /* Ganti class di bawah ini */
-                className="group p-8 rounded-3xl border-1 border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
+        {/* --- JOB LIST REVENUE FIX --- */}
+<motion.div
+  variants={containerVariants}
+  initial="hidden"
+  animate="visible"
+  className="grid grid-cols-1 md:grid-cols-2 gap-8"
+>
+  <AnimatePresence mode="popLayout">
+    {filteredJobs.map((job) => (
+      <motion.div
+        layout
+        key={job.id}
+        variants={itemVariants}
+        exit={{ opacity: 0, scale: 0.95 }}
+        whileHover={{ y: -8 }}
+        transition={{ duration: 0.3 }}
+        className=" p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
+      >
+        <div className="flex justify-between items-start mb-6">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+            <Clock size={14} className="text-[#FEB700]" />
+            {job.waktu}
+          </span>
+
+          <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+            job.kategori === "Konsultan Individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"
+          }`}>
+            {job.kategori === "Konsultan Individu" ? (
+              <Brain size={12} /> 
+            ) : (
+              <Users size={12} />
+            )} 
+            {job.kategori}
+          </span>
+        </div>
+
+        <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight">
+          {job.posisi}
+        </h3>
+
+        <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
+          {job.deskripsi}
+        </p>
+
+        <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50">
+          <div className="flex items-center gap-2">
+            <GraduationCap size={18} className="text-gray-400 mr-1" />
+            {job.pendidikan.map((edu, idx) => (
+              <span
+                key={idx}
+                className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
               >
-                <div className="flex justify-between items-start mb-6">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Clock size={14} className="text-[#FEB700]" />
-                    {job.waktu}
-                  </span>
-
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                      job.kategori === "Konsultan Individu"
-                        ? "bg-amber-50 text-[#FEB700]"
-                        : "bg-blue-50 text-[#0D278D]"
-                    }`}
-                  >
-                    {job.kategori === "Konsultan Individu" ? (
-                      <Brain size={12} />
-                    ) : (
-                      <Users size={12} />
-                    )}
-                    {job.kategori}
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight">
-                  {job.posisi}
-                </h3>
-
-                <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
-                  {job.deskripsi}
-                </p>
-
-                <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50">
-                  <div className="flex items-center gap-2">
-                    <GraduationCap size={18} className="text-gray-400 mr-1" />
-
-                    {job.pendidikan.map((edu, idx) => (
-                      <span
-                        key={idx}
-                        className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
-                      >
-                        {edu}
-                      </span>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => navigate("/detail-lowongan")}
-                    className="flex items-center gap-2 text-sm font-bold text-[#0D278D] border-1 border-[#0D278D] px-5 py-2.5 cursor-pointer rounded-xl hover:bg-[#0D278D] hover:text-white transition-all duration-300"
-                  >
-                    Lihat Detail <ChevronRight size={18} />
-                  </button>
-                </div>
-              </motion.div>
+                {edu}
+              </span>
             ))}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+
+          {/* BUTTON DENGAN ANIMASI HOVER SAMA PERSIS SEPERTI BERANDA */}
+          <button
+            onClick={() => navigate('/detail-lowongan')}
+            className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+          >
+            <span className="transition-transform duration-300">Lihat Lowongan</span>
+            <ChevronRight
+              size={18}
+              data-framer-appear-id="ignore" /* Mencegah bentrokan layout animation */
+              className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 transition-all duration-300 ease-out shrink-0"
+            />
+          </button>
+        </div>
+      </motion.div>
+    ))}
+  </AnimatePresence>
+</motion.div>
 
         {/* EMPTY */}
         {filteredJobs.length === 0 && (
@@ -318,7 +326,10 @@ const Lowongan: React.FC = () => {
             animate={{ opacity: 1 }}
             className="text-center py-32"
           >
-            <Sparkles size={48} className="mx-auto text-gray-200 mb-4" />
+            <Sparkles
+              size={48}
+              className="mx-auto text-gray-200 mb-4"
+            />
 
             <h3 className="text-[#0D278D] font-bold text-xl">
               Lowongan belum tersedia

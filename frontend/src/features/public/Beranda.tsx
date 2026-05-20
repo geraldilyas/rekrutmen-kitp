@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -50,6 +50,38 @@ const itemVariants = {
 
 const Beranda: React.FC = () => {
   const navigate = useNavigate();
+
+  /*
+    ==================================================
+    STATE SIMULASI LOGIN (Ubah sesuai Auth Context lo)
+    ==================================================
+  */
+  const isLoggedIn = true; 
+
+  /*
+    ==================================================
+    HANDLER AKSI CONDITIONAL UTK PADA BUTTON LAMAR
+    ==================================================
+  */
+  const handleActionPendaftaran = (jobId?: number) => {
+    if (!isLoggedIn) {
+      // Kondisi 1: Belum login -> Paksa masuk ke halaman login
+      navigate("/login");
+    } else {
+      // Kondisi 2: Sudah login -> Silakan lo set mau diredirect ke mana
+      if (jobId) {
+        console.log(`User melamar pada posisi ID: ${jobId}`);
+        navigate(`/detail-lowongan`); 
+        // Contoh jika ingin direct ke formulir pendaftaran spesifik lowongan:
+        // navigate(`/formulir-lamar/${jobId}`);
+      } else {
+        console.log("User menekan tombol Mulai Pendaftaran di CTA Section");
+        // Contoh diredirect ke list lowongan aktif:
+        navigate("/lowongan");
+      }
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen pt-20 overflow-x-hidden">
       <Navbar />
@@ -196,7 +228,7 @@ const Beranda: React.FC = () => {
               key={job.id}
               variants={itemVariants}
               whileHover={{ y: -8 }}
-              className=" p-8 rounded-[2rem] border-1 border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-300 flex flex-col justify-between"
+              className="p-8 rounded-[2rem] border-1 border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="flex justify-between items-center mb-6">
@@ -243,14 +275,18 @@ const Beranda: React.FC = () => {
                     </span>
                   ))}
                 </div>
-                <button className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2">
-  Lamar
-
-  <ChevronRight
-    size={18}
-    className="opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4 transition-all duration-300"
-  />
-</button>
+                
+                {/* BUTTON LAMAR - DILENGKAPI KONDISI AUTH */}
+                <button 
+                  onClick={() => handleActionPendaftaran(job.id)}
+                  className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2"
+                >
+                  <span>Lamar</span>
+                  <ChevronRight
+                    size={18}
+                    className="opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4 transition-all duration-300"
+                  />
+                </button>
               </div>
             </motion.div>
           ))}
@@ -318,7 +354,7 @@ const Beranda: React.FC = () => {
                   >
                     <div className="relative z-10 w-20 h-20 md:w-22 md:h-22 mb-6 rounded-[1.2rem] bg-white shadow-xl shadow-blue-900/5 flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500">
                       <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-500">
-                        <img /> <step.icon size={24} strokeWidth={2} />
+                        <step.icon size={24} strokeWidth={2} />
                       </div>
                       <div className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center border-[2.5px] border-white shadow-sm bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all duration-500 group-hover:rotate-12">
                         {step.id}
@@ -357,8 +393,7 @@ const Beranda: React.FC = () => {
             </div>
 
             <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight leading-tight">
-              Siap Berkontribusi bagi{" "}
-              <span className="text-[#FEB700]">Negeri?</span>
+              Siap Berkontribusi bagi <span className="text-[#FEB700]">Negeri?</span>
             </h2>
 
             <p className="text-blue-100/80 text-lg mb-12 max-w-2xl mx-auto font-light leading-relaxed">
@@ -368,7 +403,11 @@ const Beranda: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-5 w-full sm:w-auto">
-              <button className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 md:px-12 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(254,183,0,0.6)] flex items-center justify-center gap-3 w-full sm:w-auto">
+              {/* BUTTON MULAI PENDAFTARAN - DILENGKAPI KONDISI AUTH */}
+              <button 
+                onClick={() => handleActionPendaftaran()}
+                className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 md:px-12 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(254,183,0,0.6)] flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
+              >
                 <span>Mulai Pendaftaran</span>
                 <ArrowRight
                   size={20}
