@@ -5,6 +5,7 @@ import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
 import Beranda from "./features/public/Beranda";
 import Lowongan from "./features/public/Lowongan";
+import DetailLowongan from "./features/public/DetailLowongan";
 import Status from "./features/public/Status";
 import Pengumuman from "./features/public/Pengumuman";
 import Arsip from "./features/public/Arsip";
@@ -42,6 +43,16 @@ function App() {
             <>
               <Navbar />
               <Lowongan />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/detail-lowongan"
+          element={
+            <>
+              <Navbar />
+              <DetailLowongan />
               <Footer />
             </>
           }
