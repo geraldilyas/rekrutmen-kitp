@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 
-// Data untuk Tahapan Seleksi (Tetap 6 Tahap)
 const tahapanSeleksi = [
   { id: 1, title: "Registrasi Online", icon: MonitorUp },
   { id: 2, title: "Seleksi Administrasi", icon: FileCheck },
@@ -27,7 +26,6 @@ const tahapanSeleksi = [
   { id: 6, title: "Pengumuman Akhir", icon: Award },
 ];
 
-// --- MASTER STAGGER ANIMATION SYSTEM ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -65,18 +63,13 @@ const Beranda: React.FC = () => {
   */
   const handleActionPendaftaran = (jobId?: number) => {
     if (!isLoggedIn) {
-      // Kondisi 1: Belum login -> Paksa masuk ke halaman login
       navigate("/login");
     } else {
-      // Kondisi 2: Sudah login -> Silakan lo set mau diredirect ke mana
       if (jobId) {
         console.log(`User melamar pada posisi ID: ${jobId}`);
         navigate(`/detail-lowongan`); 
-        // Contoh jika ingin direct ke formulir pendaftaran spesifik lowongan:
-        // navigate(`/formulir-lamar/${jobId}`);
       } else {
         console.log("User menekan tombol Mulai Pendaftaran di CTA Section");
-        // Contoh diredirect ke list lowongan aktif:
         navigate("/lowongan");
       }
     }
@@ -86,9 +79,7 @@ const Beranda: React.FC = () => {
     <div className="bg-white min-h-screen pt-20 overflow-x-hidden">
       <Navbar />
 
-      {/* --- HERO SECTION (MODERN, MEWAH, CENTER ALIGNED) --- */}
       <section className="relative bg-[#0D278D] pt-28 pb-32 overflow-hidden">
-        {/* Luxury Background Accents (Glow & Texture) */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
         <div className="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FEB700]/15 rounded-full blur-[120px] pointer-events-none z-0" />
@@ -148,7 +139,6 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* --- LOWONGAN SECTION (STAGGER ENTRANCE FLOW) --- */}
       <motion.section
         id="lowongan"
         className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
@@ -276,7 +266,6 @@ const Beranda: React.FC = () => {
                   ))}
                 </div>
                 
-                {/* BUTTON LAMAR - DILENGKAPI KONDISI AUTH */}
                 <button 
                   onClick={() => handleActionPendaftaran(job.id)}
                   className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center "
@@ -293,7 +282,6 @@ const Beranda: React.FC = () => {
         </div>
       </motion.section>
 
-      {/* --- TAHAPAN SELEKSI SECTION (VIEWPORT TRIGGERED) --- */}
       <section
         id="tahapan"
         className="py-32 bg-white relative overflow-hidden border-y border-gray-100"
@@ -371,7 +359,7 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* --- CTA SECTION (SPRING POP ENTRANCE) --- */}
+
       <section className="py-24 px-4 relative">
         <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(13,39,141,0.4)] border border-white/10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB700] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -403,7 +391,6 @@ const Beranda: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-5 w-full sm:w-auto">
-              {/* BUTTON MULAI PENDAFTARAN - DILENGKAPI KONDISI AUTH */}
               <button 
                 onClick={() => handleActionPendaftaran()}
                 className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 md:px-12 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(254,183,0,0.6)] flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"

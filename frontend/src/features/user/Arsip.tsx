@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 
-// Data Dummy Riwayat Arsip Lamaran
 const archiveJobs = [
   {
     id: 1,
@@ -53,7 +52,6 @@ const archiveJobs = [
   },
 ];
 
-// --- ANIMATION SYSTEM ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -122,14 +120,12 @@ const Arsip: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT --- */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* HEADER LIST & FILTER CONTROLS */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
@@ -147,7 +143,6 @@ const Arsip: React.FC = () => {
             </p>
           </div>
 
-          {/* Inline Flex-Flow Filter System */}
           <div className="flex items-center gap-3 relative ">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -161,7 +156,6 @@ const Arsip: React.FC = () => {
               <span>{activeFilter}</span>
             </button>
 
-            {/* <div className="absolute left-full ml-3 top-0 flex items-center z-10"> */}
             <AnimatePresence>
               {isFilterOpen && (
                 <motion.div
@@ -181,7 +175,6 @@ const Arsip: React.FC = () => {
                     x: 10,
                   }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  // transition={{ duration: 0.35, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
                   <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30   w-max whitespace-nowrap">
@@ -206,10 +199,8 @@ const Arsip: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-          {/* </div> */}
         </motion.div>
 
-        {/* ARCHIVE GRID CARDS (Style matched to image_7657d8.png layout) */}
         <motion.div
           variants={itemVariants}
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
@@ -225,7 +216,6 @@ const Arsip: React.FC = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="group p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
               >
-                {/* Meta Header */}
                 <div className="flex justify-between items-start mb-6 gap-2">
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
                     <Clock size={14} className="text-[#FEB700]" />
@@ -248,19 +238,16 @@ const Arsip: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Job Position Title */}
                 <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight group-hover:text-blue-800 transition-colors">
                   {job.posisi}
                 </h3>
 
-                {/* Description */}
                 <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
                   {job.deskripsi}
                 </p>
 
-                {/* Divider Line & Card Footer */}
                 <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50 gap-4">
-                  {/* Education Circles */}
+
                   <div className="flex items-center gap-2">
                     <GraduationCap size={18} className="text-gray-400 mr-1" />
                     {job.pendidikan.map((edu, idx) => (
@@ -273,7 +260,6 @@ const Arsip: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Status Badges Matching Lowongan's Button Area placement */}
                   <div
                     className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border ${
                       job.statusAkhir === "Diterima"
@@ -294,7 +280,6 @@ const Arsip: React.FC = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* EMPTY STATE */}
         <AnimatePresence>
           {filteredHistory.length === 0 && (
             <motion.div

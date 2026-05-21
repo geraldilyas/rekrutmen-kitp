@@ -122,13 +122,10 @@ const Lowongan: React.FC = () => {
       : jobsData.filter((job) => job.kategori === activeFilter);
 
   
-
-  // const newLocal = "flex items-center gap-2 text-sm font-bold text-[#0D278D] border-1 border-[#0D278D] px-5 py-2.5 cursor-pointer rounded-xl hover:bg-[#0D278D] hover:text-white transition-all duration-300";
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
 
-      {/* HERO */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
 
@@ -162,14 +159,12 @@ const Lowongan: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* CONTENT */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* HEADER */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
@@ -188,7 +183,6 @@ const Lowongan: React.FC = () => {
             </p>
           </div>
 
-          {/* FILTER */}
           <div className="flex items-center gap-3 relative">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -246,7 +240,6 @@ const Lowongan: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* --- JOB LIST REVENUE FIX --- */}
 <motion.div
   variants={containerVariants}
   initial="hidden"
@@ -303,7 +296,6 @@ const Lowongan: React.FC = () => {
             ))}
           </div>
 
-          {/* BUTTON DENGAN ANIMASI HOVER SAMA PERSIS SEPERTI BERANDA */}
           <button
             onClick={() => navigate(`/detail-lowongan/${job.id}`)}
             className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
@@ -311,7 +303,7 @@ const Lowongan: React.FC = () => {
             <span className="transition-transform duration-300">Lihat Lowongan</span>
             <ChevronRight
               size={18}
-              data-framer-appear-id="ignore" /* Mencegah bentrokan layout animation */
+              data-framer-appear-id="ignore" 
               className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[18px] group-hover:ml-1.1 transition-all duration-300 ease-out shrink-0"
             />
           </button>
@@ -321,7 +313,6 @@ const Lowongan: React.FC = () => {
   </AnimatePresence>
 </motion.div>
 
-        {/* EMPTY */}
         {filteredJobs.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}

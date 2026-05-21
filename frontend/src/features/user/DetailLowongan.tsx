@@ -16,11 +16,10 @@ import {
   Info,
   Briefcase,
   FileText,
-  Send, // <-- Tambahan icon untuk tombol lamar
+  Send, 
 } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 
-// Data Dummy Detail Lowongan
 const jobDetail = {
   id: 1,
   posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
@@ -58,7 +57,6 @@ const DetailLowongan: React.FC = () => {
     <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
 
-      {/* --- HERO HEADER --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] z-10">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
@@ -89,7 +87,6 @@ const DetailLowongan: React.FC = () => {
               </span>
             </div>
 
-            {/* Headline Teks Split */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] mb-8 max-w-4xl tracking-tight">
               <span className="text-white drop-shadow-sm">
                 {jobDetail.posisi.split(" - ")[0]}
@@ -118,17 +115,14 @@ const DetailLowongan: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT (CARDLESS / EDITORIAL STYLE) --- */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-          {/* KIRI: KONTEN UTAMA DENGAN WHITESPACE LEGA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="lg:col-span-8 space-y-16"
           >
-            {/* Section: Deskripsi */}
             <section>
               <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-6 tracking-tight flex items-center gap-3">
                 <Briefcase size={28} className="text-[#FEB700]" />
@@ -139,7 +133,6 @@ const DetailLowongan: React.FC = () => {
               </p>
             </section>
 
-            {/* Section: Kualifikasi */}
             <section>
               <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-8 tracking-tight flex items-center gap-3">
                 <CheckCircle2 size={28} className="text-[#FEB700]" />
@@ -162,7 +155,6 @@ const DetailLowongan: React.FC = () => {
               </ul>
             </section>
 
-            {/* Section: Berkas */}
             <section>
               <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
                 <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] tracking-tight flex items-center gap-3">
@@ -192,14 +184,12 @@ const DetailLowongan: React.FC = () => {
             </section>
           </motion.div>
 
-          {/* KANAN: SIDEBAR MINIMALIS (Garis vertikal, no box) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="lg:col-span-4"
           >
-            {/* Pakai border-l buat misahin, bukan kotak */}
             <div className="sticky top-32 lg:border-l-2 lg:border-gray-100 lg:pl-10 pb-8">
               <h3 className="text-xl font-extrabold text-[#0D278D] flex items-center gap-2 mb-8">
                 <ClipboardList size={22} className="text-[#FEB700]" />
@@ -250,7 +240,6 @@ const DetailLowongan: React.FC = () => {
                 </div>
               </div>
 
-              {/* Warning/Info Teks Biasa (Tanpa box kuning tebal) */}
               <div className="flex gap-3 mb-8 text-gray-500">
                 <Info size={18} className="shrink-0 mt-0.5 text-gray-400" />
                 <p className="text-[13px] leading-relaxed">
@@ -259,7 +248,6 @@ const DetailLowongan: React.FC = () => {
                 </p>
               </div>
 
-              {/* Tombol Lamar */}
               <button className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0a1e6e] hover:border-[#0a1e6e] hover:text-white hover:shadow-[0_15px_30px_-10px_rgba(13,39,141,0.4)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group">
                 Lamar Posisi Ini
                 <Send
