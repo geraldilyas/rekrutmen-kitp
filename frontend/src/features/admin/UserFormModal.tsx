@@ -58,6 +58,7 @@ const UserFormModal: React.FC<Props> = ({
   >({});
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirm, setShowConfirm] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,6 +78,7 @@ const UserFormModal: React.FC<Props> = ({
       setErrors({});
       setShowPassword(false);
       setShowConfirm(false);
+      setIsSubmitting(false);
     }
   }, [isOpen, initialData, mode]);
 
@@ -95,13 +97,26 @@ const UserFormModal: React.FC<Props> = ({
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(form);
-      onClose();
+      setIsSubmitting(true);
+      try {
+        await onSubmit(form);
+        onClose();
+      } catch (err: any) {
+        if (err.response?.data?.errors) {
+            setErrors(err.response.data.errors);
+        } else {
+            setErrorMsg(err.response?.data?.message || "Terjadi kesalahan");
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
+
+  const [errorMsg, setErrorMsg] = React.useState("");
 
   const ic = (f: keyof UserFormData) =>
     `w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm bg-gray-50 focus:bg-white outline-none transition-all ${errors[f] ? "border-red-200 focus:border-red-400" : "border-gray-200 focus:border-[#0D278D]"}`;
@@ -129,6 +144,11 @@ const UserFormModal: React.FC<Props> = ({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
               Role
@@ -202,25 +222,25 @@ const UserFormModal: React.FC<Props> = ({
               <p className="text-red-500 text-xs mt-1">{errors.email}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                Telepon
-              </label>
-              <div className="relative">
-                <Phone
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="081234567890"
-                  className={ic("phone")}
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+              Telepon
+            </label>
+            <div className="relative">
+              <Phone
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="081234567890"
+                className={ic("phone")}
+              />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
                 Password
@@ -248,6 +268,33 @@ const UserFormModal: React.FC<Props> = ({
               </div>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+                Konfirmasi Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.password_confirmation}
+                  onChange={(e) => {
+                    setForm({ ...form, password_confirmation: e.target.value });
+                    setErrors((p) => ({ ...p, password_confirmation: undefined }));
+                  }}
+                  placeholder="Ulangi password"
+                  className={ic("password_confirmation") + " pr-10"}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password_confirmation && (
+                <p className="text-red-500 text-xs mt-1">{errors.password_confirmation}</p>
               )}
             </div>
           </div>
@@ -279,9 +326,10 @@ const UserFormModal: React.FC<Props> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all disabled:opacity-50"
             >
-              Simpan
+              {isSubmitting ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
         </form>

@@ -48,7 +48,7 @@ function App() {
           }
         />
         <Route
-          path="/detail-lowongan"
+          path="/detail-lowongan/:id"
           element={
             <>
               <Navbar />

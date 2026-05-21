@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Megaphone,
@@ -10,49 +10,19 @@ import {
   Brain,
   Filter,
 } from "lucide-react";
-import Navbar from "../../components/layout/Navbar";
+import { api } from "../../services/api";
 
-// --- DATA ---
-const announcements = [
-  {
-    id: 1,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Teknik Sipil",
-    posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-    deskripsi:
-      "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial pada kegiatan Percepatan Peningkatan Tata Guna Air Irigasi.",
-    pendidikan: ["S1", "D3"],
-    tanggalTutup: "20 April 2026",
-    totalPendaftar: 245,
-    totalLulus: 5,
-  },
-  {
-    id: 2,
-    kategori: "Konsultan Individu",
-    jurusan: "IT Support",
-    posisi: "Software Engineer (Full-Stack)",
-    deskripsi:
-      "Mengembangkan dan memelihara sistem informasi manajemen sumber daya air berbasis web and mobile yang terintegrasi.",
-    pendidikan: ["S1"],
-    tanggalTutup: "15 April 2026",
-    totalPendaftar: 128,
-    totalLulus: 2,
-  },
-  {
-    id: 3,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Administrasi",
-    posisi: "Petugas Administrasi Satker",
-    deskripsi:
-      "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin pada satuan kerja Balai.",
-    pendidikan: ["S1", "D3", "SMA"],
-    tanggalTutup: "10 April 2026",
-    totalPendaftar: 412,
-    totalLulus: 3,
-  },
-];
+interface Announcement {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  qualification: string;
+  deadline: string;
+  applications_count: number;
+  accepted_count: number;
+}
 
-// --- ANIMATION SYSTEM ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -74,22 +44,50 @@ const itemVariants = {
     },
   },
 };
+
 const Pengumuman: React.FC = () => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/jobs?finished=1");
+      setAnnouncements(res.data);
+    } catch (err) {
+      console.error("Error fetching announcements:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryDisplay = (cat: string) => {
+    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu") return "Konsultan Individu";
+    return cat;
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
   const filteredData =
     activeFilter === "Semua"
       ? announcements
-      : announcements.filter((item) => item.kategori === activeFilter);
+      : announcements.filter((item) => getCategoryDisplay(item.category) === activeFilter);
 
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
-      <Navbar />
 
-      {/* HERO SECTION WITH SUBHEAD */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
@@ -114,7 +112,6 @@ const Pengumuman: React.FC = () => {
               </span>
             </h1>
 
-            {/* Subhead Hero */}
             <p className="text-blue-100/80 text-[15px] md:text-base max-w-2xl mx-auto leading-relaxed">
               Informasi resmi hasil seleksi akhir, daftar kandidat yang
               dinyatakan diterima, serta penutupan tahapan rekrutmen.
@@ -123,19 +120,16 @@ const Pengumuman: React.FC = () => {
         </div>
       </div>
 
-      {/* MAIN CONTENT - EDITORIAL STYLE */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* HEADER LIST & FILTER (Flexbox Inline Flow System) */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
         >
-          {/* Header List */}
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D]">
               Hasil Akhir Seleksi
@@ -149,11 +143,10 @@ const Pengumuman: React.FC = () => {
             </p>
           </div>
 
-          {/* Filter System */}
           <div className="flex items-center gap-3 relative">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-cente gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold cursor-pointer border transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold cursor-pointer border transition-all duration-300 ${
                 isFilterOpen
                   ? "bg-[#0D278D] text-white border-[#0D278D]"
                   : "bg-white text-[#0D278D] border-[#0D278D] hover:bg-[#0D278D] hover:text-white"
@@ -184,7 +177,6 @@ const Pengumuman: React.FC = () => {
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
-                  {/* w-max & whitespace-nowrap mengamankan tombol agar tidak gepeng */}
                   <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] ml-2 w-max whitespace-nowrap">
                     {filters.map((f) => (
                       <button
@@ -209,17 +201,23 @@ const Pengumuman: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* LIST PENGUMUMAN */}
         <motion.div variants={itemVariants} className="space-y-2">
           <AnimatePresence mode="popLayout">
-            {filteredData.map((item) => (
+            {loading ? (
+                <div className="text-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+                </div>
+            ) : filteredData.length === 0 ? (
+                <div className="text-center py-20">
+                    <p className="text-gray-500">Belum ada pengumuman hasil seleksi.</p>
+                </div>
+            ) : filteredData.map((item) => (
               <motion.div
                 layout
                 key={item.id}
                 exit={{ opacity: 0, y: -10 }}
                 className="group border-b border-gray-100 py-10 relative"
               >
-                {/* Garis Kuning Hover Accent */}
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center rounded-r-full" />
 
                 <div className="px-4 flex flex-col md:flex-row justify-between gap-8 group-hover:translate-x-2 transition-transform duration-300">
@@ -227,50 +225,45 @@ const Pengumuman: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       <span
                         className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                          item.kategori === "Konsultan Individu"
+                          item.category === "konsultan_individu"
                             ? "bg-amber-50 text-[#FEB700]"
                             : "bg-blue-50 text-[#0D278D]"
                         }`}
                       >
-                        {item.kategori === "Konsultan Individu" ? (
+                        {item.category === "konsultan_individu" ? (
                           <Brain size={12} />
                         ) : (
                           <Users size={12} />
                         )}
-                        {item.kategori}
+                        {getCategoryDisplay(item.category)}
                       </span>
                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Clock size={14} className="text-[#FEB700]" />{" "}
-                        {item.tanggalTutup}
+                        Ditutup pada {formatDate(item.deadline)}
                       </span>
                     </div>
 
                     <h3 className="text-2xl font-extrabold text-[#0D278D] mb-4 group- transition-colors">
-                      {item.posisi}
+                      {item.title}
                     </h3>
 
-                    <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-3xl">
-                      {item.deskripsi}
+                    <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-3xl line-clamp-2">
+                      {item.description}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-6">
                       <div className="flex items-center gap-2">
                         <GraduationCap size={18} className="text-gray-400" />
-                        {item.pendidikan.map((edu, idx) => (
-                          <span
-                            key={idx}
-                            className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-[10px] font-black text-[#0D278D] border border-gray-100"
-                          >
-                            {edu}
-                          </span>
-                        ))}
+                        <span className="px-2 py-0.5 rounded bg-gray-50 text-[10px] font-black text-[#0D278D] border border-gray-100 uppercase">
+                            {item.qualification}
+                        </span>
                       </div>
                       <div className="flex items-center gap-6 text-sm font-bold text-gray-400 border-l border-gray-100 pl-6">
                         <span className="flex items-center gap-1.5">
-                          <Users size={16} /> {item.totalPendaftar} Pendaftar
+                          <Users size={16} /> {item.applications_count} Pendaftar
                         </span>
                         <span className="flex items-center gap-1.5 text-[#0D278D]">
-                          <Award size={16} /> {item.totalLulus} Diterima
+                          <Award size={16} /> {item.accepted_count} Diterima
                         </span>
                       </div>
                     </div>

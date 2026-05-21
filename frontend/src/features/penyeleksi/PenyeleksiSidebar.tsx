@@ -1,6 +1,7 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Briefcase, X, LogOut } from "lucide-react";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Briefcase, X, LogOut, AlertTriangle } from "lucide-react";
+import { api } from "../../services/api";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 
 interface Props {
@@ -15,6 +16,27 @@ const menu = [
 
 const PenyeleksiSidebar: React.FC<Props> = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const authUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const initials = authUser.name
+    ? authUser.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "P";
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // proceed even if the API call fails
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setShowLogoutModal(false);
+      navigate("/beranda");
+    }
+  };
+
   return (
     <>
       {isOpen && (
@@ -77,24 +99,61 @@ const PenyeleksiSidebar: React.FC<Props> = ({ isOpen, onClose }) => {
           </nav>
           <div className="p-3 border-t border-gray-50">
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50">
-              <div className="w-8 h-8 rounded-lg bg-[#0D278D] flex items-center justify-center">
-                <span className="text-white text-xs font-bold">P</span>
+              <div className="w-8 h-8 rounded-lg bg-[#0D278D] flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900">
-                  Penyeleksi
+                <p className="text-xs font-semibold text-gray-900 truncate">
+                  {authUser.name || "Penyeleksi"}
                 </p>
                 <p className="text-[11px] text-gray-400 truncate">
-                  penyeleksi@kitp.go.id
+                  {authUser.email || ""}
                 </p>
               </div>
-              <button className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                title="Logout"
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              >
                 <LogOut size={16} />
               </button>
             </div>
           </div>
         </div>
       </aside>
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={28} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-extrabold text-gray-900 mb-1">
+              Keluar dari Akun?
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Anda akan keluar dari sesi ini. Pastikan semua pekerjaan sudah tersimpan.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 transition-all shadow-sm"
+              >
+                Ya, Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

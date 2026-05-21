@@ -11,6 +11,7 @@ export default function Register() {
     email: "",
     password: "",
     role: "user",
+    nik: "",
   });
 
   const handleChange = (e: any) => {
@@ -22,7 +23,7 @@ export default function Register() {
     setErrorMsg([]);
 
     try {
-      await api.post("/register", form);
+      await api.post("/auth/register", form);
       navigate("/login");
     } catch (error: any) {
       console.log("FULL ERROR:", error.response);
@@ -93,6 +94,17 @@ export default function Register() {
           className="w-full mb-3 p-3 border rounded-lg"
           onChange={handleChange}
           required
+        />
+
+        <input
+          type="text"
+          name="nik"
+          placeholder="NIK (16 digit)"
+          maxLength={16}
+          value={form.nik}
+          onChange={handleChange}
+          required
+          className="w-full mb-3 p-3 border rounded-lg"
         />
 
         <button

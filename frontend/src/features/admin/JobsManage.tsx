@@ -45,12 +45,9 @@ const JobsManage: React.FC = () => {
     if (window.confirm("Hapus lowongan ini?")) deleteJob(id);
   };
 
-  const handleSubmit = (data: JobFormData) => {
-    const names = availablePenyeleksi
-      .filter((u) => data.penyeleksi_ids.includes(u.id))
-      .map((u) => u.name);
-    if (mode === "add") addJob(data, names);
-    else if (selectedJob) editJob(selectedJob.id, data, names);
+  const handleSubmit = async (data: JobFormData) => {
+    if (mode === "add") await addJob(data);
+    else if (selectedJob) await editJob(selectedJob.id, data);
   };
 
   return (

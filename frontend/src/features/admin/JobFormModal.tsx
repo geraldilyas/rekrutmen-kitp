@@ -15,7 +15,7 @@ import type { Job, JobFormData, SelectionStage, User } from "../shared/types";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: JobFormData) => void;
+  onSubmit: (data: JobFormData) => Promise<void> | void;
   initialData?: Job | null;
   mode: "add" | "edit";
   availablePenyeleksi: User[];
@@ -102,6 +102,8 @@ const JobFormModal: React.FC<Props> = ({
         });
       }
       setErrors({});
+      setErrorMsg("");
+      setSubmitting(false);
       setSearchPenyeleksi("");
       setShowPenyeleksi(false);
       setShowStages(false);
@@ -189,11 +191,21 @@ const JobFormModal: React.FC<Props> = ({
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      onSubmit(form);
+    if (!validate()) return;
+    setSubmitting(true);
+    setErrorMsg("");
+    try {
+      await onSubmit(form);
       onClose();
+    } catch (err: any) {
+      setErrorMsg(err?.response?.data?.message || "Terjadi kesalahan");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -709,6 +721,11 @@ const JobFormModal: React.FC<Props> = ({
           </div>
 
           {/* Buttons */}
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
@@ -719,9 +736,10 @@ const JobFormModal: React.FC<Props> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm"
+              disabled={submitting}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm disabled:opacity-50"
             >
-              {mode === "add" ? "Simpan" : "Perbarui"}
+              {submitting ? "Menyimpan..." : mode === "add" ? "Simpan" : "Perbarui"}
             </button>
           </div>
         </form>

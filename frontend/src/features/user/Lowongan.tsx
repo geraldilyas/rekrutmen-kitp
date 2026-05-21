@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,70 +12,18 @@ import {
   Brain
 } from "lucide-react";
 
-import Navbar from "../../components/layout/Navbar";
+import { api } from "../../services/api";
 
-const jobsData = [
-  {
-    id: 1,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Teknik Sipil",
-    waktu: "15 - 24 Mei 2026",
-    posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-    deskripsi:
-      "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial.",
-    pendidikan: ["S1", "D3"],
-  },
-  {
-    id: 2,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Administrasi",
-    waktu: "10 - 20 Mei 2026",
-    posisi: "Petugas Administrasi Satker",
-    deskripsi:
-      "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin.",
-    pendidikan: ["S1", "D3", "SMA"],
-  },
-  {
-    id: 3,
-    kategori: "Konsultan Individu",
-    jurusan: "IT Support",
-    waktu: "18 - 31 Mei 2026",
-    posisi: "Software Engineer (Full-Stack)",
-    deskripsi:
-      "Mengembangkan sistem informasi manajemen sumber daya air berbasis web dan mobile.",
-    pendidikan: ["S1"],
-  },
-  {
-    id: 4,
-    kategori: "Konsultan Individu",
-    jurusan: "Hukum",
-    waktu: "20 Mei - 5 Jun 2026",
-    posisi: "Staf Advokasi Hukum",
-    deskripsi:
-      "Menangani aspek legalitas lahan, sengketa pemanfaatan wilayah sungai, dan penyusunan draf.",
-    pendidikan: ["S1", "S2"],
-  },
-  {
-    id: 5,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Akuntansi",
-    waktu: "15 - 22 Mei 2026",
-    posisi: "Staf Keuangan & Pelaporan",
-    deskripsi:
-      "Melakukan rekapitulasi keuangan, verifikasi dokumen pencairan, dan pelaporan realisasi anggaran.",
-    pendidikan: ["S1", "D3"],
-  },
-  {
-    id: 6,
-    kategori: "Konsultan Individu",
-    jurusan: "Teknik Lingkungan",
-    waktu: "25 Mei - 25 Jun 2026",
-    posisi: "Ahli Lingkungan Hidup",
-    deskripsi:
-      "Menyusun kajian AMDAL dan memastikan proyek infrastruktur mematuhi standar lingkungan.",
-    pendidikan: ["S1", "S2"],
-  },
-];
+interface Job {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  qualification: string;
+  start_date: string;
+  deadline: string;
+  requirements: string;
+}
 
 const containerVariants = {
   hidden: {
@@ -107,6 +55,8 @@ const itemVariants = {
 const Lowongan: React.FC = () => {
   const navigate = useNavigate();
 
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -116,15 +66,46 @@ const Lowongan: React.FC = () => {
     "Konsultan Individu",
   ];
 
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/jobs");
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      setJobs(data);
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryDisplay = (cat: string) => {
+    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu") return "Konsultan Individu";
+    return cat;
+  };
+
+  const formatDateRange = (start: string, end: string) => {
+    if (!start || !end) return "";
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    
+    return `${startDate.getDate()} ${months[startDate.getMonth()]} - ${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
+  };
+
   const filteredJobs =
     activeFilter === "Semua"
-      ? jobsData
-      : jobsData.filter((job) => job.kategori === activeFilter);
+      ? jobs
+      : jobs.filter((job) => getCategoryDisplay(job.category) === activeFilter);
 
-  // const newLocal = "flex items-center gap-2 text-sm font-bold text-[#0D278D] border-1 border-[#0D278D] px-5 py-2.5 cursor-pointer rounded-xl hover:bg-[#0D278D] hover:text-white transition-all duration-300";
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
-      <Navbar />
 
       {/* HERO */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
@@ -245,101 +226,98 @@ const Lowongan: React.FC = () => {
         </motion.div>
 
         {/* --- JOB LIST REVENUE FIX --- */}
-<motion.div
-  variants={containerVariants}
-  initial="hidden"
-  animate="visible"
-  className="grid grid-cols-1 md:grid-cols-2 gap-8"
->
-  <AnimatePresence mode="popLayout">
-    {filteredJobs.map((job) => (
-      <motion.div
-        layout
-        key={job.id}
-        variants={itemVariants}
-        exit={{ opacity: 0, scale: 0.95 }}
-        whileHover={{ y: -8 }}
-        transition={{ duration: 0.3 }}
-        className=" p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
-      >
-        <div className="flex justify-between items-start mb-6">
-          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-            <Clock size={14} className="text-[#FEB700]" />
-            {job.waktu}
-          </span>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 gap-8"
+        >
+          {loading ? (
+            <div className="col-span-full text-center py-20 flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mb-4"></div>
+              <p className="text-gray-500 text-sm">Memuat lowongan...</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <motion.div
+                    layout
+                    key={job.id}
+                    variants={itemVariants}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    whileHover={{ y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
+                  >
+                    {/* ... job content ... */}
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Clock size={14} className="text-[#FEB700]" />
+                        {formatDateRange(job.start_date, job.deadline)}
+                      </span>
 
-          <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-            job.kategori === "Konsultan Individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"
-          }`}>
-            {job.kategori === "Konsultan Individu" ? (
-              <Brain size={12} /> 
-            ) : (
-              <Users size={12} />
-            )} 
-            {job.kategori}
-          </span>
-        </div>
+                      <span
+                        className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                          job.category === "konsultan_individu"
+                            ? "bg-amber-50 text-[#FEB700]"
+                            : "bg-blue-50 text-[#0D278D]"
+                        }`}
+                      >
+                        {job.category === "konsultan_individu" ? (
+                          <Brain size={12} />
+                        ) : (
+                          <Users size={12} />
+                        )}
+                        {getCategoryDisplay(job.category)}
+                      </span>
+                    </div>
 
-        <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight">
-          {job.posisi}
-        </h3>
+                    <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight">
+                      {job.title}
+                    </h3>
 
-        <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
-          {job.deskripsi}
-        </p>
+                    <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow line-clamp-3">
+                      {job.description}
+                    </p>
 
-        <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50">
-          <div className="flex items-center gap-2">
-            <GraduationCap size={18} className="text-gray-400 mr-1" />
-            {job.pendidikan.map((edu, idx) => (
-              <span
-                key={idx}
-                className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
-              >
-                {edu}
-              </span>
-            ))}
-          </div>
+                    <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap size={18} className="text-gray-400 mr-1" />
+                        <span className="text-[11px] font-bold text-[#0D278D] bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                          {job.qualification}
+                        </span>
+                      </div>
 
-          {/* BUTTON DENGAN ANIMASI HOVER SAMA PERSIS SEPERTI BERANDA */}
-          <button
-            onClick={() => navigate('/detail-lowongan')}
-            className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
-          >
-            <span className="transition-transform duration-300">Lihat Lowongan</span>
-            <ChevronRight
-              size={18}
-              data-framer-appear-id="ignore" /* Mencegah bentrokan layout animation */
-              className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 transition-all duration-300 ease-out shrink-0"
-            />
-          </button>
-        </div>
-      </motion.div>
-    ))}
-  </AnimatePresence>
-</motion.div>
-
-        {/* EMPTY */}
-        {filteredJobs.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-32"
-          >
-            <Sparkles
-              size={48}
-              className="mx-auto text-gray-200 mb-4"
-            />
-
-            <h3 className="text-[#0D278D] font-bold text-xl">
-              Lowongan belum tersedia
-            </h3>
-
-            <p className="text-gray-400 mt-2">
-              Maaf, saat ini belum ada posisi aktif untuk kategori ini.
-            </p>
-          </motion.div>
-        )}
+                      <button
+                        onClick={() => navigate(`/detail-lowongan/${job.id}`)}
+                        className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+                      >
+                        <span className="transition-transform duration-300">
+                          Lihat Lowongan
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 transition-all duration-300 ease-out shrink-0"
+                        />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-32 flex flex-col items-center">
+                  <Sparkles size={48} className="text-gray-200 mb-4" />
+                  <h3 className="text-[#0D278D] font-bold text-xl">
+                    Lowongan belum tersedia
+                  </h3>
+                  <p className="text-gray-400 mt-2 text-sm">
+                    Maaf, saat ini belum ada posisi aktif untuk kategori ini.
+                  </p>
+                </div>
+              )}
+            </AnimatePresence>
+          )}
+        </motion.div>
       </motion.main>
     </div>
   );

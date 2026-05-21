@@ -1,28 +1,83 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Users } from "lucide-react";
+import { ArrowLeft, Search, Users, Briefcase } from "lucide-react";
 import ApplicantTable from "./ApplicantTable";
+import StageUpdateModal from "../penyeleksi/StageUpdateModal";
+import ApplicantDetailModal from "./ApplicantDetailModal";
 import { useApplications } from "./hooks";
+import type { Application, UpdateStageData } from "../shared/types";
 
 const ApplicantDetail: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const {
     getApplicationsByJobId,
+    getJobById,
+    startApplicationStage,
+    updateStage,
     search,
     setSearch,
     filterStage,
     setFilterStage,
+    loading,
   } = useApplications();
 
-  const applicants = getApplicationsByJobId(Number(jobId));
-  const jobTitle = applicants[0]?.job_title || "Lowongan";
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selected, setSelected] = useState<Application | null>(null);
+  const [viewApp, setViewApp] = useState<Application | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [initLoading, setInitLoading] = useState<number | null>(null);
+
+  const jobIdNum = Number(jobId);
+  const applicants = getApplicationsByJobId(jobIdNum);
+  const job = getJobById(jobIdNum);
+  const jobTitle = job?.title || applicants[0]?.job_title || "Lowongan";
+  const stages = job?.selection_stages || [];
+
+  const scorerName = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "{}");
+      return u.name || "Admin";
+    } catch {
+      return "Admin";
+    }
+  })();
+
+  const handleOpenGrade = async (app: Application) => {
+    if (app.current_stage_result_id) {
+      setSelected(app);
+      setModalOpen(true);
+      return;
+    }
+    // No pending stage result yet — create it first
+    setInitLoading(app.id);
+    try {
+      const newId = await startApplicationStage(app.id);
+      if (newId) {
+        setSelected({ ...app, current_stage_result_id: newId });
+        setModalOpen(true);
+      }
+    } finally {
+      setInitLoading(null);
+    }
+  };
+
+  const handleSubmit = async (data: UpdateStageData) => {
+    setSubmitting(true);
+    try {
+      await updateStage(data);
+      setModalOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const tabs = [
     { key: "all", label: "Semua" },
     { key: "pending", label: "Proses" },
-    { key: "lulus", label: "Lulus" },
-    { key: "tidak_lulus", label: "Tidak Lulus" },
+    { key: "seleksi", label: "Seleksi" },
+    { key: "Lulus", label: "Lulus" },
+    { key: "Tidak Lulus", label: "Tidak Lulus" },
   ];
 
   return (
@@ -36,14 +91,21 @@ const ApplicantDetail: React.FC = () => {
       </button>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{jobTitle}</h1>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex flex-wrap items-center gap-3 mt-1">
           <span className="text-sm text-gray-500">
             {applicants.length} pelamar
           </span>
+          {stages.length > 0 && (
+            <span className="text-xs font-semibold text-[#0D278D] bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Briefcase size={10} />
+              {stages.length} tahap seleksi
+            </span>
+          )}
         </div>
       </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-1 p-1 bg-gray-50 rounded-xl w-fit">
+        <div className="flex flex-wrap gap-1 p-1 bg-gray-50 rounded-xl w-fit">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -68,7 +130,41 @@ const ApplicantDetail: React.FC = () => {
           />
         </div>
       </div>
-      <ApplicantTable applicants={applicants} />
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0D278D] mx-auto" />
+        </div>
+      ) : applicants.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 text-center py-16">
+          <Users size={40} className="mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-500 text-sm">Belum ada pelamar untuk lowongan ini</p>
+        </div>
+      ) : (
+        <ApplicantTable
+          applicants={applicants}
+          onView={(app) => setViewApp(app)}
+        />
+      )}
+
+      <ApplicantDetailModal
+        application={viewApp}
+        stages={stages}
+        onClose={() => setViewApp(null)}
+        onGrade={(app) => {
+          setViewApp(null);
+          handleOpenGrade(app);
+        }}
+      />
+
+      <StageUpdateModal
+        isOpen={modalOpen}
+        onClose={() => !submitting && setModalOpen(false)}
+        onSubmit={handleSubmit}
+        application={selected}
+        stages={stages}
+        scorerName={scorerName}
+      />
     </div>
   );
 };

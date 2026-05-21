@@ -1,5 +1,5 @@
-import React from "react";
-import { motion, } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -15,7 +15,17 @@ import {
   Megaphone,
   Users,
 } from "lucide-react";
-import Navbar from "../../components/layout/Navbar";
+import { api } from "../../services/api";
+
+interface Job {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  qualification: string;
+  start_date: string;
+  deadline: string;
+}
 
 // Data untuk Tahapan Seleksi (Tetap 6 Tahap)
 const tahapanSeleksi = [
@@ -50,13 +60,50 @@ const itemVariants = {
 
 const Beranda: React.FC = () => {
   const navigate = useNavigate();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLatestJobs();
+  }, []);
+
+  const fetchLatestJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/jobs");
+      setJobs(res.data.slice(0, 4)); // Show only top 4
+    } catch (err) {
+      console.error("Error fetching latest jobs:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryDisplay = (cat: string) => {
+    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu") return "Konsultan Individu";
+    return cat;
+  };
+
+  const formatDeadline = (dateStr: string) => {
+    if (!dateStr) return "";
+    const deadline = new Date(dateStr);
+    const now = new Date();
+    const diffTime = deadline.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return "Sudah ditutup";
+    if (diffDays === 0) return "Tutup hari ini";
+    if (diffDays > 30) return "Masih lama";
+    return `${diffDays} Hari Lagi`;
+  };
 
   /*
     ==================================================
     STATE SIMULASI LOGIN (Ubah sesuai Auth Context lo)
     ==================================================
   */
-  const isLoggedIn = true; 
+  const isLoggedIn = !!localStorage.getItem("token"); 
 
   /*
     ==================================================
@@ -65,30 +112,21 @@ const Beranda: React.FC = () => {
   */
   const handleActionPendaftaran = (jobId?: number) => {
     if (!isLoggedIn) {
-      // Kondisi 1: Belum login -> Paksa masuk ke halaman login
       navigate("/login");
     } else {
-      // Kondisi 2: Sudah login -> Silakan lo set mau diredirect ke mana
       if (jobId) {
-        console.log(`User melamar pada posisi ID: ${jobId}`);
-        navigate(`/detail-lowongan`); 
-        // Contoh jika ingin direct ke formulir pendaftaran spesifik lowongan:
-        // navigate(`/formulir-lamar/${jobId}`);
+        navigate(`/detail-lowongan/${jobId}`); 
       } else {
-        console.log("User menekan tombol Mulai Pendaftaran di CTA Section");
-        // Contoh diredirect ke list lowongan aktif:
         navigate("/lowongan");
       }
     }
   };
 
   return (
-    <div className="bg-white min-h-screen pt-20 overflow-x-hidden">
-      <Navbar />
+    <div className="bg-white min-h-screen pt-20 overflow-x-hidden font-['Poppins']">
 
-      {/* --- HERO SECTION (MODERN, MEWAH, CENTER ALIGNED) --- */}
+      {/* --- HERO SECTION --- */}
       <section className="relative bg-[#0D278D] pt-32 pb-32 overflow-hidden">
-        {/* Luxury Background Accents (Glow & Texture) */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FEB700]/15 rounded-full blur-[120px] pointer-events-none z-0" />
@@ -148,7 +186,7 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* --- LOWONGAN SECTION (STAGGER ENTRANCE FLOW) --- */}
+      {/* --- LOWONGAN SECTION --- */}
       <motion.section
         id="lowongan"
         className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
@@ -170,8 +208,8 @@ const Beranda: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate("/Lowongan")}
-            className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group"
+            onClick={() => navigate("/lowongan")}
+            className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group cursor-pointer"
           >
             Lihat Semua Posisi
             <ChevronRight
@@ -182,48 +220,15 @@ const Beranda: React.FC = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {[
-            {
-              id: 1,
-              kategori: "Tenaga Pendukung",
-              jurusan: "Teknik Sipil",
-              waktu: "5 Hari Lagi",
-              posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-              deskripsi:
-                "Melaksanakan pendampingan kepada P3A/GP3A/IP3A dalam aspek teknis, administratif, dan sosial pada kegiatan Percepatan Peningkatan Tata Guna Air Irigasi.",
-              pendidikan: ["S1", "D3"],
-            },
-            {
-              id: 2,
-              kategori: "Tenaga Pendukung",
-              jurusan: "Administrasi",
-              waktu: "Tutup Besok",
-              posisi: "Petugas Administrasi Satker",
-              deskripsi:
-                "Mendukung pengelolaan administrasi perkantoran, kearsipan, dan penyusunan laporan rutin pada satuan kerja Balai.",
-              pendidikan: ["S1", "D3", "SMA"],
-            },
-            {
-              id: 3,
-              kategori: "Konsultan Individu",
-              jurusan: "IT Support",
-              waktu: "12 Hari Lagi",
-              posisi: "Software Engineer (Full-Stack)",
-              deskripsi:
-                "Mengembangkan dan memelihara sistem informasi manajemen sumber daya air berbasis web dan mobile yang terintegrasi.",
-              pendidikan: ["S1"],
-            },
-            {
-              id: 4,
-              kategori: "Konsultan Individu",
-              jurusan: "Hukum",
-              waktu: "2 Basin Lagi",
-              posisi: "Staf Advokasi Hukum",
-              deskripsi:
-                "Menangani aspek legalitas lahan, sengketa pemanfaatan wilayah sungai, dan penyusunan draf perjanjian kerja sama.",
-              pendidikan: ["S1", "S2"],
-            },
-          ].map((job) => (
+          {loading ? (
+              <div className="col-span-full text-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+              </div>
+          ) : jobs.length === 0 ? (
+              <div className="col-span-full text-center py-20">
+                  <p className="text-gray-500">Belum ada lowongan aktif.</p>
+              </div>
+          ) : jobs.map((job) => (
             <motion.div
               key={job.id}
               variants={itemVariants}
@@ -233,11 +238,11 @@ const Beranda: React.FC = () => {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <span className="px-4 py-1.5 rounded-xl bg-blue-50/50 text-[#0D278D] text-xs font-bold tracking-wider border border-blue-100">
-                    {job.jurusan}
+                    {job.qualification}
                   </span>
                   <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
                     <Clock size={14} />
-                    <span>{job.waktu}</span>
+                    <span>{formatDeadline(job.deadline)}</span>
                   </div>
                 </div>
 
@@ -245,38 +250,32 @@ const Beranda: React.FC = () => {
                   <Briefcase
                     size={16}
                     className={
-                      job.kategori === "Konsultan Individu"
+                      job.category === "konsultan_individu"
                         ? "text-[#FEB700]"
                         : "text-[#0D278D]"
                     }
                   />
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {job.kategori}
+                    {getCategoryDisplay(job.category)}
                   </span>
                 </div>
 
                 <h3 className="text-2xl font-bold text-[#0D278D] mb-4 group-hover:text-[#FEB700] transition-colors leading-tight">
-                  {job.posisi}
+                  {job.title}
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed mb-8">
-                  {job.deskripsi}
+                <p className="text-gray-500 text-sm leading-relaxed mb-8 line-clamp-3">
+                  {job.description}
                 </p>
               </div>
 
               <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                 <div className="flex items-center gap-2">
                   <GraduationCap size={18} className="text-gray-400 mr-1" />
-                  {job.pendidikan.map((edu, index) => (
-                    <span
-                      key={index}
-                      className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
-                    >
-                      {edu}
-                    </span>
-                  ))}
+                  <span className="w-auto px-3 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]">
+                      {job.qualification}
+                  </span>
                 </div>
                 
-                {/* BUTTON LAMAR - DILENGKAPI KONDISI AUTH */}
                 <button 
                   onClick={() => handleActionPendaftaran(job.id)}
                   className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center gap-2"
@@ -293,7 +292,7 @@ const Beranda: React.FC = () => {
         </div>
       </motion.section>
 
-      {/* --- TAHAPAN SELEKSI SECTION (VIEWPORT TRIGGERED) --- */}
+      {/* --- TAHAPAN SELEKSI SECTION --- */}
       <section
         id="tahapan"
         className="py-32 bg-white relative overflow-hidden border-y border-gray-100"
@@ -371,7 +370,7 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* --- CTA SECTION (SPRING POP ENTRANCE) --- */}
+      {/* --- CTA SECTION --- */}
       <section className="py-24 px-4 relative">
         <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[3rem] p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(13,39,141,0.4)] border border-white/10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB700] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -403,7 +402,6 @@ const Beranda: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-5 w-full sm:w-auto">
-              {/* BUTTON MULAI PENDAFTARAN - DILENGKAPI KONDISI AUTH */}
               <button 
                 onClick={() => handleActionPendaftaran()}
                 className="group relative overflow-hidden bg-[#FEB700] text-[#0D278D] px-8 md:px-12 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(254,183,0,0.6)] flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"

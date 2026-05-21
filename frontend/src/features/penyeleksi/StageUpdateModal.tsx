@@ -15,7 +15,7 @@ import type {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: UpdateStageData) => void;
+  onSubmit: (data: UpdateStageData) => void | Promise<void>;
   application: Application | null;
   stages: SelectionStage[];
   scorerName: string;
@@ -48,10 +48,11 @@ const StageUpdateModal: React.FC<Props> = ({
   );
   const bobot = currentStage?.weight || 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
+    await onSubmit({
       application_id: application.id,
+      stage_result_id: application.current_stage_result_id!,
       stage_name: application.current_stage || "",
       status: decision,
       note: note.trim() || "",

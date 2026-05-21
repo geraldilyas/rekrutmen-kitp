@@ -9,6 +9,7 @@ const roleTabs = [
   { key: "all", label: "Semua" },
   { key: "admin", label: "Admin" },
   { key: "penyeleksi", label: "Penyeleksi" },
+  { key: "user", label: "Pendaftar" },
 ];
 
 const verifyTabs = [
@@ -37,60 +38,86 @@ const UsersManage: React.FC = () => {
   const [mode, setMode] = useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  const authUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = authUser.role === "admin";
+
   const handleAdd = () => {
     setMode("add");
     setSelectedUser(null);
     setModalOpen(true);
   };
+
   const handleEdit = (user: User) => {
     setMode("edit");
     setSelectedUser(user);
     setModalOpen(true);
   };
-  const handleSubmit = (data: UserFormData) => {
-    if (mode === "add") addUser(data);
-    else if (selectedUser) editUser(selectedUser.id, data);
+
+  const handleSubmit = async (data: UserFormData) => {
+    if (mode === "add") {
+      await addUser(data);
+    } else if (selectedUser) {
+      await editUser(selectedUser.id, data, selectedUser.role);
+    }
   };
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Manajemen User</h1>
-          <p className="text-gray-500 text-sm mt-1">{totalUsers} user</p>
+          <p className="text-gray-500 text-sm mt-1">{totalUsers} user terdaftar</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#0D278D] text-white rounded-xl font-semibold text-sm hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          Tambah User
-        </button>
+        {/* Only admin can add users */}
+        {isAdmin && (
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0D278D] text-white rounded-xl font-semibold text-sm hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm"
+          >
+            <Plus size={18} />
+            Tambah User
+          </button>
+        )}
       </div>
 
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
+        {/* Role filter */}
         <div className="flex gap-1 p-1 bg-gray-50 rounded-xl w-fit">
           {roleTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilterRole(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterRole === tab.key ? "bg-white text-[#0D278D] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filterRole === tab.key
+                  ? "bg-white text-[#0D278D] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
+
+        {/* Verification filter */}
         <div className="flex gap-1 p-1 bg-gray-50 rounded-xl w-fit">
           {verifyTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilterVerification(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterVerification === tab.key ? "bg-white text-[#0D278D] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filterVerification === tab.key
+                  ? "bg-white text-[#0D278D] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
+
+        {/* Search */}
         <div className="relative flex-1">
           <Search
             size={16}
@@ -100,26 +127,31 @@ const UsersManage: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari user..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:border-[#0D278D]"
+            placeholder="Cari nama, email, atau NIK..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:border-[#0D278D] transition-colors"
           />
         </div>
       </div>
 
+      {/* Table */}
       <UsersTable
         users={users}
         onEdit={handleEdit}
         onDelete={deleteUser}
         onToggleVerification={toggleVerification}
+        canEdit={isAdmin}
       />
 
-      <UserFormModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleSubmit}
-        initialData={selectedUser}
-        mode={mode}
-      />
+      {/* Modal — only reachable by admin since the button is hidden for penyeleksi */}
+      {isAdmin && (
+        <UserFormModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleSubmit}
+          initialData={selectedUser}
+          mode={mode}
+        />
+      )}
     </div>
   );
 };

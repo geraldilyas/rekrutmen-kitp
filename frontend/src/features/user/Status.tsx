@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   ChevronDown,
@@ -17,46 +18,23 @@ import {
   Activity,
   Filter,
 } from "lucide-react";
-import Navbar from "../../components/layout/Navbar";
+import { api } from "../../services/api";
 
-// Data Dummy Status Lamaran
-const appliedJobs = [
-  {
-    id: 1,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Teknik Sipil",
-    posisi: "Tenaga Pendamping Masyarakat (TPM) - P3-TGAI",
-    pendidikan: ["S1", "D3"],
-    tanggal: "12 Mei 2026",
-    currentStep: 4,
-    statusText: "Sedang Tes Kompetensi",
-    isRejected: false,
-  },
-  {
-    id: 2,
-    kategori: "Konsultan Individu",
-    jurusan: "IT Support",
-    posisi: "Software Engineer (Full-Stack)",
-    pendidikan: ["S1"],
-    tanggal: "05 Mei 2026",
-    currentStep: 6,
-    statusText: "Lulus",
-    isRejected: false,
-  },
-  {
-    id: 3,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Administrasi",
-    posisi: "Petugas Administrasi Satker",
-    pendidikan: ["S1", "D3", "SMA"],
-    tanggal: "01 Mei 2026",
-    currentStep: 6,
-    statusText: "Tidak Lulus",
-    isRejected: true,
-  },
-];
+interface Application {
+  id: number;
+  status: string;
+  applied_at: string;
+  job: {
+    id: number;
+    title: string;
+    category: string;
+    qualification: string;
+    stages: any[];
+  };
+  stage_results: any[];
+}
 
-const timelineSteps = [
+const timelineStepsDefault = [
   { id: 1, label: "Diajukan", desc: "Registrasi Online", icon: Send },
   { id: 2, label: "Seleksi Admin", desc: "Verifikasi Berkas", icon: FileText },
   { id: 3, label: "Pengumuman", desc: "Hasil Admin", icon: Megaphone },
@@ -65,7 +43,6 @@ const timelineSteps = [
   { id: 6, label: "Hasil Akhir", desc: "Keputusan Final", icon: CheckCircle2 },
 ];
 
-// Master Animasi Entrance Konten Utama (Lebih Lambat & Slow Premium)
 const mainContainerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -87,16 +64,62 @@ const mainItemVariants = {
 };
 
 const StatusLamaran: React.FC = () => {
+  const navigate = useNavigate();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    fetchMyApplications();
+  }, []);
+
+  const fetchMyApplications = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/applications/my");
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      setApplications(data);
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+      setApplications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryDisplay = (cat: string) => {
+    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu") return "Konsultan Individu";
+    return cat;
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const getApplicationStatus = (app: Application) => {
+    if (app.status === 'Tidak Lulus') return { text: 'Tidak Lulus', isRejected: true, step: 6 };
+    if (app.status === 'Lulus') return { text: 'Lulus', isRejected: false, step: 6 };
+    
+    // Logic to determine current step based on stage results
+    const completedStages = app.stage_results?.filter((sr: any) => sr.status === 'Lulus' || sr.status === 'lulus' || sr.status === 'passed').length || 0;
+    return { text: 'Sedang Proses', isRejected: false, step: completedStages + 1 };
+  };
+
   const filteredJobs =
     activeFilter === "Semua"
-      ? appliedJobs
-      : appliedJobs.filter((job) => job.kategori === activeFilter);
+      ? applications
+      : applications.filter((app) => getCategoryDisplay(app.job.category) === activeFilter);
 
   const toggleExpand = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
@@ -104,9 +127,7 @@ const StatusLamaran: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
-      <Navbar />
 
-      {/* --- HERO HEADER DENGAN ANIMASI ENTRANCE --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] z-10 overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
@@ -139,14 +160,12 @@ const StatusLamaran: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT (EDITORIAL SLOW SLIDE) --- */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-0"
         variants={mainContainerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Header List & Dropdown Filter Floating Absolute */}
         <motion.div
           variants={mainItemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-8 relative"
@@ -164,8 +183,7 @@ const StatusLamaran: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center relative gap-3 relative">
-            {/* Tombol Pemicu / Trigger Filter */}
+          <div className="flex items-center relative gap-3">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-bold border cursor-pointer transition-all duration-300 ${
@@ -178,8 +196,6 @@ const StatusLamaran: React.FC = () => {
               <span>{activeFilter}</span>
             </button>
 
-            {/* Wrapper absolute murni (tanpa motion) untuk menjaga vertical alignment tetap di tengah tombol */}
-            {/* <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center z-10 pl-3"> */}
             <AnimatePresence>
               {isFilterOpen && (
                 <motion.div
@@ -189,8 +205,6 @@ const StatusLamaran: React.FC = () => {
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30  whitespace-nowrap overflow-hidden"
                 >
-                  {/* Inner wrapper (w-max) agar isi menu tidak gepeng/terpotong saat animasi lebar (width) berjalan */}
-                  {/* <div className="flex items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] w-max"> */}
                   {filters.map((filter) => (
                     <button
                       key={filter}
@@ -207,27 +221,28 @@ const StatusLamaran: React.FC = () => {
                       {filter}
                     </button>
                   ))}
-                  {/* </div> */}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          {/* </div> */}
-          {/* === AKHIR BAGIAN FILTER === */}
         </motion.div>
 
-        {/* List Lamaran */}
         <motion.div
           layout
           className="flex flex-col"
           variants={mainItemVariants}
         >
           <AnimatePresence mode="popLayout">
-            {filteredJobs.map((job) => (
+            {loading ? (
+                <div className="text-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+                </div>
+            ) : filteredJobs.map((app) => {
+              const statusInfo = getApplicationStatus(app);
+              return (
               <motion.div
                 layout
-                key={job.id}
+                key={app.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, height: 0, overflow: "hidden" }}
@@ -236,63 +251,57 @@ const StatusLamaran: React.FC = () => {
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-center rounded-r-full z-10" />
 
-                {/* Baris Utama Lamaran */}
                 <div
-                  onClick={() => toggleExpand(job.id)}
+                  onClick={() => toggleExpand(app.id)}
                   className="py-6 px-4 sm:px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer transition-colors duration-300 hover:bg-gray-50/30"
                 >
                   <div className="flex-1 w-full group-hover:translate-x-2 transition-transform duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-4">
                       <span className="text-[11px] font-medium text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Calendar size={14} className="text-[#FEB700]" />{" "}
-                        {job.tanggal}
+                        {formatDate(app.applied_at)}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-gray-300 hidden md:block" />
                       <span
                         className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                          job.kategori === "Konsultan Individu"
+                          app.job.category === "konsultan_individu"
                             ? "bg-amber-50 text-[#FEB700]"
                             : "bg-blue-50 text-[#0D278D]"
                         }`}
                       >
-                        {job.kategori === "Konsultan Individu" ? (
+                        {app.job.category === "konsultan_individu" ? (
                           <Brain size={12} />
                         ) : (
                           <Users size={12} />
                         )}
-                        {job.kategori}
+                        {getCategoryDisplay(app.job.category)}
                       </span>
                     </div>
 
                     <h3 className="text-xl md:text-2xl font-bold text-[#0D278D] mb-5 leading-tight transition-colors">
-                      {job.posisi}
+                      {app.job.title}
                     </h3>
 
                     <div className="flex items-center gap-2">
                       <GraduationCap size={18} className="text-gray-400 mr-1" />
-                      {job.pendidikan.map((edu, index) => (
-                        <span
-                          key={index}
-                          className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[12px] font-bold text-[#0D278D] hover:border-blue-200 transition-colors"
-                        >
-                          {edu}
-                        </span>
-                      ))}
+                      <span className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100 text-[12px] font-bold text-[#0D278D]">
+                          {app.job.qualification}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between w-full md:w-auto gap-6 mt-4 md:mt-0">
                     <div
                       className={`px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border ${
-                        job.currentStep === 6
-                          ? job.isRejected
+                        statusInfo.step === 6
+                          ? statusInfo.isRejected
                             ? "bg-red-50 text-red-600 border-red-100"
                             : "bg-green-50 text-green-600 border-green-100"
                           : "bg-white text-[#0D278D] border-[#0D278D]"
                       }`}
                     >
-                      {job.currentStep === 6 ? (
-                        job.isRejected ? (
+                      {statusInfo.step === 6 ? (
+                        statusInfo.isRejected ? (
                           <XCircle size={16} />
                         ) : (
                           <CheckCircle2 size={16} />
@@ -303,12 +312,12 @@ const StatusLamaran: React.FC = () => {
                           className="animate-spin-slow text-[#FEB700]"
                         />
                       )}
-                      {job.statusText}
+                      {statusInfo.text}
                     </div>
 
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        expandedId === job.id
+                        expandedId === app.id
                           ? "rotate-180 bg-[#0D278D] text-white shadow-md"
                           : "text-gray-400 group-hover:bg-white group-hover:text-[#0D278D] group-hover:shadow-sm"
                       }`}
@@ -318,9 +327,8 @@ const StatusLamaran: React.FC = () => {
                   </div>
                 </div>
 
-                {/* --- TIMELINE TRACKER --- */}
                 <AnimatePresence>
-                  {expandedId === job.id && (
+                  {expandedId === app.id && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -340,29 +348,12 @@ const StatusLamaran: React.FC = () => {
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{
-                                width: `${((job.currentStep - 1) / 5) * 100}%`,
+                                width: `${((statusInfo.step - 1) / 5) * 100}%`,
                               }}
                               className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${
-                                job.isRejected && job.currentStep === 6
+                                statusInfo.isRejected && statusInfo.step === 6
                                   ? "bg-red-500"
-                                  : job.currentStep === 6 && !job.isRejected
-                                    ? "bg-green-500"
-                                    : "bg-[#0D278D]"
-                              }`}
-                            />
-                          </div>
-
-                          <div className="block md:hidden absolute top-[24px] bottom-[24px] left-[22px] z-0">
-                            <div className="w-[2px] h-full bg-gray-100" />
-                            <motion.div
-                              initial={{ height: 0 }}
-                              animate={{
-                                height: `${((job.currentStep - 1) / 5) * 100}%`,
-                              }}
-                              className={`absolute top-0 left-0 w-[2px] transition-all duration-700 ease-out ${
-                                job.isRejected && job.currentStep === 6
-                                  ? "bg-red-500"
-                                  : job.currentStep === 6 && !job.isRejected
+                                  : statusInfo.step === 6 && !statusInfo.isRejected
                                     ? "bg-green-500"
                                     : "bg-[#0D278D]"
                               }`}
@@ -370,16 +361,16 @@ const StatusLamaran: React.FC = () => {
                           </div>
 
                           <div className="flex flex-col md:flex-row justify-between gap-10 md:gap-0 relative z-10 w-full">
-                            {timelineSteps.map((step) => {
-                              const isPast = job.currentStep > step.id;
-                              const isCurrent = job.currentStep === step.id;
+                            {timelineStepsDefault.map((step) => {
+                              const isPast = statusInfo.step > step.id;
+                              const isCurrent = statusInfo.step === step.id;
                               const isEndRejected =
-                                job.currentStep === 6 &&
-                                job.isRejected &&
+                                statusInfo.step === 6 &&
+                                statusInfo.isRejected &&
                                 step.id === 6;
                               const isEndAccepted =
-                                job.currentStep === 6 &&
-                                !job.isRejected &&
+                                statusInfo.step === 6 &&
+                                !statusInfo.isRejected &&
                                 step.id === 6;
 
                               let circleClass =
@@ -453,12 +444,11 @@ const StatusLamaran: React.FC = () => {
                   )}
                 </AnimatePresence>
               </motion.div>
-            ))}
+            )})}
           </AnimatePresence>
         </motion.div>
 
-        {/* Empty State */}
-        {filteredJobs.length === 0 && (
+        {!loading && filteredJobs.length === 0 && (
           <motion.div
             variants={mainItemVariants}
             className="text-center py-32 mt-6"

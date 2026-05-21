@@ -18,6 +18,7 @@ interface Props {
   onEdit: (user: User) => void;
   onDelete: (id: number) => void;
   onToggleVerification: (id: number) => void;
+  canEdit: boolean;
 }
 
 const fmt = (d: string | null) =>
@@ -50,6 +51,7 @@ const UsersTable: React.FC<Props> = ({
   onEdit,
   onDelete,
   onToggleVerification,
+  canEdit,
 }) => {
   if (users.length === 0)
     return (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive,
@@ -11,49 +11,21 @@ import {
   Users,
   Filter,
 } from "lucide-react";
-import Navbar from "../../components/layout/Navbar";
+import { api } from "../../services/api";
 
-// Data Dummy Riwayat Arsip Lamaran
-const archiveJobs = [
-  {
-    id: 1,
-    kategori: "Konsultan Individu",
-    jurusan: "Teknik Informatika",
-    posisi: "Data Analyst",
-    deskripsi:
-      "Melakukan pengolahan data spasial dan non-spasial terkait sumber daya air untuk kebutuhan pelaporan pimpinan.",
-    pendidikan: ["S1"],
-    tanggalMelamar: "10 Agustus 2025",
-    periode: "Rekrutmen Tahap II 2025",
-    statusAkhir: "Diterima",
-  },
-  {
-    id: 2,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Administrasi",
-    posisi: "Staf Administrasi Umum",
-    deskripsi:
-      "Mengelola surat menyurat, arsip digital, dan dokumen kepegawaian di lingkungan Balai Besar Wilayah Sungai.",
-    pendidikan: ["D3", "SMA"],
-    tanggalMelamar: "05 Februari 2025",
-    periode: "Rekrutmen Tahap I 2025",
-    statusAkhir: "Tidak Lulus",
-  },
-  {
-    id: 3,
-    kategori: "Tenaga Pendukung",
-    jurusan: "Teknik Sipil",
-    posisi: "Pengawas Lapangan Irigasi",
-    deskripsi:
-      "Melakukan monitoring dan evaluasi terhadap proyek rehabilitasi jaringan irigasi tingkat sekunder.",
-    pendidikan: ["S1", "D3"],
-    tanggalMelamar: "12 November 2024",
-    periode: "Rekrutmen Akhir Tahun 2024",
-    statusAkhir: "Tidak Lulus",
-  },
-];
+interface ArchiveItem {
+  id: number;
+  status: string;
+  applied_at: string;
+  job: {
+    id: number;
+    title: string;
+    category: string;
+    qualification: string;
+    deadline: string;
+  };
+}
 
-// --- ANIMATION SYSTEM ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -75,21 +47,52 @@ const itemVariants = {
 };
 
 const Arsip: React.FC = () => {
+  const [history, setHistory] = useState<ArchiveItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua Riwayat");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const filters = ["Semua Riwayat", "Diterima", "Tidak Lulus"];
+  const filters = ["Semua Riwayat", "Lulus", "Tidak Lulus"];
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/applications/my");
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      const finished = data.filter((app: any) => ['Lulus', 'Tidak Lulus'].includes(app.status));
+      setHistory(finished);
+    } catch (err) {
+      console.error("Error fetching history:", err);
+      setHistory([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryDisplay = (cat: string) => {
+    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu") return "Konsultan Individu";
+    return cat;
+  };
+
+  const getStatusDisplay = (status: string) => {
+    if (status === 'Lulus') return 'Lulus';
+    if (status === 'Tidak Lulus') return 'Tidak Lulus';
+    return status;
+  };
 
   const filteredHistory =
     activeFilter === "Semua Riwayat"
-      ? archiveJobs
-      : archiveJobs.filter((job) => job.statusAkhir === activeFilter);
+      ? history
+      : history.filter((app) => getStatusDisplay(app.status) === activeFilter);
 
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
-      <Navbar />
 
-      {/* --- HERO SECTION --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
@@ -122,14 +125,12 @@ const Arsip: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT --- */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* HEADER LIST & FILTER CONTROLS */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
@@ -147,11 +148,10 @@ const Arsip: React.FC = () => {
             </p>
           </div>
 
-          {/* Inline Flex-Flow Filter System */}
           <div className="flex items-center gap-3 relative ">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold border transition-all duration-300  ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold cursor-pointer border transition-all duration-300  ${
                 isFilterOpen
                   ? "bg-[#0D278D] text-white border-[#0D278D]"
                   : "bg-white text-[#0D278D] border-[#0D278D] hover:bg-[#0D278D] hover:text-white"
@@ -161,7 +161,6 @@ const Arsip: React.FC = () => {
               <span>{activeFilter}</span>
             </button>
 
-            {/* <div className="absolute left-full ml-3 top-0 flex items-center z-10"> */}
             <AnimatePresence>
               {isFilterOpen && (
                 <motion.div
@@ -181,7 +180,6 @@ const Arsip: React.FC = () => {
                     x: 10,
                   }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  // transition={{ duration: 0.35, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
                   <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30   w-max whitespace-nowrap">
@@ -206,87 +204,74 @@ const Arsip: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-          {/* </div> */}
         </motion.div>
 
-        {/* ARCHIVE GRID CARDS (Style matched to image_7657d8.png layout) */}
         <motion.div
           variants={itemVariants}
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
         >
           <AnimatePresence mode="popLayout">
-            {filteredHistory.map((job) => (
+            {loading ? (
+                <div className="col-span-full text-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+                </div>
+            ) : filteredHistory.map((app) => (
               <motion.div
                 layout
-                key={job.id}
+                key={app.id}
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="group p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
               >
-                {/* Meta Header */}
                 <div className="flex justify-between items-start mb-6 gap-2">
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
                     <Clock size={14} className="text-[#FEB700]" />
-                    {job.periode}
+                    {new Date(app.applied_at).getFullYear()}
                   </span>
 
                   <span
                     className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                      job.kategori === "Konsultan Individu"
+                      app.job.category === "konsultan_individu"
                         ? "bg-amber-50 text-[#FEB700]"
                         : "bg-blue-50 text-[#0D278D]"
                     }`}
                   >
-                    {job.kategori === "Konsultan Individu" ? (
+                    {app.job.category === "konsultan_individu" ? (
                       <Brain size={12} />
                     ) : (
                       <Users size={12} />
                     )}
-                    {job.kategori}
+                    {getCategoryDisplay(app.job.category)}
                   </span>
                 </div>
 
-                {/* Job Position Title */}
                 <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight group-hover:text-blue-800 transition-colors">
-                  {job.posisi}
+                  {app.job.title}
                 </h3>
 
-                {/* Description */}
-                <p className="text-gray-500 text-[14px] leading-relaxed mb-8 flex-grow">
-                  {job.deskripsi}
-                </p>
-
-                {/* Divider Line & Card Footer */}
                 <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-50 gap-4">
-                  {/* Education Circles */}
                   <div className="flex items-center gap-2">
                     <GraduationCap size={18} className="text-gray-400 mr-1" />
-                    {job.pendidikan.map((edu, idx) => (
-                      <span
-                        key={idx}
-                        className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#0D278D]"
-                      >
-                        {edu}
-                      </span>
-                    ))}
+                    <span className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-bold text-[#0D278D]">
+                        {app.job.qualification}
+                    </span>
                   </div>
 
-                  {/* Status Badges Matching Lowongan's Button Area placement */}
                   <div
                     className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border ${
-                      job.statusAkhir === "Diterima"
+                      app.status === "Lulus"
                         ? "bg-green-50 text-green-600 border-green-100 shadow-sm shadow-green-50"
                         : "bg-red-50 text-red-600 border-red-100 shadow-sm shadow-red-50"
                     }`}
                   >
-                    {job.statusAkhir === "Diterima" ? (
+                    {app.status === "Lulus" ? (
                       <CheckCircle2 size={15} />
                     ) : (
                       <XCircle size={15} />
                     )}
-                    <span>{job.statusAkhir}</span>
+                    <span>{getStatusDisplay(app.status)}</span>
                   </div>
                 </div>
               </motion.div>
@@ -294,9 +279,8 @@ const Arsip: React.FC = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* EMPTY STATE */}
-        <AnimatePresence>
-          {filteredHistory.length === 0 && (
+        {!loading && filteredHistory.length === 0 && (
+          <AnimatePresence>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -310,18 +294,11 @@ const Arsip: React.FC = () => {
                 Riwayat Kosong
               </h3>
               <p className="text-gray-400 mt-2 text-sm max-w-sm mx-auto leading-relaxed">
-                Anda belum memiliki riwayat rekaman administrasi lamaran pada
-                kategori ini.
+                Anda belum memiliki riwayat rekaman administrasi lamaran yang sudah selesai.
               </p>
-              <button
-                onClick={() => setActiveFilter("Semua Riwayat")}
-                className="mt-8 text-sm font-bold text-[#0D278D] border-b-2 border-transparent hover:border-[#FEB700] hover:text-[#FEB700] transition-all pb-1"
-              >
-                Kembali ke Semua Riwayat
-              </button>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>
+        )}
       </motion.main>
     </div>
   );

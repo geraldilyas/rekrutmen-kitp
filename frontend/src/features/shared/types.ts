@@ -47,6 +47,7 @@ export interface Job {
   penyeleksi_names: string[];
   start_date: string | null;
   end_date: string | null;
+  deadline: string | null;
   form_fields: string[] | null;
   selection_stages: SelectionStage[];
   status: "coming_soon" | "active" | "finished";
@@ -99,9 +100,10 @@ export interface Application {
   user_nik: string | null;
   user_phone: string | null;
   job_title: string;
-  status: "pending" | "lulus" | "tidak_lulus";
+  status: "pending" | "seleksi" | "lulus" | "tidak_lulus" | "Lulus" | "Tidak Lulus";
   current_stage: string | null;
   current_stage_order: number;
+  current_stage_result_id: number | null;
   stage_history: StageHistory[];
   stage_scores: StageScore[];
   document_link: string | null;
@@ -112,6 +114,7 @@ export interface Application {
 
 export interface UpdateStageData {
   application_id: number;
+  stage_result_id: number;
   stage_name: string;
   status: "lulus" | "tidak_lulus";
   note: string;

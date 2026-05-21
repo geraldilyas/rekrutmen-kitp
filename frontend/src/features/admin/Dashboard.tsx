@@ -11,6 +11,38 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const StatCard = ({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+}) => {
+  const colors: Record<string, string> = {
+    blue: "bg-blue-50 text-[#0D278D]",
+    yellow: "bg-amber-50 text-[#FEB700]",
+    green: "bg-emerald-50 text-emerald-600",
+    red: "bg-rose-50 text-rose-600",
+  };
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">{title}</p>
+        <div
+          className={`w-9 h-9 rounded-xl flex items-center justify-center ${colors[color]}`}
+        >
+          {icon}
+        </div>
+      </div>
+      <p className="text-2xl font-bold text-gray-900 mt-3">{value}</p>
+    </div>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { stats, loading } = useDashboardStats();
 
@@ -71,99 +103,71 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Chart */}
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
-          <div className="h-6 bg-gray-100 rounded w-48 mb-2" />
-          <div className="h-4 bg-gray-50 rounded w-64 mb-6" />
-          <div className="h-64 bg-gray-100 rounded-xl" />
-        </div>
-      ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h3 className="font-bold text-gray-900 mb-1">Tren Pendaftaran</h3>
           <p className="text-sm text-gray-500 mb-6">
             Pelamar vs yang Lulus per bulan
           </p>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={stats?.applicationsByMonth || []}
-                margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient
-                    id="colorApplicants"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#0D278D" stopOpacity={0.08} />
-                    <stop offset="95%" stopColor="#0D278D" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient
-                    id="colorAccepted"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#FEB700" stopOpacity={0.12} />
-                    <stop offset="95%" stopColor="#FEB700" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#f1f5f9"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="applicants"
-                  name="Pelamar"
-                  stroke="#0D278D"
-                  strokeWidth={2}
-                  fill="url(#colorApplicants)"
-                  dot={false}
-                  activeDot={{
-                    r: 4,
-                    fill: "#0D278D",
-                    stroke: "#fff",
-                    strokeWidth: 2,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="accepted"
-                  name="Lulus"
-                  stroke="#FEB700"
-                  strokeWidth={2}
-                  fill="url(#colorAccepted)"
-                  dot={false}
-                  activeDot={{
-                    r: 4,
-                    fill: "#FEB700",
-                    stroke: "#fff",
-                    strokeWidth: 2,
-                  }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="w-full bg-white" style={{ height: 256 }}>
+            {loading ? (
+              <div className="w-full h-full flex items-center justify-center animate-pulse bg-gray-50 rounded-xl">
+                <p className="text-gray-400 text-sm">Memuat data...</p>
+              </div>
+            ) : stats?.applicationsByMonth && stats.applicationsByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height={256}>
+                <AreaChart
+                  data={stats.applicationsByMonth}
+                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorApplicants" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0D278D" stopOpacity={0.08} />
+                      <stop offset="95%" stopColor="#0D278D" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FEB700" stopOpacity={0.12} />
+                      <stop offset="95%" stopColor="#FEB700" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
+                    dy={10}
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="applicants"
+                    name="Pelamar"
+                    stroke="#0D278D"
+                    strokeWidth={2}
+                    fill="url(#colorApplicants)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "#0D278D", stroke: "#fff", strokeWidth: 2 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="accepted"
+                    name="Lulus"
+                    stroke="#FEB700"
+                    strokeWidth={2}
+                    fill="url(#colorAccepted)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "#FEB700", stroke: "#fff", strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <p className="text-gray-400 text-sm font-medium">Data tren belum tersedia</p>
+              </div>
+            )}
           </div>
         </div>
-      )}
 
       {/* Aktivitas Terbaru */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -198,38 +202,6 @@ const Dashboard: React.FC = () => {
           ))}
         </div>
       </div>
-    </div>
-  );
-};
-
-const StatCard = ({
-  title,
-  value,
-  icon,
-  color,
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-}) => {
-  const colors: Record<string, string> = {
-    blue: "bg-blue-50 text-[#0D278D]",
-    yellow: "bg-amber-50 text-[#FEB700]",
-    green: "bg-emerald-50 text-emerald-600",
-    red: "bg-rose-50 text-rose-600",
-  };
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{title}</p>
-        <div
-          className={`w-9 h-9 rounded-xl flex items-center justify-center ${colors[color]}`}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-gray-900 mt-3">{value}</p>
     </div>
   );
 };

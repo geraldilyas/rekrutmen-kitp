@@ -11,11 +11,22 @@ export default function Login() {
   const handleLogin = async (e: any) => {
     e.preventDefault();
     setErrorMsg("");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
     try {
-      const res = await api.post("/login", { email, password });
+      const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
-      navigate("/beranda");
+      localStorage.setItem("user", JSON.stringify(res.data.user)); 
+      
+      const user = res.data.user;
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else if (user.role === "penyeleksi") {
+        navigate("/penyeleksi");
+      } else {
+        navigate("/beranda");
+      }
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Email atau password salah.";
       setErrorMsg(msg);
