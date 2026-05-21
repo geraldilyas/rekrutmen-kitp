@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import Navbar from "../../components/layout/Navbar";
 
-// Data Dummy Status Lamaran
 const appliedJobs = [
   {
     id: 1,
@@ -65,7 +64,6 @@ const timelineSteps = [
   { id: 6, label: "Hasil Akhir", desc: "Keputusan Final", icon: CheckCircle2 },
 ];
 
-// Master Animasi Entrance Konten Utama (Lebih Lambat & Slow Premium)
 const mainContainerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -106,7 +104,6 @@ const StatusLamaran: React.FC = () => {
     <div className="bg-white min-h-screen font-['Poppins']">
       <Navbar />
 
-      {/* --- HERO HEADER DENGAN ANIMASI ENTRANCE --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] z-10 overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
@@ -139,14 +136,12 @@ const StatusLamaran: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT (EDITORIAL SLOW SLIDE) --- */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-0"
         variants={mainContainerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Header List & Dropdown Filter Floating Absolute */}
         <motion.div
           variants={mainItemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-8 relative"
@@ -165,7 +160,6 @@ const StatusLamaran: React.FC = () => {
           </div>
 
           <div className="flex items-center relative gap-3 relative">
-            {/* Tombol Pemicu / Trigger Filter */}
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-bold border cursor-pointer transition-all duration-300 ${
@@ -178,8 +172,6 @@ const StatusLamaran: React.FC = () => {
               <span>{activeFilter}</span>
             </button>
 
-            {/* Wrapper absolute murni (tanpa motion) untuk menjaga vertical alignment tetap di tengah tombol */}
-            {/* <div className="absolute left-full top-1/2 -translate-y-1/2 flex items-center z-10 pl-3"> */}
             <AnimatePresence>
               {isFilterOpen && (
                 <motion.div
@@ -189,8 +181,6 @@ const StatusLamaran: React.FC = () => {
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30  whitespace-nowrap overflow-hidden"
                 >
-                  {/* Inner wrapper (w-max) agar isi menu tidak gepeng/terpotong saat animasi lebar (width) berjalan */}
-                  {/* <div className="flex items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] w-max"> */}
                   {filters.map((filter) => (
                     <button
                       key={filter}
@@ -212,12 +202,7 @@ const StatusLamaran: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-
-          {/* </div> */}
-          {/* === AKHIR BAGIAN FILTER === */}
         </motion.div>
-
-        {/* List Lamaran */}
         <motion.div
           layout
           className="flex flex-col"
@@ -236,7 +221,6 @@ const StatusLamaran: React.FC = () => {
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-center rounded-r-full z-10" />
 
-                {/* Baris Utama Lamaran */}
                 <div
                   onClick={() => toggleExpand(job.id)}
                   className="py-6 px-4 sm:px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer transition-colors duration-300 hover:bg-gray-50/30"
@@ -318,7 +302,6 @@ const StatusLamaran: React.FC = () => {
                   </div>
                 </div>
 
-                {/* --- TIMELINE TRACKER --- */}
                 <AnimatePresence>
                   {expandedId === job.id && (
                     <motion.div
@@ -457,7 +440,6 @@ const StatusLamaran: React.FC = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Empty State */}
         {filteredJobs.length === 0 && (
           <motion.div
             variants={mainItemVariants}
