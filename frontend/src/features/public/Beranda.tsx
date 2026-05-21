@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   MonitorUp,
@@ -48,13 +48,14 @@ const itemVariants = {
 
 const Beranda: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   /*
     ==================================================
     STATE SIMULASI LOGIN (Ubah sesuai Auth Context lo)
     ==================================================
   */
-  const isLoggedIn = true; 
+  const isLoggedIn = !location.search.includes("status=logout");
 
   /*
     ==================================================
@@ -66,10 +67,10 @@ const Beranda: React.FC = () => {
       navigate("/login");
     } else {
       if (jobId) {
-        console.log(`User melamar pada posisi ID: ${jobId}`);
-        navigate(`/detail-lowongan`); 
+        // console.log(`User melamar pada posisi ID: ${jobId}`);
+        navigate(`/detail-lowongan/${jobId}`); 
       } else {
-        console.log("User menekan tombol Mulai Pendaftaran di CTA Section");
+        // console.log("User menekan tombol Mulai Pendaftaran di CTA Section");
         navigate("/lowongan");
       }
     }

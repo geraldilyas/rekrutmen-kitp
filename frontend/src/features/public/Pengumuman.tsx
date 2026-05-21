@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Megaphone,
   Users,
@@ -78,7 +78,8 @@ const Pengumuman: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const isLoggedIn = !location.search.includes("status=logout");
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
   const filteredData =
@@ -257,7 +258,10 @@ const Pengumuman: React.FC = () => {
 
                     <div className="flex items-center md:items-center">
                       <button 
-                        onClick={() => navigate(`/detail-lowongan/${item.id}`)}
+                        onClick={() => {
+                            const targetParam = !isLoggedIn ? "?status=logout" : "";
+                            navigate(`/detail-lowongan/${item.id}${targetParam}`);
+                          }}
                         className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
                       >
                         <div className="group/btn flex items-center justify-center">
