@@ -7,8 +7,6 @@ import {
   MapPin,
   BadgeCheck,
   Clock,
-  Shield,
-  CheckCircle2,
   User as UserIcon,
 } from "lucide-react";
 import type { User } from "../shared/types";
@@ -18,17 +16,7 @@ interface Props {
   onEdit: (user: User) => void;
   onDelete: (id: number) => void;
   onToggleVerification: (id: number) => void;
-  canEdit: boolean;
 }
-
-const fmt = (d: string | null) =>
-  d
-    ? new Date(d).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "-";
 
 const roleConfig: Record<
   string,
@@ -51,7 +39,6 @@ const UsersTable: React.FC<Props> = ({
   onEdit,
   onDelete,
   onToggleVerification,
-  canEdit,
 }) => {
   if (users.length === 0)
     return (

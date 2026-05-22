@@ -5,6 +5,7 @@ import {
   XCircle,
   AlertCircle,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import type {
   Application,
@@ -47,6 +48,11 @@ const StageUpdateModal: React.FC<Props> = ({
     (s) => s.order === application.current_stage_order,
   );
   const bobot = currentStage?.weight || 0;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const stageStart = currentStage?.start_date ? new Date(currentStage.start_date) : null;
+  const stageNotStarted = stageStart !== null && stageStart > today;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +107,21 @@ const StageUpdateModal: React.FC<Props> = ({
             <X size={20} />
           </button>
         </div>
+
+        {stageNotStarted && (
+          <div className="mx-5 mb-4 mt-2 flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+            <Lock size={18} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-amber-800">Tahap Belum Dimulai</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Penilaian untuk tahap <span className="font-semibold">{currentStage?.name}</span> dibuka mulai{" "}
+                <span className="font-semibold">
+                  {stageStart?.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                </span>.
+              </p>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Info Tahap + Bobot */}
@@ -235,7 +256,8 @@ const StageUpdateModal: React.FC<Props> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm"
+              disabled={stageNotStarted}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#0D278D] disabled:hover:text-white"
             >
               Simpan
             </button>

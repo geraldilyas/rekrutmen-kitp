@@ -8,7 +8,6 @@ import {
   Search,
   XCircle,
   CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import type { Job, JobFormData, SelectionStage, User } from "../shared/types";
 

@@ -1,6 +1,31 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import type { Job, Application, UpdateStageData } from "../shared/types";
+import type { Job, Application, UpdateStageData, PendingGradingItem } from "../shared/types";
 import { api } from "../../services/api";
+
+export function usePendingGrading() {
+  const [count, setCount] = useState(0);
+  const [items, setItems] = useState<PendingGradingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/admin/statistics/pending-grading");
+        setCount(res.data.count || 0);
+        setItems(res.data.items || []);
+      } catch {
+        setCount(0);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  return { count, items, loading };
+}
 
 function determineStatus(start: string, end: string): "coming_soon" | "active" | "finished" {
   const now = new Date();

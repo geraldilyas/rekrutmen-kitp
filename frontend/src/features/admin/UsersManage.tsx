@@ -139,7 +139,6 @@ const UsersManage: React.FC = () => {
         onEdit={handleEdit}
         onDelete={deleteUser}
         onToggleVerification={toggleVerification}
-        canEdit={isAdmin}
       />
 
       {/* Modal — only reachable by admin since the button is hidden for penyeleksi */}

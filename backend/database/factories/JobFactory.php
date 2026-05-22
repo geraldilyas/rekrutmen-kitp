@@ -24,6 +24,7 @@ class JobFactory extends Factory
             'category' => $this->faker->randomElement(['tenaga_pendukung', 'konsultan_individu']),
             'description' => $this->faker->paragraph(),
             'requirements' => $this->faker->paragraph(),
+            'start_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
             'deadline' => $this->faker->dateTimeBetween('now', '+1 month'),
         ];
     }

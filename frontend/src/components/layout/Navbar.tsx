@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Briefcase, User, AlertTriangle } from "lucide-react";
+import { LogOut, User, AlertTriangle, LogIn, UserPlus } from "lucide-react";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
-import { api } from "../../services/api";
+import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -34,19 +34,6 @@ const Navbar: React.FC = () => {
         setUserData(null);
       });
   }, []);
-
-  const fetchUser = async () => {
-    try {
-      const res = await api.get("/auth/me");
-      setUserData(res.data.user);
-    } catch (err) {
-      console.error("Navbar: Error fetching user:", err);
-      if ((err as any).response?.status === 401) {
-        console.warn("Navbar: 401 Unauthorized, logging out...");
-        handleLogout();
-      }
-    }
-  };
 
   const publicMenu = [
     { name: "Beranda", path: "/beranda" },
@@ -87,6 +74,15 @@ const Navbar: React.FC = () => {
                 Rekrutmen KITP
               </span>
             </div>
+            <div className="h-7 w-[2px] bg-[#0D278D] self-center shrink-0" />
+            <div className="flex items-center shrink-0">
+              <img
+                src={logoRekrutmen}
+                alt="Logo Rekrutmen"
+                className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -94,18 +90,19 @@ const Navbar: React.FC = () => {
               const isActive = location.pathname === item.path;
 
               return (
+
                 <Link
                   key={item.name}
-                  to={item.path}
-                  className={`group relative text-sm font-medium  transition-all duration-300 ${
+                  to={`${item.path}${!isLoggedIn ? "?status=logout" : ""}`}
+                  className={`group relative text-sm font-semibold transition-all duration-300 px-1 py-0.5 ${
                     isActive
-                      ? "text-[#FEB700]"
-                      : "text-[#0D278D] hover:text-[#FEB700]"
+                      ? "text-[#FEB700]" // Warna kuning emas kalau tombol lagi aktif/diklik
+                      : "text-[#0D278D] hover:text-[#FEB700]" // Warna biru utama kalau didiemin
                   }`}
                 >
                   {item.name}
                   <span
-                    className={`absolute left-0 -bottom-1 h-[2px] w-full bg-[#FEB700] rounded-full transition-transform duration-300 origin-left ${
+                    className={`absolute left-0 -bottom-1 h-[2.5px] w-full bg-[#FEB700] rounded-full transition-transform duration-300 origin-left ${
                       isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
                     }`}
                   />
@@ -119,15 +116,17 @@ const Navbar: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="text-[#0D278D] font-semibold text-sm hover:text-[#FEB700] transition-colors duration-300"
+                  className="group flex items-center gap-2 text-[#0D278D] border-2 border-transparent px-4 py-2.5 rounded-xl text-sm font-bold hover:text-[#FEB700] transition-all duration-300"
                 >
-                  Masuk
+                  <LogIn size={16} className="text-[#0D278D] group-hover:text-[#FEB700] transition-colors" />
+                  <span>Masuk</span>
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-[#0D278D] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#FEB700] hover:text-[#0D278D] transition-all duration-300 shadow-sm hover:shadow-md"
+                  className="group flex items-center gap-2 bg-[#0d278d] text-white  px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#FEB700] hover:text-white transition-all duration-300 shadow-sm hover:shadow-sm"
                 >
-                  Daftar
+                  <UserPlus size={16} className="text-white group-hover:text-white transition-colors" />
+                  <span>Daftar</span>
                 </Link>
               </>
             ) : (
@@ -195,4 +194,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar;
+export default Navbar; 

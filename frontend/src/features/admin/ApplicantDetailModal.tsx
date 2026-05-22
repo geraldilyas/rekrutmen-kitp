@@ -16,7 +16,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { api } from "../../services/api";
-import type { Application, SelectionStage } from "../shared/types";
+import type { Application } from "../shared/types";
 
 interface FullApplicationData {
   user: { name: string; email: string; nik: string | null; phone: string | null };
@@ -27,7 +27,6 @@ interface FullApplicationData {
 
 interface Props {
   application: Application | null;
-  stages: SelectionStage[];
   onClose: () => void;
   onGrade: (app: Application) => void;
 }
@@ -56,7 +55,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   "Tidak Lulus":{ label: "Tidak Lulus", color: "bg-red-50 text-red-600 border-red-200" },
 };
 
-const ApplicantDetailModal: React.FC<Props> = ({ application, stages, onClose, onGrade }) => {
+const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }) => {
   const [detail, setDetail] = useState<FullApplicationData | null>(null);
   const [fetching, setFetching] = useState(false);
 

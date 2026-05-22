@@ -19,10 +19,15 @@ import PenyeleksiLayout from "./features/penyeleksi/PenyeleksiLayout";
 import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
 import PenyeleksiApplicantDetail from "./features/penyeleksi/ApplicantDetail";
+import ScrollToTop from "./components/layout/ScrollToTop";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
   return (
     <div className="min-h-screen bg-white">
+      {/* 🚀 FIX 1: ScrollToTop ditaruh di LUAR <Routes> agar bisa mengontrol semua perpindahan halaman */}
+      <ScrollToTop />
+
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />
         <Route path="/login" element={<Login />} />
@@ -47,6 +52,8 @@ function App() {
             </>
           }
         />
+        
+        {/* 🚀 FIX 2: Tambahkan /:id agar rute detail dinamis dan tidak mental balik ke Beranda saat diklik */}
         <Route
           path="/detail-lowongan/:id"
           element={
@@ -57,6 +64,7 @@ function App() {
             </>
           }
         />
+        
         <Route
           path="/status"
           element={
@@ -88,7 +96,15 @@ function App() {
           }
         />
 
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* ADMIN LAYOUT */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="lowongan" element={<JobsManage />} />
           <Route path="users" element={<UsersManage />} />
@@ -99,12 +115,21 @@ function App() {
           />
         </Route>
 
-        <Route path="/penyeleksi" element={<PenyeleksiLayout />}>
+        {/* PENYELEKSI LAYOUT */}
+        <Route
+          path="/penyeleksi"
+          element={
+            <ProtectedRoute allowedRoles={["penyeleksi"]}>
+              <PenyeleksiLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<PenyeleksiDashboard />} />
           <Route path="jobs" element={<AssignedJobs />} />
           <Route path="jobs/:jobId" element={<PenyeleksiApplicantDetail />} />
         </Route>
 
+        {/* FALLBACK ROUTE */}
         <Route path="*" element={<Navigate to="/beranda" replace />} />
       </Routes>
     </div>

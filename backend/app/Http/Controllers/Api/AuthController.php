@@ -17,9 +17,9 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|max:100',
-            'role' => 'required|in:admin,pelamar',
+            'role' => 'sometimes|in:admin,user',
             'nik' => [
-                'required_if:role,pelamar',
+                'required_if:role,user',
                 'nullable',
                 'string',
                 'digits:16',
@@ -32,7 +32,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => \Hash::make($validated['password']),
             'nik' => $validated['nik'] ?? null,
-            'role' => $validated['role']
+            'role' => $validated['role'] ?? 'user'
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;

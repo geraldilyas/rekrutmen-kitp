@@ -30,16 +30,15 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
 });
 
 Route::middleware('throttle:api')->group(function () {
+
     // Jobs (Public access)
     Route::prefix('jobs')->group(function () {
-        Route::get('/', [JobController::class, 'index']); 
+        Route::get('/', [JobController::class, 'index']);
         Route::get('/{id}', [JobController::class, 'show']);
         Route::get('/{id}/form', [JobController::class, 'getForm']);
     });
 
-
     // --- AUTHENTICATED ROUTES ---
-
     Route::middleware('auth:sanctum')->group(function () {
 
         // User Profile & Logout
@@ -47,8 +46,8 @@ Route::middleware('throttle:api')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', function (Request $request) {
                 return response()->json([
-                    'user' => $request->user(),
-                    'token' => $request->bearerToken()
+                    'user'  => $request->user(),
+                    'token' => $request->bearerToken(),
                 ]);
             });
         });
@@ -59,8 +58,28 @@ Route::middleware('throttle:api')->group(function () {
             Route::post('/', [ApplicationController::class, 'apply']);
         });
 
-        // Admin Specific Endpoints
+        // --- STAFF ROUTES (admin + penyeleksi) ---
+        Route::prefix('admin')->middleware('staff')->group(function () {
+            // View all registered users (role = user)
+            Route::get('/users/registered', [AdminUserController::class, 'users']);
+
+            // Applications — read & grade (penyeleksi needs these)
+            Route::prefix('applications')->group(function () {
+                Route::get('/', [ApplicationAdminController::class, 'index']);
+                Route::post('/{id}/init-stage', [ApplicationAdminController::class, 'initStage']);
+                Route::get('/{id}/stages', [ApplicationAdminController::class, 'applicationStages']);
+                Route::put('/stages/{id}', [ApplicationAdminController::class, 'updateStageResult']);
+                Route::get('/{id}', [ApplicationAdminController::class, 'show']);
+            });
+
+            // Pending grading notification (accessible by admin & penyeleksi)
+            Route::get('/statistics/pending-grading', [StatisticsController::class, 'pendingGrading']);
+        });
+
+        // --- ADMIN-ONLY ROUTES ---
         Route::prefix('admin')->middleware('admin')->group(function () {
+
+            // Jobs CRUD
             Route::apiResource('jobs', JobController::class)->only(['store', 'update', 'destroy']);
 
             // Bulk Operations
@@ -71,13 +90,10 @@ Route::middleware('throttle:api')->group(function () {
                 Route::post('/users/delete', [BulkOperationController::class, 'deleteUsers']);
             });
 
-            Route::prefix('applications')->group(function () {                Route::get('/', [ApplicationAdminController::class, 'index']);
-                Route::get('/{id}', [ApplicationAdminController::class, 'show']);
-                Route::put('/{id}/status', [ApplicationAdminController::class, 'updateStatus']);
-                Route::get('/{id}/stages', [ApplicationAdminController::class, 'applicationStages']);
-                Route::put('/stages/{id}', [ApplicationAdminController::class, 'updateStageResult']);
-            });
+            // Applications — admin-only actions
+            Route::put('/applications/{id}/status', [ApplicationAdminController::class, 'updateStatus']);
 
+            // Statistics
             Route::prefix('statistics')->group(function () {
                 Route::get('/dashboard', [StatisticsController::class, 'dashboard']);
                 Route::get('/jobs', [StatisticsController::class, 'applicationsPerJob']);
@@ -85,15 +101,23 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/monthly', [StatisticsController::class, 'applicationsPerMonth']);
             });
 
+            // Reports
             Route::prefix('reports')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
                 Route::get('/export/{job_id}', [ReportController::class, 'exportApplications']);
             });
 
+            // Documents
             Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
 
-            Route::apiResource('users', AdminUserController::class)->only(['index', 'store']);
+            // Admin hierarchy management (admin users only, not regular users)
+            Route::apiResource('users', AdminUserController::class)->only(['index', 'store', 'update']);
 
+            // Registered users management (role = user)
+            Route::put('/users/registered/{id}', [AdminUserController::class, 'updateUser']);
+            Route::post('/users/registered/{id}/toggle-verification', [AdminUserController::class, 'toggleVerification']);
+
+            // Form Fields
             Route::apiResource('form-fields', FormFieldController::class)->only(['index', 'store']);
         });
     });

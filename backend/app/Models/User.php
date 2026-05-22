@@ -28,6 +28,8 @@ class User extends Authenticatable
         'role',
         'admin_level',
         'parent_id',
+        'phone',
+        'address',
     ];
 
     public function parent()

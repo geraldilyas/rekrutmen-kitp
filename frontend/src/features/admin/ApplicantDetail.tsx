@@ -26,7 +26,6 @@ const ApplicantDetail: React.FC = () => {
   const [selected, setSelected] = useState<Application | null>(null);
   const [viewApp, setViewApp] = useState<Application | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [initLoading, setInitLoading] = useState<number | null>(null);
 
   const jobIdNum = Number(jobId);
   const applicants = getApplicationsByJobId(jobIdNum);
@@ -50,7 +49,6 @@ const ApplicantDetail: React.FC = () => {
       return;
     }
     // No pending stage result yet — create it first
-    setInitLoading(app.id);
     try {
       const newId = await startApplicationStage(app.id);
       if (newId) {
@@ -58,7 +56,7 @@ const ApplicantDetail: React.FC = () => {
         setModalOpen(true);
       }
     } finally {
-      setInitLoading(null);
+      // no-op
     }
   };
 
@@ -149,7 +147,6 @@ const ApplicantDetail: React.FC = () => {
 
       <ApplicantDetailModal
         application={viewApp}
-        stages={stages}
         onClose={() => setViewApp(null)}
         onGrade={(app) => {
           setViewApp(null);

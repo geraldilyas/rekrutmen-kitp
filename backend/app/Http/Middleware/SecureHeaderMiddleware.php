@@ -52,7 +52,7 @@ class SecureHeaderMiddleware
                 foreach ($sensitiveKeys as $sensitive) {
                     if (str_contains(strtolower($key), $sensitive)) {
                         // Keep specific allowed fields
-                        if (in_array($key, ['auth_token', 'token_type', 'expires_at'])) {
+                        if (in_array($key, ['token', 'auth_token', 'token_type', 'expires_at'])) {
                             continue;
                         }
                         $value = '********';

@@ -226,7 +226,6 @@ const StatusLamaran: React.FC = () => {
             </AnimatePresence>
           </div>
         </motion.div>
-
         <motion.div
           layout
           className="flex flex-col"

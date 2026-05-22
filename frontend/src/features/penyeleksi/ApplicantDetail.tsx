@@ -139,7 +139,6 @@ const ApplicantDetail: React.FC = () => {
 
       <ApplicantDetailModal
         application={viewApp}
-        stages={stages}
         onClose={() => setViewApp(null)}
         onGrade={(app) => {
           setViewApp(null);

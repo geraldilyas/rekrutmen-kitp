@@ -47,7 +47,9 @@ class AdminHierarchyTest extends TestCase
                     'name' => "New Admin L$level",
                     'email' => "l1_created_$level@example.com",
                     'password' => 'password123',
-                    'admin_level' => $level
+                    'password_confirmation' => 'password123',
+                    'admin_level' => $level,
+                    'role' => 'admin'
                 ]);
 
             $response->assertStatus(201);
@@ -64,7 +66,9 @@ class AdminHierarchyTest extends TestCase
                 'name' => "New Admin L3",
                 'email' => "l2_created_l3@example.com",
                 'password' => 'password123',
-                'admin_level' => 3
+                'password_confirmation' => 'password123',
+                'admin_level' => 3,
+                'role' => 'admin'
             ]);
         $response->assertStatus(201);
 
@@ -74,7 +78,9 @@ class AdminHierarchyTest extends TestCase
                 'name' => "New Admin L2",
                 'email' => "l2_created_l2@example.com",
                 'password' => 'password123',
-                'admin_level' => 2
+                'password_confirmation' => 'password123',
+                'admin_level' => 2,
+                'role' => 'admin'
             ]);
         $response->assertStatus(422);
     }
@@ -87,7 +93,9 @@ class AdminHierarchyTest extends TestCase
                 'name' => "New Admin",
                 'email' => "l3_created@example.com",
                 'password' => 'password123',
-                'admin_level' => 3
+                'password_confirmation' => 'password123',
+                'admin_level' => 3,
+                'role' => 'admin'
             ]);
         $response->assertStatus(422);
     }

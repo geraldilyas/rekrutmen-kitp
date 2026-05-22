@@ -122,6 +122,15 @@ export interface UpdateStageData {
   scored_by: string;
 }
 
+export interface PendingGradingItem {
+  application_id: number;
+  user_name: string;
+  job_title: string;
+  job_id: number;
+  stage_name: string;
+  stage_start_date: string;
+}
+
 export interface DashboardStats {
   totalApplicants: number;
   totalJobs: number;

@@ -16,7 +16,7 @@ class ApplicationAdminController extends Controller
     //  GET semua lamaran + filter
     public function index(Request $request)
     {
-        $query = Application::with(['user', 'job']);
+        $query = Application::with(['user', 'job', 'stageResults.stage', 'stageResults.reviewer']);
 
         // filter status
         if ($request->status) {
@@ -112,6 +112,34 @@ class ApplicationAdminController extends Controller
         ]);
     }
 
+    public function initStage($id)
+    {
+        $application = Application::with('job.stages')->findOrFail($id);
+
+        $existing = ApplicationStageResult::where('application_id', $id)
+            ->where('status', 'pending')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($existing) {
+            return response()->json(['message' => 'Stage already active', 'data' => $existing]);
+        }
+
+        $firstStage = $application->job->stages->sortBy('stage_order')->first();
+
+        if (!$firstStage) {
+            return response()->json(['message' => 'Lowongan tidak memiliki tahap seleksi'], 422);
+        }
+
+        $result = ApplicationStageResult::create([
+            'application_id' => $application->id,
+            'job_stage_id'   => $firstStage->id,
+            'status'         => 'pending',
+        ]);
+
+        return response()->json(['message' => 'Seleksi dimulai', 'data' => $result]);
+    }
+
     public function applicationStages($id)
     {
         $application = \App\Models\Application::with([
@@ -133,12 +161,13 @@ class ApplicationAdminController extends Controller
 
             return [
                 'stage_id' => $stage->id,
-                'stage_name' => $stage->stage_name,
+                'stage_name' => $stage->name,
                 'stage_order' => $stage->stage_order,
                 'start_date' => $stage->start_date,
                 'end_date' => $stage->end_date,
 
-                'result' => $result ? $result->result : 'pending',
+                'result_id' => $result ? $result->id : null,
+                'result' => $result ? $result->status : 'pending',
                 'score' => $result ? $result->score : null,
                 'notes' => $result ? $result->notes : null,
                 'updated_at' => $result ? $result->updated_at : null,
@@ -168,6 +197,15 @@ class ApplicationAdminController extends Controller
 
             $stageResult = ApplicationStageResult::findOrFail($id);
 
+            $currentStage = JobStage::findOrFail($stageResult->job_stage_id);
+
+            // Block grading if the stage hasn't started yet
+            if ($currentStage->start_date && \Carbon\Carbon::today()->lt(\Carbon\Carbon::parse($currentStage->start_date))) {
+                return response()->json([
+                    'message' => 'Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . \Carbon\Carbon::parse($currentStage->start_date)->format('d/m/Y'),
+                ], 403);
+            }
+
             $application = Application::findOrFail(
                 $stageResult->application_id
             );
@@ -179,10 +217,6 @@ class ApplicationAdminController extends Controller
                 'reviewed_at' => now(),
                 'reviewed_by' => auth()->id()
             ]);
-
-            $currentStage = JobStage::findOrFail(
-                $stageResult->job_stage_id
-            );
 
             if ($validated['status'] === 'tidak_lulus') {
 

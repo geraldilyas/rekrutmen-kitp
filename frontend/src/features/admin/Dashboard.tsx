@@ -1,6 +1,7 @@
 import React from "react";
-import { Users, Briefcase, CheckCircle2, XCircle } from "lucide-react";
-import { useDashboardStats } from "./hooks";
+import { useNavigate } from "react-router-dom";
+import { Users, Briefcase, CheckCircle2, XCircle, Bell, ChevronRight } from "lucide-react";
+import { useDashboardStats, usePendingGrading } from "./hooks";
 import {
   AreaChart,
   Area,
@@ -44,7 +45,9 @@ const StatCard = ({
 };
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { stats, loading } = useDashboardStats();
+  const { count: pendingCount, items: pendingItems, loading: pendingLoading } = usePendingGrading();
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -169,37 +172,47 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-      {/* Aktivitas Terbaru */}
+      {/* Notifikasi Perlu Dinilai */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <div className="p-5 border-b border-gray-50">
-          <h3 className="font-bold text-gray-900">Aktivitas Terbaru</h3>
+        <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell size={18} className="text-amber-500" />
+            <h3 className="font-bold text-gray-900">Perlu Dinilai</h3>
+          </div>
+          {!pendingLoading && pendingCount > 0 && (
+            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">
+              {pendingCount} lamaran
+            </span>
+          )}
         </div>
-        <div className="p-5 space-y-3">
-          {[
-            {
-              text: "Pendaftar baru untuk posisi Software Engineer",
-              time: "5 menit lalu",
-            },
-            {
-              text: "Lowongan Petugas Administrasi telah ditutup",
-              time: "2 jam lalu",
-            },
-            {
-              text: "Pengumuman hasil seleksi Tahap 2 dipublikasikan",
-              time: "1 hari lalu",
-            },
-          ].map((activity, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 p-3 rounded-xl bg-gray-50"
-            >
-              <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-              <p className="text-sm text-gray-600 flex-1">{activity.text}</p>
-              <span className="text-xs text-gray-400 shrink-0">
-                {activity.time}
-              </span>
+        <div className="divide-y divide-gray-50">
+          {pendingLoading ? (
+            <div className="p-6 text-center text-sm text-gray-400">Memuat...</div>
+          ) : pendingItems.length === 0 ? (
+            <div className="p-8 text-center">
+              <CheckCircle2 size={32} className="mx-auto text-emerald-300 mb-2" />
+              <p className="text-sm text-gray-500 font-medium">Semua penilaian sudah selesai</p>
             </div>
-          ))}
+          ) : (
+            pendingItems.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => navigate(`/admin/applications/${item.job_id}`)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-amber-50 transition-colors text-left group"
+              >
+                <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-[#0D278D]">
+                    {item.user_name}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {item.job_title} — Tahap: <span className="font-medium text-amber-600">{item.stage_name}</span>
+                  </p>
+                </div>
+                <ChevronRight size={16} className="text-gray-300 group-hover:text-[#0D278D] shrink-0" />
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>

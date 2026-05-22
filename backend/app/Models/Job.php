@@ -18,6 +18,7 @@ class Job extends Model
             'duration',
             'location',
             'unit_kerja',
+            'recruiter_name',
             'start_date',
             'end_date',
             'requirements',
@@ -49,6 +50,15 @@ class Job extends Model
     public function stages()
     {
         return $this->hasMany(JobStage::class)->orderBy('stage_order');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date'   => 'date',
+            'deadline'   => 'date',
+        ];
     }
 
     protected static function booted()

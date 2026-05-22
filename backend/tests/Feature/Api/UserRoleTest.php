@@ -16,7 +16,7 @@ class UserRoleTest extends TestCase
             'name' => 'Pelamar Test',
             'email' => 'pelamar@test.com',
             'password' => 'password123',
-            'role' => 'pelamar'
+            'role' => 'user'
             // NIK missing
         ]);
 

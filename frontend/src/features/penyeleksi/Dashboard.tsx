@@ -7,12 +7,14 @@ import {
   Clock,
   MapPin,
   ChevronRight,
+  Bell,
 } from "lucide-react";
-import { useAssignedJobs } from "./hooks";
+import { useAssignedJobs, usePendingGrading } from "./hooks";
 
 const PenyeleksiDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { jobs, totalJobs, currentPenyeleksi } = useAssignedJobs();
+  const { count: pendingCount, items: pendingItems, loading: pendingLoading } = usePendingGrading();
   const totalPeserta = jobs.reduce((s, j) => s + j.totalPendaftar, 0);
 
   return (
@@ -38,17 +40,61 @@ const PenyeleksiDashboard: React.FC = () => {
           color="yellow"
         />
         <StatCard
-          title="Dinilai"
-          value={8}
+          title="Sudah Dinilai"
+          value={pendingLoading ? 0 : Math.max(0, totalPeserta - pendingCount)}
           icon={<CheckCircle2 size={20} />}
           color="green"
         />
         <StatCard
-          title="Pending"
-          value={7}
+          title="Belum Dinilai"
+          value={pendingLoading ? 0 : pendingCount}
           icon={<Clock size={20} />}
           color="red"
         />
+      </div>
+
+      {/* Notifikasi Perlu Dinilai */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell size={18} className="text-amber-500" />
+            <h3 className="font-bold text-gray-900">Perlu Dinilai</h3>
+          </div>
+          {!pendingLoading && pendingCount > 0 && (
+            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">
+              {pendingCount} lamaran
+            </span>
+          )}
+        </div>
+        <div className="divide-y divide-gray-50">
+          {pendingLoading ? (
+            <div className="p-6 text-center text-sm text-gray-400">Memuat...</div>
+          ) : pendingItems.length === 0 ? (
+            <div className="p-8 text-center">
+              <CheckCircle2 size={32} className="mx-auto text-emerald-300 mb-2" />
+              <p className="text-sm text-gray-500 font-medium">Semua penilaian sudah selesai</p>
+            </div>
+          ) : (
+            pendingItems.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => navigate(`/penyeleksi/jobs/${item.job_id}`)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-amber-50 transition-colors text-left group"
+              >
+                <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-[#0D278D]">
+                    {item.user_name}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {item.job_title} — Tahap: <span className="font-medium text-amber-600">{item.stage_name}</span>
+                  </p>
+                </div>
+                <ChevronRight size={16} className="text-gray-300 group-hover:text-[#0D278D] shrink-0" />
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">

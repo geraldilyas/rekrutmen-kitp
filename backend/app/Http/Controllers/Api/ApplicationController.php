@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\Job;
+use App\Models\JobStage;
 use App\Models\ApplicationDocument;
 use App\Models\ApplicationAnswer;
+use App\Models\ApplicationStageResult;
 use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
@@ -31,9 +33,19 @@ class ApplicationController extends Controller
 
         // Check if job is currently open
         $now = now();
-        if ($now->lt($job->start_date) || $now->gt($job->deadline)) {
+        if (($job->start_date && $now->lt($job->start_date)) || ($job->deadline && $now->gt($job->deadline))) {
             return response()->json([
                 'message' => 'Pendaftaran untuk lowongan ini sedang ditutup.'
+            ], 422);
+        }
+
+        // Prevent duplicate applications
+        $existing = Application::where('user_id', auth()->id())
+            ->where('job_id', $job->id)
+            ->first();
+        if ($existing) {
+            return response()->json([
+                'message' => 'Anda sudah pernah melamar lowongan ini.'
             ], 422);
         }
 
@@ -79,6 +91,19 @@ class ApplicationController extends Controller
                         'uploaded_at' => now()
                     ]);
                 }
+            }
+
+            // Auto-create stage result for first stage
+            $firstStage = JobStage::where('job_id', $job->id)
+                ->orderBy('stage_order')
+                ->first();
+
+            if ($firstStage) {
+                ApplicationStageResult::create([
+                    'application_id' => $application->id,
+                    'job_stage_id'   => $firstStage->id,
+                    'status'         => 'pending',
+                ]);
             }
 
             return response()->json([

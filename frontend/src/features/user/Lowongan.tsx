@@ -107,7 +107,6 @@ const Lowongan: React.FC = () => {
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
 
-      {/* HERO */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
 
@@ -141,14 +140,12 @@ const Lowongan: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* CONTENT */}
       <motion.main
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* HEADER */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-gray-100 pb-8"
@@ -167,7 +164,6 @@ const Lowongan: React.FC = () => {
             </p>
           </div>
 
-          {/* FILTER */}
           <div className="flex items-center gap-3 relative">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
