@@ -7,18 +7,15 @@ import {
   Clock,
   CalendarClock,
   CheckCircle2,
-  UploadCloud,
   GraduationCap,
   UserPlus,
   Banknote,
   ClipboardList,
-  Check,
   Info,
   Briefcase,
   FileText,
   Send,
   AlertCircle,
-  X,
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -36,6 +33,7 @@ interface JobDetail {
   deadline: string;
   start_date: string;
   end_date: string;
+  required_documents?: string[] | string; 
 }
 
 const DetailLowongan: React.FC = () => {
@@ -44,17 +42,21 @@ const DetailLowongan: React.FC = () => {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Application state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Application & Form State
+  const isLoggedIn = !!localStorage.getItem("token");
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [applyLoading, setApplyLoading] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
+  
+  // DRIVER EXPAND: Mengontrol perluasan form di bawah halaman
+  const [showApplyForm, setShowApplyForm] = useState(false); 
+  
+  // 🚀 FIX TIPE DATA: Mengubah File ke string kosong "" untuk menampung tautan URL Google Drive
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token && token !== "undefined" && token !== "null");
     if (id) {
       fetchJobDetail(id, token);
     }
@@ -68,7 +70,20 @@ const DetailLowongan: React.FC = () => {
         promises.push(api.get("/applications/my"));
       }
       const results = await Promise.all(promises);
-      setJob(results[0].data.data);
+      const jobData = results[0].data.data;
+      setJob(jobData);
+
+      // Inisialisasi list tipe dokumen dinamis berdasarkan setelan Admin
+      const docRequirements = jobData.required_documents 
+        ? (typeof jobData.required_documents === 'string' ? JSON.parse(jobData.required_documents) : jobData.required_documents)
+        : ["KTP", "CV / Daftar Riwayat Hidup", "Ijazah Terakhir", "Transkrip Nilai"];
+      
+      const initialFilesState: any = {};
+      docRequirements.forEach((docType: string) => {
+        // 🚀 FIX INITIAL: Setel nilai awal murni ke string kosong ""
+        initialFilesState[docType] = "";
+      });
+      setUploadedFiles(initialFilesState);
 
       if (results[1]) {
         const myApps = Array.isArray(results[1].data)
@@ -83,18 +98,55 @@ const DetailLowongan: React.FC = () => {
     }
   };
 
-  const handleApply = async () => {
+  // 🚀 FIX HANDLER: Mengubah pembacaan File binary menjadi value string URL teks biasa (Bebas dari Warning Kuning)
+  const handleLinkChange = (docType: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadedFiles({
+      ...uploadedFiles,
+      [docType]: e.target.value
+    });
+  };
+
+  // 🚀 SUBMIT DATA MURNI JSON KE BACKEND LARAVEL
+  const handleSubmitApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!id) return;
+
+    // Validasi: Pastikan semua kolom input link drive dinamis sudah terisi teks
+    const missingDocs = Object.keys(uploadedFiles).filter(key => !uploadedFiles[key].trim());
+    if (missingDocs.length > 0) {
+      setApplyError(`Harap isi tautan Drive untuk berkas: ${missingDocs.join(", ")}`);
+      return;
+    }
+
     try {
       setApplyLoading(true);
       setApplyError("");
-      await api.post("/applications/", { job_id: Number(id) });
+
+      // 🚀 FORMAT SINKRON: Bungkus data kembali ke format Objek ber-Key nama Dokumen
+      const formattedDocumentsObj: { [key: string]: { type: string; file__path: string } } = {};
+      
+      Object.keys(uploadedFiles).forEach((docType) => {
+        formattedDocumentsObj[docType] = {
+          type: docType,                         // Mengisi field .type
+          file__path: uploadedFiles[docType]     // 🚀 SINKRONISASI EMAS: Menggunakan 'file__path' (Double Underscore)
+        };
+      });
+
+      // Kirim objek terstruktur yang dinanti oleh Laravel lo
+      await api.post("/applications", {
+        job_id: Number(id),
+        documents: formattedDocumentsObj 
+      });
+
       setApplySuccess(true);
-      setShowConfirm(false);
       setAlreadyApplied(true);
+      setShowApplyForm(false);
+      
+      // Scroll smooth kembali ke atas indikator sukses pendaftaran
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       setApplyError(
-        err?.response?.data?.message || "Gagal mengirim lamaran. Coba lagi."
+        err?.response?.data?.message || "Gagal mengirim berkas lamaran. Coba lagi."
       );
     } finally {
       setApplyLoading(false);
@@ -119,9 +171,7 @@ const DetailLowongan: React.FC = () => {
     return `Tutup dalam ${diffDays} Hari`;
   };
 
-  const isClosed = job?.deadline
-    ? new Date() > new Date(job.deadline)
-    : false;
+  const isClosed = job?.deadline ? new Date() > new Date(job.deadline) : false;
 
   if (loading) {
     return (
@@ -148,24 +198,18 @@ const DetailLowongan: React.FC = () => {
   return (
     <div className="bg-white min-h-screen font-['Poppins']">
 
+      {/* --- HERO BANNER SECTION --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] z-10">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <button
               onClick={() => navigate("/lowongan")}
               className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors text-sm font-medium mb-10 group"
             >
-              <ArrowLeft
-                size={18}
-                className="transform group-hover:-translate-x-1 transition-transform"
-              />
+              <ArrowLeft size={18} className="transform group-hover:-translate-x-1 transition-transform" />
               Kembali ke Lowongan
             </button>
 
@@ -196,9 +240,11 @@ const DetailLowongan: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT --- */}
+      {/* --- MAIN CONTENT & SIDEBAR SECTION --- */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          {/* Info Details Left Column */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -220,7 +266,7 @@ const DetailLowongan: React.FC = () => {
               <section>
                 <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-8 tracking-tight flex items-center gap-3">
                   <CheckCircle2 size={28} className="text-[#FEB700]" />
-                  Persyaratan
+                  Persyaratan Jabatan
                 </h2>
                 <div
                   className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px]"
@@ -228,32 +274,9 @@ const DetailLowongan: React.FC = () => {
                 />
               </section>
             )}
-
-            <section>
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] tracking-tight flex items-center gap-3">
-                  <FileText size={28} className="text-[#FEB700]" />
-                  Berkas yang Disiapkan
-                </h2>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-500 text-[11px] font-bold rounded-lg uppercase tracking-wider w-fit">
-                  <UploadCloud size={14} /> Format PDF
-                </span>
-              </div>
-
-              <ul className="space-y-4">
-                <li className="flex items-start gap-4 group">
-                  <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#0D278D] transition-colors">
-                    <Check size={14} className="text-[#0D278D] group-hover:text-white" />
-                  </div>
-                  <span className="text-gray-600 text-[15px] md:text-[16px] leading-[1.7]">
-                    Dokumen sesuai yang diminta pada formulir pendaftaran.
-                  </span>
-                </li>
-              </ul>
-            </section>
           </motion.div>
 
-          {/* Sidebar */}
+          {/* Action Sidebar Right Column */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -272,15 +295,9 @@ const DetailLowongan: React.FC = () => {
                     <CalendarClock size={20} strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
-                      Batas Waktu
-                    </p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Batas Waktu</p>
                     <p className="font-semibold text-gray-800 text-[15px]">
-                      {new Date(job.deadline).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                     </p>
                   </div>
                 </div>
@@ -290,12 +307,8 @@ const DetailLowongan: React.FC = () => {
                     <UserPlus size={20} strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
-                      Unit Kerja
-                    </p>
-                    <p className="font-semibold text-gray-800 text-[15px]">
-                      {job.unit_kerja || "BBWS Mesuji Sekampung"}
-                    </p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Unit Kerja</p>
+                    <p className="font-semibold text-gray-800 text-[15px]">{job.unit_kerja || "BBWS Mesuji Sekampung"}</p>
                   </div>
                 </div>
 
@@ -304,50 +317,30 @@ const DetailLowongan: React.FC = () => {
                     <Banknote size={20} strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
-                      Durasi
-                    </p>
-                    <p className="font-semibold text-gray-800 text-[15px]">
-                      {job.duration || "-"}
-                    </p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Durasi</p>
+                    <p className="font-semibold text-gray-800 text-[15px]">{job.duration || "-"}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Apply state feedback */}
+              {/* Status Sesi Feedback Atas */}
               <AnimatePresence mode="wait">
                 {applySuccess ? (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-2xl bg-green-50 border border-green-100 flex gap-3 mb-4"
-                  >
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 border border-green-100 flex gap-3 mb-4">
                     <CheckCircle2 size={20} className="text-green-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-green-800 text-sm">Lamaran terkirim!</p>
-                      <button
-                        onClick={() => navigate("/status")}
-                        className="text-[#0D278D] text-xs font-bold hover:underline mt-1"
-                      >
+                      <button onClick={() => navigate("/status")} className="text-[#0D278D] text-xs font-bold hover:underline mt-1">
                         Lihat Status Lamaran →
                       </button>
                     </div>
                   </motion.div>
                 ) : alreadyApplied ? (
-                  <motion.div
-                    key="applied"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex gap-3 mb-4"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex gap-3 mb-4">
                     <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-amber-800 text-sm">Anda sudah melamar</p>
-                      <button
-                        onClick={() => navigate("/status")}
-                        className="text-[#0D278D] text-xs font-bold hover:underline mt-1"
-                      >
+                      <button onClick={() => navigate("/status")} className="text-[#0D278D] text-xs font-bold hover:underline mt-1">
                         Cek Status →
                       </button>
                     </div>
@@ -355,53 +348,44 @@ const DetailLowongan: React.FC = () => {
                 ) : null}
               </AnimatePresence>
 
-              {applyError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs flex gap-2 mb-4">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                  <span>{applyError}</span>
-                </div>
-              )}
-
               <div className="flex gap-3 mb-6 text-gray-500">
                 <Info size={18} className="shrink-0 mt-0.5 text-gray-400" />
                 <p className="text-[13px] leading-relaxed">
-                  Pastikan seluruh data profil akun Anda sudah lengkap dan
-                  benar sebelum mengirim lamaran.
+                  Gunakan form pendaftaran di bawah untuk mengunggah dokumen digital pendaftaran Anda.
                 </p>
               </div>
 
+              {/* Conditional Action Button Group */}
               {!isLoggedIn ? (
-                <button
-                  onClick={() => navigate("/login")}
-                  className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0D278D] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
+                <button onClick={() => navigate("/login")} className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0D278D] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
                   Masuk untuk Melamar
                 </button>
               ) : isClosed ? (
-                <button
-                  disabled
-                  className="w-full bg-gray-100 text-gray-400 border-2 border-gray-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                <button disabled className="w-full bg-gray-100 text-gray-400 border-2 border-gray-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
                   Pendaftaran Ditutup
                 </button>
               ) : alreadyApplied || applySuccess ? (
-                <button
-                  disabled
-                  className="w-full bg-green-50 text-green-600 border-2 border-green-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 size={18} />
-                  Sudah Dilamar
+                <button disabled className="w-full bg-green-50 text-green-600 border-2 border-green-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
+                  <CheckCircle2 size={18} /> Sudah Dilamar
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowConfirm(true)}
-                  className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0a1e6e] hover:border-[#0a1e6e] hover:text-white hover:shadow-[0_15px_30px_-10px_rgba(13,39,141,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setShowApplyForm(!showApplyForm);
+                    // Otomatis arahkan view monitor ke form bagian bawah setelah diexpand
+                    setTimeout(() => {
+                      document.getElementById("dynamic-form-section")?.scrollIntoView({ behavior: "smooth" });
+                    }, 150);
+                  }}
+                  className={`w-full py-4 rounded-full font-bold text-[15px] transition-all flex items-center justify-center gap-2 group cursor-pointer border-2
+                    ${showApplyForm 
+                      ? "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200" 
+                      : "bg-white border-[#0D278D] text-[#0D278D] hover:bg-[#0d278d] hover:text-white shadow-sm"
+                    }`}
                 >
-                  Lamar Posisi Ini
-                  <Send
-                    size={18}
-                    className="transform group-hover:translate-x-1 transition-transform"
-                  />
+                  <span>{showApplyForm ? "Sembunyikan Form" : "Lamar Posisi Ini"}</span>
+                  {!showApplyForm && <Send size={16} className="transform group-hover:translate-x-1 transition-transform" />}
                 </button>
               )}
             </div>
@@ -409,85 +393,126 @@ const DetailLowongan: React.FC = () => {
         </div>
       </main>
 
-      {/* Confirmation Modal */}
+      {/* ============================================================================
+          🚀 DYNAMIC FORM EXPANSION - EDITORIAL STYLE DYNAMIC DRIVE LINK INPUTS
+          ============================================================================ */}
       <AnimatePresence>
-        {showConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-              onClick={() => !applyLoading && setShowConfirm(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
-            >
-              <button
-                onClick={() => !applyLoading && setShowConfirm(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                <Send size={24} className="text-[#0D278D]" />
-              </div>
-
-              <h3 className="text-lg font-extrabold text-[#0D278D] text-center mb-2">
-                Konfirmasi Lamaran
-              </h3>
-              <p className="text-gray-500 text-sm text-center mb-1">
-                Anda akan melamar posisi:
-              </p>
-              <p className="font-bold text-[#0D278D] text-center text-[15px] mb-5">
-                {job.title}
-              </p>
-
-              <p className="text-xs text-gray-400 text-center mb-6 leading-relaxed">
-                Dengan mengirim lamaran, Anda menyatakan bahwa data profil
-                yang Anda daftarkan adalah benar dan dapat
-                dipertanggungjawabkan.
-              </p>
-
-              {applyError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs flex gap-2 mb-4">
-                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                  <span>{applyError}</span>
+        {showApplyForm && (
+          <motion.div
+            id="dynamic-form-section"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full bg-white border-t border-gray-100 overflow-hidden"
+          >
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+              <div className="relative">
+                
+                {/* --- EDITORIAL HEADER --- */}
+                <div className="text-left mb-12 border-b border-gray-900 pb-6">
+                  <h3 className="text-2xl font-extrabold text-[#0D278D] font-['Poppins']">
+                    Dokumen Kelengkapan Digital
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1 font-medium tracking-wide">
+                    Silakan masukkan tautan Google Drive untuk masing-masing berkas yang diwajibkan di bawah ini.
+                  </p>
                 </div>
-              )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => !applyLoading && setShowConfirm(false)}
-                  disabled={applyLoading}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleApply}
-                  disabled={applyLoading}
-                  className="flex-1 py-3 rounded-xl bg-[#0D278D] text-white font-bold text-sm hover:bg-[#0a1e6e] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {applyLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Mengirim...
-                    </>
-                  ) : (
-                    "Kirim Lamaran"
-                  )}
-                </button>
+                {/* --- EDITORIAL INSTRUCTION NOTE --- */}
+                <div className="mb-12 p-6 bg-gray-50 border-l-2 border-[#0D278D] flex gap-4 items-start">
+                  <div className="w-5 h-5 rounded-full bg-[#0D278D] flex items-center justify-center text-white shrink-0 mt-0.5">
+                    <Info size={12} strokeWidth={2.5} />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-[#0D278D] uppercase tracking-wider block">Petunjuk Akses Berbagi</span>
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                      Unggah berkas Anda ke Google Drive per item, kemudian salin tautannya masing-masing. Pastikan status berbagi berkas telah diatur ke <span className="text-amber-600 font-bold">"Siapa saja yang memiliki link (Anyone with the link)"</span> sebagai <span className="font-bold">Pelihat (Viewer)</span> agar panitia seleksi BBWSMS dapat melakukan verifikasi.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Internal Form Error Feedback */}
+                {applyError && (
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mb-8 p-4 bg-red-50 border-l-2 border-red-500 rounded-lg text-red-600 text-xs flex gap-2 font-medium">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{applyError}</span>
+                  </motion.div>
+                )}
+
+                {/* --- EDITORIAL FORM SYSTEM (DYNAMICS ROW LAYOUT) --- */}
+                <form onSubmit={handleSubmitApplication} className="space-y-8">
+                  <div className="space-y-8">
+                    {Object.keys(uploadedFiles).map((docType, index) => (
+                      <div 
+                        key={docType} 
+                        className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300"
+                      >
+                        {/* Label Kolom Kiri */}
+                        <div className="w-full md:w-1/3 pt-3">
+                          <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-1.5">
+                            <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
+                            {docType} <span className="text-red-500/80">*</span>
+                          </label>
+                        </div>
+
+                        {/* Input Kolom Kanan */}
+                        <div className="w-full md:w-2/3 relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
+                            <FileText size={16} strokeWidth={2} />
+                          </span>
+                          <input
+                            type="url"
+                            name={`drive_link_${docType}`}
+                            placeholder="Salin tautan Google Drive dokumen di sini"
+                            value={uploadedFiles[docType] || ""}
+                            onChange={(e) => handleLinkChange(docType, e)}
+                            className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800 placeholder-gray-300"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Form Action Controls */}
+                  <div className="pt-8 flex flex-col sm:flex-row justify-end gap-1.5 mt-4">
+                    <button
+                      type="button"
+                      disabled={applyLoading}
+                      onClick={() => setShowApplyForm(false)}
+                      className="px-6 py-3 rounded-xl text-gray-400 font-bold text-xs hover:bg-gray-50 hover:text-gray-600 cursor-pointer transition-all duration-300 disabled:opacity-50"
+                    >
+                      Batalkan
+                    </button>
+                    
+                    <button
+                      type="submit"
+                      disabled={applyLoading}
+                      className="px-8 py-3.5 rounded-xl bg-white text-[#0D278D] border border-[#0D278D] font-bold text-xs hover:bg-[#0d278d] hover:text-white cursor-pointer transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      {applyLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-[#0D278D]/30 border-t-[#0D278D] rounded-full animate-spin" />
+                          <span>Mengirim Berkas...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={12} />
+                          <span>Kirim Lamaran Sekarang</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                </form>
+
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 };

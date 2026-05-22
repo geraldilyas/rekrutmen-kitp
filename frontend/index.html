@@ -2,12 +2,56 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="logobbwsms.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Rekrutmen KI/TP | BBWS Mesuji Sekampung</title>
+    <style>
+    /* 1. Atur lebar scrollbar agar tetap ramping dan luxury */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    /* 2. Latar belakang lintasan dibuat transparan bersih */
+    ::-webkit-scrollbar-track {
+      background: #ffffff;
+    }
+    
+    /* 3. Batang scrollbar dengan efek Gradasi Berjalan */
+    ::-webkit-scrollbar-thumb {
+      border-radius: 9999px;
+      /* Paduan warna Biru Utama (#0D278D), Biru Muda, dan Kuning Branding (#FEB700) */
+      background: linear-gradient(180deg, #0D278D, #2563eb, #FEB700, #0D278D);
+      /* Perlebar ukuran background agar animasi pergeseran warna kelihatan mulus */
+      background-size: 100% 400%;
+      /* Jalankan animasi bernama 'flowingScroll' selama 6 detik secara berputar terus-menerus */
+      animation: flowingScroll 6s ease infinite;
+      /* Beri border transparan sebagai padding ilusi agar bentuk kapsulnya pas di monitor */
+      border: 2.5px solid #ffffff;
+    }
+    
+    /* 4. Efek Hover agar pergeseran warna mengalir lebih cepat saat disentuh kursor */
+    ::-webkit-scrollbar-thumb:hover {
+      animation: flowingScroll 2s linear infinite;
+    }
+
+    /* 🚀 KEYFRAMES ANIMASI PERGESERAN GRADASI WARNA */
+    @keyframes flowingScroll {
+      0% {
+        background-position: 0% 0%;
+      }
+      50% {
+        background-position: 0% 100%;
+      }
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+  </style>
+</head>
   </head>
   <body>
     <div id="root"></div>

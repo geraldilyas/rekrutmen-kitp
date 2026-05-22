@@ -77,7 +77,7 @@ const Footer: React.FC = () => {
       
               <div className="flex items-center gap-5 sm:gap-6">
   
-                  <div className="w-24 sm:w-28 md:w-32 lg:w-30 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
+                  <div className="w-24 sm:w-28 md:w-32 lg:w-28 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
                     <img
                       src={logoBbwsms}
                       alt="PUPR"
@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
                     />
                   </div>
                   <div className="h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
-                  <div className="w-24 sm:w-28 md:w-32 lg:w-46 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
+                  <div className="w-24 sm:w-28 md:w-32 lg:w-45 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
                     <img
                       src={logoRekrutmen}
                       alt="Rekrutmen KITP"

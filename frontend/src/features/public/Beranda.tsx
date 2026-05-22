@@ -69,9 +69,14 @@ const Beranda: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get("/jobs");
-      setJobs(res.data.slice(0, 4)); // Show only top 4
+      
+      // 🚀 SINKRONISASI TOTAL: Meniru validasi pengaman halaman Lowongan agar support objek wrapper Laravel
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      
+      setJobs(data.slice(0, 4)); // Baru kita potong aman top 4 posisi
     } catch (err) {
       console.error("Error fetching latest jobs:", err);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -128,7 +133,7 @@ const Beranda: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
         <div className="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none z-0" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FEB700]/15 rounded-full blur-[120px] pointer-events-none z-0" />
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
 
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center">
           <motion.div
@@ -138,7 +143,7 @@ const Beranda: React.FC = () => {
             className="flex flex-col items-center"
           >
             <span className="inline-block px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-xs mb-6 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest">
-              REKRUTMEN TENAGA NON-PNS 2026
+              REKRUTMEN KONSULTAN INDIVIDU & TENAGA PENDUKUNG
             </span>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-3 leading-tight tracking-tight">
@@ -184,14 +189,14 @@ const Beranda: React.FC = () => {
         </div>
       </section>
 
-      {/* --- LOWONGAN SECTION --- */}
+ {/* --- LOWONGAN SECTION --- */}
+      {/* 🛠️ FIX TOTAL: Setel induk section ke animate="visible" secara konstan agar spinner loading tidak terkunci */}
       <motion.section
         id="lowongan"
         className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         variants={containerVariants}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
+        animate="visible"
       >
         <motion.div
           variants={itemVariants}
@@ -206,10 +211,11 @@ const Beranda: React.FC = () => {
             </p>
           </div>
           <button
+            type="button"
             onClick={() => navigate("/lowongan")}
             className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group cursor-pointer"
           >
-            Lihat Semua Posisi
+            Look Semua Posisi
             <ChevronRight
               size={18}
               className="transform group-hover:translate-x-1 transition-transform"
@@ -227,11 +233,15 @@ const Beranda: React.FC = () => {
                   <p className="text-gray-500">Belum ada lowongan aktif.</p>
               </div>
           ) : jobs.map((job) => (
+            /* 🚀 SINKRONISASI EMAS: Kita tambahkan initial="hidden" dan animate="visible" langsung di card individu ini 
+               sama persis dengan cara halaman Lowongan.tsx merender list-nya! */
             <motion.div
               key={job.id}
               variants={itemVariants}
+              initial="hidden"
+              animate="visible"
               whileHover={{ y: -8 }}
-              className="p-8 rounded-[2rem] border-1 border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-300 flex flex-col justify-between"
+              className="p-8 rounded-[2rem] border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="flex justify-between items-center mb-6">

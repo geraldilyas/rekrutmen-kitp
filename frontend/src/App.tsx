@@ -20,6 +20,7 @@ import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
 import PenyeleksiApplicantDetail from "./features/penyeleksi/ApplicantDetail";
 import ScrollToTop from "./components/layout/ScrollToTop";
+import ToTheTop from "./components/layout/ToTheTop";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
     <div className="min-h-screen bg-white">
       {/* 🚀 FIX 1: ScrollToTop ditaruh di LUAR <Routes> agar bisa mengontrol semua perpindahan halaman */}
       <ScrollToTop />
+      <ToTheTop />
 
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />

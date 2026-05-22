@@ -108,7 +108,7 @@ const Lowongan: React.FC = () => {
     <div className="bg-white min-h-screen font-['Poppins']">
 
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
 
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
 
@@ -231,7 +231,7 @@ const Lowongan: React.FC = () => {
           {loading ? (
             <div className="col-span-full text-center py-20 flex flex-col items-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mb-4"></div>
-              <p className="text-gray-500 text-sm">Memuat lowongan...</p>
+              {/* <p className="text-gray-500 text-sm">Memuat lowongan...</p> */}
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
@@ -287,7 +287,7 @@ const Lowongan: React.FC = () => {
 
                       <button
                         onClick={() => navigate(`/detail-lowongan/${job.id}`)}
-                        className="group bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+                        className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
                       >
                         <span className="transition-transform duration-300">
                           Lihat Lowongan
