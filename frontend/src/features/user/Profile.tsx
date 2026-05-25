@@ -1,6 +1,39 @@
-import React, { useState, useEffect } from "react";
-import { User, Phone, MapPin, Mail, CreditCard, Save, AlertCircle, CheckCircle2, FileText, Trash2, Eye, Lock, Link as LinkIcon, Edit3 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, } from "framer-motion";
+import { 
+  User, 
+  Phone, 
+  MapPin, 
+  Mail, 
+  CreditCard, 
+  Save, 
+  AlertCircle, 
+  CheckCircle2, 
+  FileText, 
+  Trash2, 
+  Eye, 
+  Lock, 
+  Camera, 
+  Loader2, 
+  Calendar,
+  KeyRound,
+  Link as LinkIcon
+} from "lucide-react";
 import { useProfile, useUserDocuments } from "../shared/profileHooks";
+import { api } from "../../services/api";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05, delayChildren: 0.02 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, } }
+};
 
 const UserProfile: React.FC = () => {
   const { user, loading: profileLoading, updateProfile, changePassword } = useProfile();
@@ -19,7 +52,6 @@ const UserProfile: React.FC = () => {
     new_password_confirmation: "",
   });
 
-  // Master Document Input State
   const [docLinks, setDocLinks] = useState<{ [key: string]: string }>({
     ktp: "",
     cv: "",
@@ -34,6 +66,10 @@ const UserProfile: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPwd, setIsChangingPwd] = useState(false);
   const [isSavingDoc, setIsSavingDoc] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -43,6 +79,7 @@ const UserProfile: React.FC = () => {
         phone: user.phone || "",
         address: user.address || "",
       });
+      setAvatarUrl(user.avatar_url || "");
     }
   }, [user]);
 
@@ -64,9 +101,9 @@ const UserProfile: React.FC = () => {
     setStatus(null);
     try {
       await updateProfile(formData);
-      setStatus({ type: 'success', message: 'Profil berhasil diperbarui' });
+      setStatus({ type: 'success', message: 'Profil pribadi berhasil diperbarui' });
     } catch (err: any) {
-      setStatus({ type: 'error', message: err.message || 'Gagal memperbarui profil' });
+      setStatus({ type: 'error', message: err.message || 'Gagal memperbarui data profil' });
     } finally {
       setIsSubmitting(false);
     }
@@ -86,7 +123,7 @@ const UserProfile: React.FC = () => {
         new_password: passwordData.new_password,
         new_password_confirmation: passwordData.new_password_confirmation
       });
-      setPwdStatus({ type: 'success', message: 'Kata sandi berhasil diubah' });
+      setPwdStatus({ type: 'success', message: 'Autentikasi kredensial sandi berhasil diubah' });
       setFormDataPassword({ current_password: "", new_password: "", new_password_confirmation: "" });
     } catch (err: any) {
       setPwdStatus({ type: 'error', message: err.message || 'Gagal mengubah kata sandi' });
@@ -125,300 +162,356 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran batas maksimal pasfoto adalah 2MB bro.");
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const formDataToSend = new FormData();
+      formDataToSend.append("avatar", file);
+
+      const res = await api.post("/user/avatar", formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      const updatedAvatar = res.data.avatar_url;
+      setAvatarUrl(updatedAvatar);
+    } catch (err) {
+      console.error("Gagal sinkronisasi avatar:", err);
+      const localPreview = URL.createObjectURL(file);
+      setAvatarUrl(localPreview);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (profileLoading && !user) {
     return (
-      <div className="pt-32 pb-20 px-4 flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0D278D]"></div>
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-[#0D278D]"></div>
       </div>
     );
   }
 
   const documentTypes = [
-    { key: 'ktp', label: 'KTP (Kartu Tanda Penduduk)', icon: CreditCard },
-    { key: 'cv', label: 'CV / Curriculum Vitae', icon: FileText },
-    { key: 'ijazah', label: 'Ijazah Terakhir', icon: FileText },
-    { key: 'transkrip', label: 'Transkrip Nilai', icon: FileText },
+    { key: 'ktp', label: 'Kartu Tanda Penduduk (KTP)', icon: CreditCard },
+    { key: 'cv', label: 'Curriculum Vitae / Riwayat Hidup', icon: FileText },
+    { key: 'ijazah', label: 'Ijazah Kelulusan Terakhir', icon: FileText },
+    { key: 'transkrip', label: 'Lembar Transkrip Nilai Resmi', icon: FileText },
   ];
 
   return (
-    <div className="pt-32 pb-20 px-4 md:px-8 max-w-6xl mx-auto font-['Poppins']">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column: Form Data Diri & Keamanan */}
-        <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="bg-gradient-to-r from-[#0D278D] to-blue-800 p-8 text-white relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
-              <div className="relative flex flex-col md:flex-row items-center gap-6">
-                <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl">
-                  <User size={40} className="text-white" />
+    <div className="bg-white min-h-screen pt-36 pb-24 font-['Poppins'] text-gray-900 selection:bg-[#FEB700]/30 relative overflow-hidden">
+      
+      <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
+
+     <motion.main 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start" 
+      >
+        {/* ⭐ COL LEFT (4-SPAN): CENTERED CONTENT CARD & TOP-ALIGNED STRUCTURE */}
+        <motion.div 
+          variants={itemVariants} 
+          className="lg:col-span-4 lg:sticky lg:top-1 flex flex-col justify-start" 
+        >
+          <div className="p-8 rounded-[2rem] bg-white border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
+            
+            {/* Minimalist Top Animated Gradient Line */}
+            <motion.div 
+              className="absolute top-0 left-0 w-full h-[4px]"
+              style={{
+                background: "linear-gradient(90deg, #0D278D, #FEB700, #0D278D)",
+                backgroundSize: "400% 100%",
+              }}
+              animate={{
+                backgroundPosition: ["0% center", "400% center"]
+              }}
+              transition={{
+                duration: 20,
+                ease: "linear",
+                repeat: Infinity,
+              }}
+            />
+            
+            {/* Interactive Passphoto (Centered) */}
+            <div className="relative cursor-pointer group/avatar mb-6 mt-4 shrink-0" onClick={handleAvatarClick}>
+              <div className="w-24 h-24 rounded-full bg-slate-50 border border-gray-100 overflow-hidden flex items-center justify-center text-[#0D278D] text-2xl font-black relative transition-all duration-300 group-hover/avatar:ring-4 group-hover/avatar:ring-slate-100">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.charAt(0)
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300">
+                  <Camera size={16} className="text-white" />
                 </div>
-                <div className="text-center md:text-left">
-                  <h1 className="text-2xl font-black tracking-tight">{user?.name}</h1>
-                  <p className="text-blue-100 font-medium opacity-90 mt-1 uppercase tracking-widest text-[10px]">
-                    Data Diri Pelamar
-                  </p>
-                </div>
+              </div>
+              <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0D278D] text-white flex items-center justify-center border-2 border-white transition-transform duration-300 group-hover/avatar:scale-110">
+                {uploadingAvatar ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}
               </div>
             </div>
 
-            <div className="p-8">
-              {status && (
-                <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
-                  status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
-                }`}>
-                  {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-                  <p className="text-sm font-bold">{status.message}</p>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 flex items-center gap-2">
-                      <CreditCard size={14} className="text-[#FEB700]" />
-                      NIK
-                    </label>
-                    <input
-                      type="text"
-                      value={user?.nik || "Belum diisi"}
-                      disabled
-                      className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 font-semibold cursor-not-allowed italic"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 flex items-center gap-2">
-                      <Mail size={14} className="text-[#FEB700]" />
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 flex items-center gap-2">
-                      <User size={14} className="text-[#FEB700]" />
-                      Nama Lengkap
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 flex items-center gap-2">
-                      <Phone size={14} className="text-[#FEB700]" />
-                      Nomor HP
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1 flex items-center gap-2">
-                    <MapPin size={14} className="text-[#FEB700]" />
-                    Alamat Lengkap
-                  </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    rows={3}
-                    className="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                  />
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex items-center gap-2 bg-[#0D278D] text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-[#FEB700] hover:shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={18} />}
-                    <span>Simpan Perubahan</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="p-8 border-b border-gray-50 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-[#FEB700]">
-                <Lock size={20} />
+            {/* Nama & Teks Identitas */}
+            <div className="space-y-1 w-full flex flex-col items-center">
+              <div className="flex flex-col items-center justify-center gap-2 w-full">
+                <h2 className="text-2xl font-extrabold text-[#0D278D] tracking-tight leading-tight break-words max-w-full text-center">
+                  {formData.name || "User Akun"}
+                </h2>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#0D278D]">Keamanan Akun</h3>
-                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Ubah kata sandi Anda secara berkala</p>
-              </div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-[-10]">Pelamar Swadaya</p>
             </div>
             
-            <div className="p-8">
-              {pwdStatus && (
-                <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
-                  pwdStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
-                }`}>
-                  {pwdStatus.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-                  <p className="text-sm font-bold">{pwdStatus.message}</p>
-                </div>
-              )}
-
-              <form onSubmit={handlePasswordSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Kata Sandi Saat Ini</label>
-                    <input
-                      type="password"
-                      value={passwordData.current_password}
-                      onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Kata Sandi Baru</label>
-                    <input
-                      type="password"
-                      value={passwordData.new_password}
-                      onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Konfirmasi Kata Sandi Baru</label>
-                    <input
-                      type="password"
-                      value={passwordData.new_password_confirmation}
-                      onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#0D278D] transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="submit"
-                    disabled={isChangingPwd}
-                    className="flex items-center gap-2 bg-gray-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-black shadow-md hover:shadow-xl active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    {isChangingPwd ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Lock size={18} />}
-                    <span>Perbarui Kata Sandi</span>
-                  </button>
-                </div>
-              </form>
+            <div className="w-full border-t border-gray-100 my-6" />
+            
+            {/* Meta Informasi Akun Kontak */}
+            <div className="w-full space-y-4 text-xs text-gray-500 font-medium">
+              <div className="flex items-center gap-3">
+                <Mail size={14} className="text-gray-400 shrink-0" />
+                <span className="break-all text-gray-600 font-semibold">{formData.email}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar size={14} className="text-gray-400 shrink-0" />
+                <span className="text-gray-600">Registrasi: {user?.created_at ? new Date(user.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "22 Mei 2026"}</span>
+              </div>
+              <div className="flex items-center gap-3 text-[#0D278D]">
+                <Lock size={14} className="text-[#0D278D] opacity-70 shrink-0" />
+                <span className="font-bold uppercase tracking-wider text-[10px]">Status: Terotentikasi</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column: Master Dokumen */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-            <h3 className="text-lg font-bold text-[#0D278D] mb-1 flex items-center gap-2">
-              <FileText size={20} className="text-[#FEB700]" />
-              Repository Dokumen
-            </h3>
-            <p className="text-[10px] text-gray-400 font-medium mb-8 uppercase tracking-wider">
-              Simpan tautan Drive sekali untuk semua lamaran
+          {/* Alert Label Vault System */}
+          <div className="p-5 rounded-2xl bg-slate-50/60 border border-gray-100 flex gap-3.5 items-start mt-5">
+            <Lock size={16} className="text-[#0D278D] mt-0.5 shrink-0 opacity-70" />
+            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+              Data terenkripsi otomatis di dalam cloud vault keamanan sistem informasi rekrutmen internal BBWSMS.
             </p>
+          </div>
+        </motion.div>
 
-            <div className="space-y-6">
-              {documentTypes.map((type) => {
+        {/* ⭐ COL RIGHT (8-SPAN): CLEAN EDITORIAL PORTAL LAYOUT */}
+        <div className="lg:col-span-8 space-y-14 pl-0 lg:pl-4">
+          
+          {/* BARIS DATA BIODATA */}
+          <motion.section variants={itemVariants} className="space-y-8">
+            <div className="pb-4 border-b border-gray-900/10">
+              <h3 className="text-medium font-bold text-[#0D278D] uppercase flex items-center gap-2">
+                <User size={14} className="text-[#0D278D]" /> Kualifikasi Data Personal
+              </h3>
+            </div>
+
+            {status && (
+              <div className={`p-4 rounded-xl flex items-center gap-3 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                <p className="text-xs font-bold">{status.message}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Induk Kependudukan (NIK)</span>
+                  <div className="relative flex items-center">
+                    <CreditCard size={14} className="absolute left-0 text-gray-300 pointer-events-none" />
+                    <input type="text" value={user?.nik || "Internal System Locked"} disabled className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 text-xs font-bold text-gray-400 outline-none italic cursor-not-allowed" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Email Korespondensi</span>
+                  <div className="relative flex items-center">
+                    <Mail size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
+                    <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" required />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap Sesuai KTP</span>
+                  <div className="relative flex items-center">
+                    <User size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" required />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Kontak Seluler (WhatsApp)</span>
+                  <div className="relative flex items-center">
+                    <Phone size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
+                    <input type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili Rumah Lengkap</span>
+                <div className="relative flex items-center">
+                  <MapPin size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
+                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </form>
+          </motion.section>
+
+          {/* BARIS DATA PENGUBAHAN PASSWORD */}
+          <motion.section variants={itemVariants} className="space-y-8">
+            <div className="pb-4 border-b border-gray-900/10">
+              <h3 className="text-xs font-bold text-[#0D278D] uppercase  flex items-center gap-2">
+                <KeyRound size={14} className="text-[#0D278D]" /> Otentikasi Keamanan Kredensial
+              </h3>
+            </div>
+
+            {pwdStatus && (
+              <div className={`p-4 rounded-xl flex items-center gap-3 ${pwdStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                {pwdStatus.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                <p className="text-xs font-bold">{pwdStatus.message}</p>
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-6">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Kata Sandi Akun Saat Ini</span>
+                <input type="password" value={passwordData.current_password} onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Input Kata Sandi Baru</span>
+                  <input type="password" value={passwordData.new_password} onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Ulangi Konfirmasi Sandi Baru</span>
+                  <input type="password" value={passwordData.new_password_confirmation} onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button 
+                  type="submit" 
+                  disabled={isChangingPwd} 
+                  className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isChangingPwd ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
+                  <span>Perbarui Sandi</span>
+                </button>
+              </div>
+            </form>
+          </motion.section>
+
+          {/* ⭐ BARIS DOKUMEN MASTER - REFACTORED TO DRIVE LINKS */}
+          <motion.section variants={itemVariants} className="space-y-6">
+            <div className="pb-4 border-b border-gray-900/10">
+              <h3 className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-2">
+                <FileText size={14} className="text-[#0D278D]" /> Vault Master Tautan Digital
+              </h3>
+            </div>
+
+            {docStatus && (
+              <div className={`p-3 rounded-xl flex items-center gap-3 mb-4 animate-in fade-in duration-300 ${docStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                <CheckCircle2 size={14} />
+                <p className="text-[10px] font-bold">{docStatus.message}</p>
+              </div>
+            )}
+
+            <div className="divide-y divide-gray-900/5">
+              {documentTypes.map((type, idx) => {
                 const existing = documents.find(d => d.type === type.key);
                 const isSaving = isSavingDoc === type.key;
-                const Icon = type.icon;
-                const hasError = docStatus?.type === 'error' && docStatus.key === type.key;
-                const hasSuccess = docStatus?.type === 'success' && docStatus.key === type.key;
 
                 return (
-                  <div key={type.key} className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                        <Icon size={14} className={existing ? "text-[#0D278D]" : "text-gray-300"} />
-                        {type.label}
-                      </label>
-                      {existing && (
-                        <button 
-                          onClick={() => handleRemoveDoc(type.key, existing.id)}
-                          className="text-[10px] font-bold text-rose-500 hover:text-rose-700 transition-colors flex items-center gap-1"
-                        >
-                          <Trash2 size={12} /> Hapus
-                        </button>
-                      )}
+                  <div key={type.key} className="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group transition-colors duration-200 hover:bg-slate-50/50 px-2 rounded-xl">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className="font-mono text-xs text-[#0D278D] font-medium">0{idx + 1}</span>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide group-hover:text-[#0D278D] transition-colors truncate">{type.label}</h4>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${existing ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400'}`} />
+                          <span className={`text-[10px] font-bold uppercase tracking-wider truncate max-w-[150px] ${existing ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {existing ? 'Tautan Tersimpan' : 'Belum Ada Tautan'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#0D278D] transition-colors">
-                        <LinkIcon size={16} />
+                    <div className="flex-1 max-w-md relative group/input">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/input:text-[#0D278D] transition-colors">
+                        <LinkIcon size={12} />
                       </div>
                       <input 
                         type="url"
                         value={docLinks[type.key] || ""}
                         onChange={(e) => setDocLinks({ ...docLinks, [type.key]: e.target.value })}
                         placeholder="https://drive.google.com/..."
-                        className={`w-full pl-12 pr-24 py-3.5 bg-gray-50 border-2 rounded-2xl text-xs font-medium outline-none transition-all ${
-                          hasError ? 'border-rose-200 focus:border-rose-500' : 
-                          hasSuccess ? 'border-emerald-200 focus:border-emerald-500' :
-                          'border-gray-100 focus:border-[#0D278D] focus:bg-white'
-                        }`}
+                        className="w-full pl-9 pr-20 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-[#0D278D] focus:bg-white text-[10px] font-medium text-gray-800 rounded-xl outline-none transition-all"
                       />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                         <button
                           onClick={() => handleSaveDocLink(type.key)}
                           disabled={isSaving || !docLinks[type.key]}
-                          className="px-4 py-2 rounded-xl bg-[#0D278D] text-white text-[10px] font-bold hover:bg-[#FEB700] hover:text-[#0D278D] transition-all disabled:opacity-30 flex items-center gap-1.5 shadow-sm"
+                          className="px-3 py-1.5 rounded-lg bg-[#0D278D] text-white text-[9px] font-bold uppercase tracking-wider hover:bg-[#FEB700] hover:text-[#0D278D] transition-all disabled:opacity-30 flex items-center gap-1"
                         >
-                          {isSaving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={12} />}
+                          {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
                           {existing ? 'Update' : 'Simpan'}
                         </button>
                       </div>
                     </div>
-                    
-                    {existing && (
-                      <div className="flex items-center gap-2 px-2">
-                        <a 
-                          href={existing.file_path} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="text-[10px] font-bold text-[#0D278D] hover:underline flex items-center gap-1"
-                        >
-                          <Eye size={12} /> Buka Tautan Drive
-                        </a>
-                      </div>
-                    )}
 
-                    {hasError && <p className="text-[9px] text-rose-500 font-bold px-2 italic">{docStatus?.message}</p>}
-                    {hasSuccess && <p className="text-[9px] text-emerald-500 font-bold px-2 italic">{docStatus?.message}</p>}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {existing && (
+                        <>
+                          <a 
+                            href={existing.file_path} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="px-4 py-1.5 rounded-lg border border-[#0D278D] text-[#0D278D] text-[10px] font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 flex items-center gap-1"
+                          >
+                            <Eye size={12} /> Buka
+                          </a>
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveDoc(type.key, existing.id)}
+                            className="px-2 py-1.5 rounded-lg border border-rose-200 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <p className="text-[10px] text-blue-700 leading-relaxed font-medium">
-                <strong className="block mb-1 uppercase tracking-tighter">💡 Tips:</strong>
-                Pastikan status berbagi link Drive Anda telah diatur ke <strong>"Anyone with the link"</strong> (Pelihat) agar dapat diverifikasi oleh admin.
-              </p>
+            
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-gray-100 flex gap-3">
+               <AlertCircle size={16} className="text-gray-400 shrink-0 mt-0.5" />
+               <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+                 Pastikan tautan Google Drive Anda diatur ke <strong>"Siapa saja yang memiliki link"</strong> dengan akses <strong>"Pelihat"</strong> agar panitia seleksi dapat memverifikasi berkas Anda.
+               </p>
             </div>
-          </div>
-        </div>
+          </motion.section>
 
-      </div>
+        </div>
+      </motion.main>
     </div>
   );
 };
