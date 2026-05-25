@@ -118,23 +118,20 @@ const DetailLowongan: React.FC = () => {
       return;
     }
 
-    try {
+   try {
       setApplyLoading(true);
       setApplyError("");
 
-      // Kita pakai format Objek Key-Value yang kemarin terbukti berhasil nembak field-nya
-      const formattedDocumentsObj: { [key: string]: { type: string; file_path: string } } = {};
-      
-      Object.keys(uploadedFiles).forEach((docType) => {
-        formattedDocumentsObj[docType] = {
-          type: docType,
-          file_path: uploadedFiles[docType]
-        };
-      });
+      // Ubah wujudnya jadi Array Murni
+      const formattedDocumentsArray = Object.keys(uploadedFiles).map((docType) => ({
+        type: docType,
+        file_path: uploadedFiles[docType]
+      }));
 
+      // Kirim format JSON murni
       await api.post("/applications", {
         job_id: Number(id),
-        documents: formattedDocumentsObj 
+        documents: formattedDocumentsArray 
       });
 
       setApplySuccess(true);
@@ -142,18 +139,14 @@ const DetailLowongan: React.FC = () => {
       setShowApplyForm(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
-      // 🚀 AMBIL CIRI ERROR DETAIL DARI OBJEK VALIDASI LARAVEL
       const serverMessage = err?.response?.data?.message;
       const validationErrors = err?.response?.data?.errors;
 
       if (validationErrors) {
-        // Bongkar array errors bawaan Laravel dan gabungkan jadi teks pesan yang jelas
-        const errorMessages = Object.values(validationErrors)
-          .flat()
-          .join(", ");
+        const errorMessages = Object.values(validationErrors).flat().join(", ");
         setApplyError(errorMessages);
       } else {
-        setApplyError(serverMessage || "Gagal mengirim berkas lamaran. Coba lagi.");
+        setApplyError(serverMessage || "Gagal mengirim berkas lamaran.");
       }
     } finally {
       setApplyLoading(false);
