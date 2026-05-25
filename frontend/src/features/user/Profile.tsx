@@ -17,7 +17,6 @@ import {
   Camera, 
   Loader2, 
   Calendar,
-  Sparkles,
   KeyRound
 } from "lucide-react";
 import { useProfile, useUserDocuments } from "../shared/profileHooks";
