@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Menu, Clock } from "lucide-react";
+import { Menu, Clock, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   onMenuClick: () => void;
@@ -22,14 +23,23 @@ const AdminHeader: React.FC<Props> = ({ onMenuClick }) => {
           <Menu size={20} />
         </button>
         <div className="flex-1" />
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0D278D] text-white">
-          <Clock size={14} className="text-[#FEB700]" />
-          <span className="text-xs font-bold tabular-nums">
-            {time.toLocaleTimeString("id-ID", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/admin/profil"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 text-[#0D278D] hover:bg-[#0D278D] hover:text-white transition-all font-bold text-xs shadow-sm border border-gray-100"
+          >
+            <User size={14} />
+            <span>Profil Saya</span>
+          </Link>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0D278D] text-white">
+            <Clock size={14} className="text-[#FEB700]" />
+            <span className="text-xs font-bold tabular-nums">
+              {time.toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
         </div>
       </div>
     </header>

@@ -44,6 +44,8 @@ Route::middleware('throttle:api')->group(function () {
         // User Profile & Logout
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
+            Route::put('/update-profile', [AuthController::class, 'updateProfile']);
+            Route::put('/change-password', [AuthController::class, 'changePassword']);
             Route::get('/me', function (Request $request) {
                 return response()->json([
                     'user'  => $request->user(),
@@ -56,6 +58,13 @@ Route::middleware('throttle:api')->group(function () {
         Route::prefix('applications')->group(function () {
             Route::get('/my', [ApplicationController::class, 'myApplications']);
             Route::post('/', [ApplicationController::class, 'apply']);
+        });
+
+        // User Master Documents
+        Route::prefix('user-documents')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\UserDocumentController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\UserDocumentController::class, 'store']);
+            Route::delete('/{id}', [\App\Http\Controllers\Api\UserDocumentController::class, 'destroy']);
         });
 
         // --- STAFF ROUTES (admin + penyeleksi) ---

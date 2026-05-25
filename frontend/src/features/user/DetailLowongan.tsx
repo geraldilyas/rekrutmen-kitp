@@ -440,42 +440,44 @@ const DetailLowongan: React.FC = () => {
                   </motion.div>
                 )}
 
-                {/* --- EDITORIAL FORM SYSTEM (DYNAMICS ROW LAYOUT) --- */}
+               {/* --- SYSTEM FORM: MURNI INPUT TEKS URL DRIVE DINAMIS --- */}
                 <form onSubmit={handleSubmitApplication} className="space-y-8">
                   <div className="space-y-8">
-                    {Object.keys(uploadedFiles).map((docType, index) => (
-                      <div 
-                        key={docType} 
-                        className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300"
-                      >
-                        {/* Label Kolom Kiri */}
-                        <div className="w-full md:w-1/3 pt-3">
-                          <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-1.5">
-                            <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
-                            {docType} <span className="text-red-500/80">*</span>
-                          </label>
-                        </div>
+                    {Object.keys(uploadedFiles).map((docType, index) => {
+                      return (
+                        <div 
+                          key={docType} 
+                          className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300"
+                        >
+                          {/* Label Tipe Berkas (Sisi Kiri) */}
+                          <div className="w-full md:w-1/3 pt-3">
+                            <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-1.5">
+                              <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
+                              {docType} <span className="text-red-500/80">*</span>
+                            </label>
+                          </div>
 
-                        {/* Input Kolom Kanan */}
-                        <div className="w-full md:w-2/3 relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
-                            <FileText size={16} strokeWidth={2} />
-                          </span>
-                          <input
-                            type="url"
-                            name={`drive_link_${docType}`}
-                            placeholder="Salin tautan Google Drive dokumen di sini"
-                            value={uploadedFiles[docType] || ""}
-                            onChange={(e) => handleLinkChange(docType, e)}
-                            className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800 placeholder-gray-300"
-                            required
-                          />
+                          {/* Input Kolom Tautan Teks Drive (Sisi Kanan) */}
+                          <div className="w-full md:w-2/3 relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
+                              <FileText size={16} strokeWidth={2} />
+                            </span>
+                            <input
+                              type="url"
+                              name={`drive_link_${docType}`}
+                              placeholder="Salin tautan Google Drive dokumen di sini"
+                              value={uploadedFiles[docType] || ""}
+                              onChange={(e) => handleLinkChange(docType, e)}
+                              className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800 placeholder-gray-300"
+                              required
+                            />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
-                  {/* Form Action Controls */}
+                  {/* 🚀 FIX: Tombol Kontrol ditaruh SEKALI di dalam tag </form> agar integrasi submit berjalan lancar */}
                   <div className="pt-8 flex flex-col sm:flex-row justify-end gap-1.5 mt-4">
                     <button
                       type="button"
@@ -504,7 +506,6 @@ const DetailLowongan: React.FC = () => {
                       )}
                     </button>
                   </div>
-
                 </form>
 
               </div>
