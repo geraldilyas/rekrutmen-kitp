@@ -136,7 +136,7 @@ export default function Register() {
             <h2 className="text-2xl md:text-3xl font-bold text-[#0D278D] tracking-tight">
               Selamat Datang!
             </h2>
-            <p className="text-[11px] md:text-xs text-gray-400 mt-0.5 font-medium mb-5">
+            <p className="text-[11px] md:text-xs text-gray-400 mt-1 font-medium mb-5">
               Buat akun pelamar Anda untuk memulai registrasi berkas
             </p>
           </div>

@@ -99,10 +99,7 @@ export default function Login() {
             <h1 className="text-2xl lg:text-[2.3rem] font-black mt-2 leading-tight tracking-tight">
               Selamat Datang <br />
               <span className="text-white">
-                Bangun Karir Bersama{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-yellow-200">
-                  BBWSMS
-                </span>
+                Bangun Karir Bersama BBWSMS{" "}
               </span>
             </h1>
             <p className="text-white/80 text-[11px] md:text-xs mt-1 md:mt-2 leading-relaxed max-w-sm font-light">
@@ -135,7 +132,7 @@ export default function Login() {
             <h2 className="text-2xl md:text-3xl font-bold text-[#0D278D] tracking-tight">
               Selamat Datang Kembali!
             </h2>
-            <p className="text-[11px] md:text-xs text-gray-400 mt-0.5 font-medium mb-5">
+            <p className="text-[11px] md:text-xs text-gray-400 mt-1 font-medium mb-5">
               Lanjutkan perjalanan rekrutmen Anda bersama BBWSMS
             </p>
           </div>
