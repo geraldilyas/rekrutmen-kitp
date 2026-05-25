@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Users, Briefcase, CheckCircle2, XCircle, Bell, ChevronRight } from "lucide-react";
 import { useDashboardStats, usePendingGrading } from "./hooks";
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 const StatCard = ({
@@ -46,8 +47,15 @@ const StatCard = ({
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { stats, loading } = useDashboardStats();
+  const [period, setPeriod] = React.useState<'daily' | 'monthly'>('daily');
+  const { stats, loading } = useDashboardStats(period);
   const { count: pendingCount, items: pendingItems, loading: pendingLoading } = usePendingGrading();
+  
+  // 🚀 FIX: Prevent Recharts from rendering before parent container is ready
+  const [isReady, setIsReady] = React.useState(false);
+  React.useEffect(() => {
+    setIsReady(true);
+  }, []);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -106,71 +114,112 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Chart */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-bold text-gray-900 mb-1">Tren Pendaftaran</h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Pelamar vs yang Lulus per bulan
-          </p>
-          <div className="w-full bg-white" style={{ height: 256 }}>
-            {loading ? (
-              <div className="w-full h-full flex items-center justify-center animate-pulse bg-gray-50 rounded-xl">
-                <p className="text-gray-400 text-sm">Memuat data...</p>
-              </div>
-            ) : stats?.applicationsByMonth && stats.applicationsByMonth.length > 0 ? (
-              <ResponsiveContainer width="100%" height={256}>
-                <AreaChart
-                  data={stats.applicationsByMonth}
-                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="font-bold text-gray-900 mb-1">Tren Pendaftaran</h3>
+            <p className="text-sm text-gray-500">
+              {period === 'daily' ? 'Pelamar vs Pelamar Lulus per hari (30 hari terakhir)' : 'Pelamar vs Pelamar Lulus per bulan (12 bulan terakhir)'}
+            </p>
+          </div>
+          
+          {/* Period Toggle */}
+          <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 shrink-0">
+            <button
+              onClick={() => setPeriod('daily')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                period === 'daily' 
+                ? 'bg-white text-[#0D278D] shadow-sm' 
+                : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Harian
+            </button>
+            <button
+              onClick={() => setPeriod('monthly')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                period === 'monthly' 
+                ? 'bg-white text-[#0D278D] shadow-sm' 
+                : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Bulanan
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full bg-white" style={{ minHeight: '300px' }}>
+          {loading ? (
+            <div className="w-full h-[300px] flex items-center justify-center animate-pulse bg-gray-50 rounded-xl">
+              <p className="text-gray-400 text-sm">Memuat data...</p>
+            </div>
+          ) : isReady && stats?.trendData && stats.trendData.length > 0 ? (
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={stats.trendData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
-                  <defs>
-                    <linearGradient id="colorApplicants" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0D278D" stopOpacity={0.08} />
-                      <stop offset="95%" stopColor="#0D278D" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FEB700" stopOpacity={0.12} />
-                      <stop offset="95%" stopColor="#FEB700" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis
-                    dataKey="month"
+                    dataKey="date"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 500 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
                     dy={10}
+                    interval="preserveStartEnd"
+                    minTickGap={period === 'daily' ? 30 : 10}
+                    tickFormatter={(str) => {
+                      try {
+                        if (period === 'monthly') return str; 
+                        const d = new Date(str);
+                        return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+                      } catch {
+                        return str;
+                      }
+                    }}
                   />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: "#94a3b8", fontSize: 11 }} 
+                    allowDecimals={false}
+                  />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area
+                  <Legend 
+                    verticalAlign="top" 
+                    align="right" 
+                    iconType="circle"
+                    wrapperStyle={{ paddingBottom: '20px', fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Line
                     type="monotone"
                     dataKey="applicants"
                     name="Pelamar"
                     stroke="#0D278D"
-                    strokeWidth={2}
-                    fill="url(#colorApplicants)"
-                    dot={false}
-                    activeDot={{ r: 4, fill: "#0D278D", stroke: "#fff", strokeWidth: 2 }}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#0D278D", strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6, fill: "#0D278D", stroke: "#fff", strokeWidth: 2 }}
                   />
-                  <Area
+                  <Line
                     type="monotone"
                     dataKey="accepted"
-                    name="Lulus"
+                    name="Pelamar Lulus"
                     stroke="#FEB700"
-                    strokeWidth={2}
-                    fill="url(#colorAccepted)"
-                    dot={false}
-                    activeDot={{ r: 4, fill: "#FEB700", stroke: "#fff", strokeWidth: 2 }}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#FEB700", strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6, fill: "#FEB700", stroke: "#fff", strokeWidth: 2 }}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm font-medium">Data tren belum tersedia</p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="w-full h-[300px] flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <p className="text-gray-400 text-sm font-medium">Data tren belum tersedia</p>
+            </div>
+          )}
         </div>
+      </div>
 
       {/* Notifikasi Perlu Dinilai */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">

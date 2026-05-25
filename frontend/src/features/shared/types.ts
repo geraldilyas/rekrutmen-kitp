@@ -104,6 +104,8 @@ export interface Application {
   current_stage: string | null;
   current_stage_order: number;
   current_stage_result_id: number | null;
+  stage_start_date: string | null;
+  stage_end_date: string | null;
   stage_history: StageHistory[];
   stage_scores: StageScore[];
   document_link: string | null;
@@ -136,8 +138,8 @@ export interface DashboardStats {
   totalJobs: number;
   totalAccepted: number;
   totalRejected: number;
-  applicationsByMonth: {
-    month: string;
+  trendData: {
+    date: string;
     applicants: number;
     accepted: number;
   }[];

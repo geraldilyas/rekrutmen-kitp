@@ -14,6 +14,7 @@ import {
   XCircle,
   Paperclip,
   MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { api } from "../../services/api";
 import type { Application } from "../shared/types";
@@ -71,7 +72,21 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
   if (!application) return null;
 
   const sc = statusConfig[application.status] || statusConfig.pending;
-  const canGrade = GRADEABLE.has(application.status);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = application.stage_start_date ? new Date(application.stage_start_date) : null;
+  const end = application.stage_end_date ? new Date(application.stage_end_date) : null;
+  if (start) start.setHours(0, 0, 0, 0);
+  if (end) end.setHours(0, 0, 0, 0);
+
+  const isTooEarly = start ? today < start : false;
+  const isTooLate = end ? today > end : false;
+  const isStageActive = !isTooEarly && !isTooLate;
+
+  const canGrade = GRADEABLE.has(application.status) && isStageActive;
+
   const initials = application.user_name
     .split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 
@@ -110,6 +125,21 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Date Alert */}
+          {(isTooEarly || isTooLate) && GRADEABLE.has(application.status) && (
+            <div className={`p-4 rounded-xl flex gap-3 border ${isTooEarly ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
+              <AlertCircle size={20} className="shrink-0" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-tight">Penilaian Belum Tersedia</p>
+                <p className="text-xs font-medium leading-relaxed">
+                  {isTooEarly 
+                    ? `Tahap "${application.current_stage}" baru akan dimulai pada ${fmt(application.stage_start_date)}.` 
+                    : `Masa penilaian untuk tahap "${application.current_stage}" telah berakhir pada ${fmt(application.stage_end_date)}.`}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Profile info */}
           <section>
@@ -260,12 +290,12 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center shrink-0 bg-white">
-          <p className="text-xs text-gray-400">
-            Tahap saat ini:{" "}
-            <span className="font-semibold text-gray-600">
+          <div className="flex flex-col">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tahap Aktif</p>
+            <p className="text-sm font-bold text-[#0D278D]">
               {application.current_stage || "—"}
-            </span>
-          </p>
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={onClose}
@@ -273,14 +303,21 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
             >
               Tutup
             </button>
-            {canGrade && (
-              <button
-                onClick={() => onGrade(application)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D] transition-all shadow-sm"
-              >
-                <Star size={14} />
-                Nilai Pelamar
-              </button>
+            {GRADEABLE.has(application.status) && (
+              <div className="relative group/btn">
+                <button
+                  onClick={() => canGrade && onGrade(application)}
+                  disabled={!canGrade}
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                    canGrade 
+                    ? "bg-[#0D278D] text-white hover:bg-[#FEB700] hover:text-[#0D278D]" 
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  }`}
+                >
+                  <Star size={14} className={canGrade ? "animate-pulse" : ""} />
+                  Nilai Pelamar
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -199,10 +199,21 @@ class ApplicationAdminController extends Controller
 
             $currentStage = JobStage::findOrFail($stageResult->job_stage_id);
 
+            $today = \Carbon\Carbon::today();
+            $startDate = $currentStage->start_date ? \Carbon\Carbon::parse($currentStage->start_date) : null;
+            $endDate = $currentStage->end_date ? \Carbon\Carbon::parse($currentStage->end_date) : null;
+
             // Block grading if the stage hasn't started yet
-            if ($currentStage->start_date && \Carbon\Carbon::today()->lt(\Carbon\Carbon::parse($currentStage->start_date))) {
+            if ($startDate && $today->lt($startDate)) {
                 return response()->json([
-                    'message' => 'Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . \Carbon\Carbon::parse($currentStage->start_date)->format('d/m/Y'),
+                    'message' => 'Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . $startDate->format('d/m/Y'),
+                ], 403);
+            }
+
+            // Block grading if the stage has ended
+            if ($endDate && $today->gt($endDate)) {
+                return response()->json([
+                    'message' => 'Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $endDate->format('d/m/Y'),
                 ], 403);
             }
 

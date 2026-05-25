@@ -75,13 +75,8 @@ export function useUserDocuments() {
     }
   }, []);
 
-  const uploadDocument = async (type: string, file: File) => {
-    const formData = new FormData();
-    formData.append("type", type);
-    formData.append("file", file);
-    const res = await api.post("/user-documents", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  const saveDocumentLink = async (type: string, url: string) => {
+    const res = await api.post("/user-documents", { type, url });
     fetchDocuments();
     return res.data;
   };
@@ -95,5 +90,5 @@ export function useUserDocuments() {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  return { documents, loading, uploadDocument, deleteDocument, refresh: fetchDocuments };
+  return { documents, loading, saveDocumentLink, deleteDocument, refresh: fetchDocuments };
 }

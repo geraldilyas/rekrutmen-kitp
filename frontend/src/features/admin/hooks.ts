@@ -13,14 +13,14 @@ import { api } from "../../services/api";
 // ============================================================
 // DASHBOARD STATS
 // ============================================================
-export function useDashboardStats() {
+export function useDashboardStats(period: 'daily' | 'monthly' = 'daily') {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/admin/statistics/dashboard");
+      const res = await api.get(`/admin/statistics/dashboard?period=${period}`);
       const data = res.data;
       
       const accepted = data.applications_by_status?.find((s: any) => s.status === 'Lulus')?.total || 0;
@@ -31,8 +31,8 @@ export function useDashboardStats() {
         totalJobs: data.total_jobs || 0,
         totalAccepted: accepted,
         totalRejected: rejected,
-        applicationsByMonth: data.monthly_stats?.map((m: any) => ({
-            month: m.month,
+        trendData: data.trend_stats?.map((m: any) => ({
+            date: m.date,
             applicants: parseInt(m.applicants),
             accepted: parseInt(m.accepted)
         })) || [], 
@@ -46,11 +46,11 @@ export function useDashboardStats() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   return { stats, loading };
 }
@@ -374,6 +374,8 @@ export function useApplications() {
                 current_stage: pendingResult?.stage?.name ?? null,
                 current_stage_order: pendingResult?.stage?.stage_order ?? null,
                 current_stage_result_id: pendingResult?.id ?? null,
+                stage_start_date: pendingResult?.stage?.start_date ?? null,
+                stage_end_date: pendingResult?.stage?.end_date ?? null,
                 stage_history: completedResults.map((sr: any) => ({
                     stage_name: sr.stage?.name,
                     status: sr.status,

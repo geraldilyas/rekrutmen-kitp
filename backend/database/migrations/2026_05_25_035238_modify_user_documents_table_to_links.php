@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('user_documents', function (Blueprint $table) {
+            $table->text('file_path')->change(); // Use text for longer URLs
+            $table->dropColumn('file_name');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('user_documents', function (Blueprint $table) {
+            $table->string('file_path', 255)->change();
+            $table->string('file_name')->nullable();
+        });
+    }
+};

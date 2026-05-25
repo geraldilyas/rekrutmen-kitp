@@ -8,46 +8,53 @@ use App\Models\Job;
 use App\Models\User;
 use App\Models\ApplicationStageResult;
 use App\Models\JobStage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StatisticsController extends Controller
 {
     // DASHBOARD SUMMARY
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        return response()->json([
-            'total_jobs' => Job::count(),
+        $period = $request->query('period', 'daily');
 
-            'total_applications' => Application::count(),
-
-            'total_applicants' => User::where('role', 'user')->count(),
-
-            'applications_by_status' => Application::select(
-                    'status',
-                    DB::raw('count(*) as total')
-                )
-                ->groupBy('status')
-                ->get(),
-
-            'applications_by_category' => Job::select(
-                    'category',
-                    DB::raw('count(*) as total')
-                )
-                ->groupBy('category')
-                ->get(),
-            
-            'monthly_stats' => Application::select(
+        if ($period === 'monthly') {
+            $trendStats = Application::select(
                     DB::getDriverName() === 'mysql'
-                        ? DB::raw('DATE_FORMAT(created_at, "%b") as month')
-                        : DB::raw('strftime("%m", created_at) as month'),
+                        ? DB::raw('DATE_FORMAT(created_at, "%b %Y") as date')
+                        : DB::raw('strftime("%m-%Y", created_at) as date'),
                     DB::raw('COUNT(*) as applicants'),
                     DB::raw('SUM(CASE WHEN status = "Lulus" THEN 1 ELSE 0 END) as accepted')
                 )
-                ->groupBy('month')
+                ->where('created_at', '>=', now()->subMonths(12))
+                ->groupBy('date')
                 ->orderBy(DB::raw('MIN(created_at)'))
-                ->get(),
-            ]);
-            }
+                ->get();
+        } else {
+            $trendStats = Application::select(
+                    DB::getDriverName() === 'mysql'
+                        ? DB::raw('DATE(created_at) as date')
+                        : DB::raw('date(created_at) as date'),
+                    DB::raw('COUNT(*) as applicants'),
+                    DB::raw('SUM(CASE WHEN status = "Lulus" THEN 1 ELSE 0 END) as accepted')
+                )
+                ->where('created_at', '>=', now()->subDays(30))
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+        }
+
+        return response()->json([
+            'total_jobs' => Job::count(),
+            'total_applications' => Application::count(),
+            'total_applicants' => User::where('role', 'user')->count(),
+            'applications_by_status' => Application::select('status', DB::raw('count(*) as total'))
+                ->groupBy('status')->get(),
+            'applications_by_category' => Job::select('category', DB::raw('count(*) as total'))
+                ->groupBy('category')->get(),
+            'trend_stats' => $trendStats,
+        ]);
+    }
 
             // PELAMAR PER LOWONGAN
             public function applicationsPerJob()
