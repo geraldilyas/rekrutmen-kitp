@@ -5,6 +5,7 @@ import {
   Briefcase,
   Users,
   FileText,
+  User,
   X,
   LogOut,
   AlertTriangle,
@@ -121,17 +122,23 @@ const AdminSidebar: React.FC<Props> = ({ isOpen, onClose }) => {
 
           <div className="p-3 border-t border-gray-50">
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50">
-              <div className="w-8 h-8 rounded-lg bg-[#0D278D] flex items-center justify-center shrink-0">
-                <span className="text-white text-xs font-bold">{initials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900 truncate">
-                  {authUser.name || "Admin"}
-                </p>
-                <p className="text-[11px] text-gray-400 truncate">
-                  {authUser.email || ""}
-                </p>
-              </div>
+              <Link 
+                to="/admin/profil"
+                onClick={onClose}
+                className="flex items-center gap-3 flex-1 min-w-0 group/info"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#0D278D] flex items-center justify-center shrink-0 group-hover/info:scale-105 transition-transform">
+                  <span className="text-white text-xs font-bold">{initials}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-900 truncate group-hover/info:text-[#0D278D] transition-colors">
+                    {authUser.name || "Admin"}
+                  </p>
+                  <p className="text-[11px] text-gray-400 truncate">
+                    {authUser.email || ""}
+                  </p>
+                </div>
+              </Link>
               <button
                 onClick={() => setShowLogoutModal(true)}
                 title="Logout"

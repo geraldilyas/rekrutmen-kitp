@@ -9,12 +9,14 @@ import DetailLowongan from "./features/user/DetailLowongan";
 import Status from "./features/user/Status";
 import Pengumuman from "./features/public/Pengumuman";
 import Arsip from "./features/user/Arsip";
+import UserProfile from "./features/user/Profile";
 import AdminLayout from "./features/admin/AdminLayout";
 import Dashboard from "./features/admin/Dashboard";
 import JobsManage from "./features/admin/JobsManage";
 import UsersManage from "./features/admin/UsersManage";
 import ApplicationsList from "./features/admin/ApplicationsList";
 import AdminApplicantDetail from "./features/admin/ApplicantDetail";
+import AdminProfile from "./features/admin/Profile";
 import PenyeleksiLayout from "./features/penyeleksi/PenyeleksiLayout";
 import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
@@ -97,6 +99,18 @@ function App() {
             </>
           }
         />
+        <Route
+          path="/profil"
+          element={
+            <ProtectedRoute allowedRoles={["user"]}>
+              <>
+                <Navbar />
+                <UserProfile />
+                <Footer />
+              </>
+            </ProtectedRoute>
+          }
+        />
 
         {/* ADMIN LAYOUT */}
         <Route
@@ -115,6 +129,7 @@ function App() {
             path="applications/:jobId"
             element={<AdminApplicantDetail />}
           />
+          <Route path="profil" element={<AdminProfile />} />
         </Route>
 
         {/* PENYELEKSI LAYOUT */}
@@ -129,6 +144,7 @@ function App() {
           <Route index element={<PenyeleksiDashboard />} />
           <Route path="jobs" element={<AssignedJobs />} />
           <Route path="jobs/:jobId" element={<PenyeleksiApplicantDetail />} />
+          <Route path="profil" element={<AdminProfile />} />
         </Route>
 
         {/* FALLBACK ROUTE */}

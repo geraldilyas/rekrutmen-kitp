@@ -64,6 +64,7 @@ const Navbar: React.FC = () => {
     { name: "Beranda", path: "/beranda" },
     { name: "Lowongan", path: "/lowongan" },
     { name: "Status Lamaran", path: "/status" },
+    { name: "Profil", path: "/profil" },
     { name: "Pengumuman", path: "/pengumuman" },
     { name: "Arsip", path: "/arsip" },
   ];
@@ -156,19 +157,22 @@ const Navbar: React.FC = () => {
                     <span>Keluar</span>
                   </button>
 
-                  <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider">
+                  <Link 
+                    to={userData?.role === 'admin' ? '/admin/profil' : userData?.role === 'penyeleksi' ? '/penyeleksi/profil' : '/profil'}
+                    className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm group/profile"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider group-hover/profile:scale-105 transition-transform">
                       {userData?.name?.charAt(0) || <User size={16} />}
                     </div>
                     <div className="leading-tight pr-1 text-left">
-                      <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate">
+                      <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate group-hover/profile:text-[#FEB700] transition-colors">
                         {userData?.name || "Memuat..."}
                       </h4>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                         {userData?.role || "Pelamar"}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 </>
               )}
             </div>
