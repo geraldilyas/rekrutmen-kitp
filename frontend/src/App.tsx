@@ -9,6 +9,7 @@ import DetailLowongan from "./features/user/DetailLowongan";
 import Status from "./features/user/Status";
 import Pengumuman from "./features/public/Pengumuman";
 import Arsip from "./features/user/Arsip";
+import Profil from "./features/user/Profil"; // 🚀 Sudah terimpor aman di sini bro
 import AdminLayout from "./features/admin/AdminLayout";
 import Dashboard from "./features/admin/Dashboard";
 import JobsManage from "./features/admin/JobsManage";
@@ -26,7 +27,6 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 function App() {
   return (
     <div className="min-h-screen bg-white">
-      {/* 🚀 FIX 1: ScrollToTop ditaruh di LUAR <Routes> agar bisa mengontrol semua perpindahan halaman */}
       <ScrollToTop />
       <ToTheTop />
 
@@ -55,7 +55,6 @@ function App() {
           }
         />
         
-        {/* 🚀 FIX 2: Tambahkan /:id agar rute detail dinamis dan tidak mental balik ke Beranda saat diklik */}
         <Route
           path="/detail-lowongan/:id"
           element={
@@ -93,6 +92,18 @@ function App() {
             <>
               <Navbar />
               <Arsip />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* 🚀 BERHASIL DITAMBAHKAN: Rute halaman profil user */}
+        <Route
+          path="/profil"
+          element={
+            <>
+              <Navbar />
+              <Profil />
               <Footer />
             </>
           }

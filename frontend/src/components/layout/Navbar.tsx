@@ -156,19 +156,25 @@ const Navbar: React.FC = () => {
                     <span>Keluar</span>
                   </button>
 
-                  <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider">
+                  <Link 
+                    to="/profil" // ➔ Otomatis direct meluncur ke halaman rute /profil yang baru kita daftarkan
+                    className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 border border-transparent transition-all duration-300 hover:bg-white hover:border-gray-100 hover:shadow-[0_4px_20px_-10px_rgba(13,39,141,0.15)] hover:-translate-y-0.5 cursor-pointer group text-decoration-none"
+                  >
+                    {/* Avatar Lingkaran */}
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider transform group-hover:scale-105 transition-transform duration-300">
                       {userData?.name?.charAt(0) || <User size={16} />}
                     </div>
+
+                    {/* Detail Teks Nama & Role */}
                     <div className="leading-tight pr-1 text-left">
-                      <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate">
+                      <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate group-hover:text-blue-600 transition-colors">
                         {userData?.name || "Memuat..."}
                       </h4>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                         {userData?.role || "Pelamar"}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 </>
               )}
             </div>

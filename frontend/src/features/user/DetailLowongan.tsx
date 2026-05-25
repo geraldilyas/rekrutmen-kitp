@@ -106,12 +106,12 @@ const DetailLowongan: React.FC = () => {
     });
   };
 
-  // 🚀 SUBMIT DATA MURNI JSON KE BACKEND LARAVEL
+  // 🚀 SUBMIT DATA DENGAN TRACKER ERROR DETAIL LARAVEL
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
 
-    // Validasi: Pastikan semua kolom input link drive dinamis sudah terisi teks
+    // Validasi internal frontend
     const missingDocs = Object.keys(uploadedFiles).filter(key => !uploadedFiles[key].trim());
     if (missingDocs.length > 0) {
       setApplyError(`Harap isi tautan Drive untuk berkas: ${missingDocs.join(", ")}`);
@@ -122,17 +122,16 @@ const DetailLowongan: React.FC = () => {
       setApplyLoading(true);
       setApplyError("");
 
-      // 🚀 FORMAT SINKRON: Bungkus data kembali ke format Objek ber-Key nama Dokumen
-      const formattedDocumentsObj: { [key: string]: { type: string; file__path: string } } = {};
+      // Kita pakai format Objek Key-Value yang kemarin terbukti berhasil nembak field-nya
+      const formattedDocumentsObj: { [key: string]: { type: string; file_path: string } } = {};
       
       Object.keys(uploadedFiles).forEach((docType) => {
         formattedDocumentsObj[docType] = {
-          type: docType,                         // Mengisi field .type
-          file__path: uploadedFiles[docType]     // 🚀 SINKRONISASI EMAS: Menggunakan 'file__path' (Double Underscore)
+          type: docType,
+          file_path: uploadedFiles[docType]
         };
       });
 
-      // Kirim objek terstruktur yang dinanti oleh Laravel lo
       await api.post("/applications", {
         job_id: Number(id),
         documents: formattedDocumentsObj 
@@ -141,13 +140,21 @@ const DetailLowongan: React.FC = () => {
       setApplySuccess(true);
       setAlreadyApplied(true);
       setShowApplyForm(false);
-      
-      // Scroll smooth kembali ke atas indikator sukses pendaftaran
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
-      setApplyError(
-        err?.response?.data?.message || "Gagal mengirim berkas lamaran. Coba lagi."
-      );
+      // 🚀 AMBIL CIRI ERROR DETAIL DARI OBJEK VALIDASI LARAVEL
+      const serverMessage = err?.response?.data?.message;
+      const validationErrors = err?.response?.data?.errors;
+
+      if (validationErrors) {
+        // Bongkar array errors bawaan Laravel dan gabungkan jadi teks pesan yang jelas
+        const errorMessages = Object.values(validationErrors)
+          .flat()
+          .join(", ");
+        setApplyError(errorMessages);
+      } else {
+        setApplyError(serverMessage || "Gagal mengirim berkas lamaran. Coba lagi.");
+      }
     } finally {
       setApplyLoading(false);
     }
