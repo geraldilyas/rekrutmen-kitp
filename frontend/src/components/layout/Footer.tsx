@@ -64,18 +64,19 @@ const Footer: React.FC = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16"
+             className="grid grid-cols-1 md:grid-cols-12 gap-y-10 gap-x-12 mb-16"
         >
           {/* Brand Info */}
           <motion.div
             variants={itemVariants as any}
-            className="md:col-span-5 space-y-8"
+            className="md:col-span-12 lg:col-span-5 space-y-8"
           >
             {" "}
             <div className="flex items-center gap-4 h-fit">
               {" "}
-      
-              <div className="flex items-center gap-5 sm:gap-6">
+              
+              {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap agar logo menekuk aman ke bawah di layar HP kecil (320px - 400px) */}
+              <div className="flex flex-wrap items-center gap-4 sm:gap-5 md:gap-6">
   
                   <div className="w-24 sm:w-28 md:w-32 lg:w-28 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
                     <img
@@ -84,7 +85,8 @@ const Footer: React.FC = () => {
                       className="w-full object-contain block"
                     />
                   </div>
-                  <div className="h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
+                  {/* 🚀 RESPONSIVE FIX: Garis pembatas vertikal disembunyikan di mobile layar sangat sempit (hidden sm:block) jika posisi logo patah kebawah */}
+                  <div className="hidden sm:block h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
                   <div className="w-24 sm:w-28 md:w-32 lg:w-45 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
                     <img
                       src={logoRekrutmen}
@@ -95,23 +97,26 @@ const Footer: React.FC = () => {
               </div>
 
             </div>
+            {/* 🚀 RESPONSIVE FIX: Ditambahkan leading-relaxed agar susunan teks instansi bernafas lega saat pecah baris */}
             <p className="text-gray-500 text-sm leading-relaxed max-w-sm pt-1">
               Direktorat Jenderal Sumber Daya Air. <br />
               Balai Besar Wilayah Sungai Mesuji Sekampung. <br />
               Mengelola sumber daya air secara terpadu untuk kemakmuran rakyat.
             </p>
             <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
-                <MapPin size={16} className="text-[#FEB700]" />
+              {/* 🚀 RESPONSIVE FIX: Diubah ke items-start & leading-relaxed agar jika alamat memanjang ke baris kedua, ikon MapPin tidak ketarik rusak ke tengah */}
+              <div className="flex items-start gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors leading-relaxed">
+                <MapPin size={16} className="text-[#FEB700] mt-0.5 shrink-0" />
                 <span>Jl. Gatot Subroto No. 57, Bandar Lampung</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
-                <Phone size={16} className="text-[#FEB700]" />
+                <Phone size={16} className="text-[#FEB700] shrink-0" />
                 <span>(0721) 484 212</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
-                <Mail size={16} className="text-[#FEB700]" />
-                <span>rekrutmen.bbwsms@pu.go.id</span>
+                <Mail size={16} className="text-[#FEB700] shrink-0" />
+                {/* 🚀 RESPONSIVE FIX: Teks email diberi break-all untuk mencegah tumpah keluar layout saat dibuka di device resolusi ultra-kecil */}
+                <span className="break-all">rekrutmen.bbwsms@pu.go.id</span>
               </div>
             </div>
           </motion.div>
@@ -119,7 +124,8 @@ const Footer: React.FC = () => {
           {/* Tautan Penting */}
           <motion.div
             variants={itemVariants as any}
-            className="md:col-span-3 md:col-start-7 pt-4"
+
+            className="md:col-span-6 lg:col-span-3 lg:col-start-7 pt-2 md:pt-4"
           >
             <h5 className="font-extrabold text-[#0D278D] mb-6 text-lg">
               Tautan Penting
@@ -147,7 +153,8 @@ const Footer: React.FC = () => {
           {/* Bantuan & Sosial */}
           <motion.div
             variants={itemVariants as any}
-            className="md:col-span-3 pt-4"
+
+            className="md:col-span-6 lg:col-span-3 pt-2 md:pt-4"
           >
             <h5 className="font-extrabold text-[#0D278D] mb-6 text-lg">
               Bantuan & Kontak
@@ -168,7 +175,8 @@ const Footer: React.FC = () => {
               )}
             </ul>
 
-            <div className="flex items-center gap-4">
+            {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap agar barisan bundaran sosial media tidak terpotong di HP */}
+            <div className="flex flex-wrap items-center gap-4">
               {/* Instagram */}
               <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-[#0D278D] hover:text-white hover:border-[#0D278D] hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-inner">
                 <svg
@@ -246,16 +254,18 @@ const Footer: React.FC = () => {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10"
+
+          className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4 relative z-10"
         >
           <p className="text-xs text-gray-400 font-medium tracking-wide">
             © 2026 BBWS Kementerian PUPR. Direktorat Jenderal Sumber Daya Air.
           </p>
-          <div className="flex gap-6 text-xs text-gray-400 font-medium">
+          {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap & justify-center agar tautan privasi tidak terpotong ke samping di mobile screen */}
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium">
             <span className="hover:text-[#0D278D] cursor-pointer transition-colors">
               Kebijakan Privasi
             </span>
-            <span className="w-1 h-1 rounded-full bg-gray-300 my-auto" />
+            <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300 my-auto" />
             <span className="hover:text-[#0D278D] cursor-pointer transition-colors">
               Syarat & Ketentuan
             </span>
