@@ -110,14 +110,16 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/monthly', [StatisticsController::class, 'applicationsPerMonth']);
             });
 
-            // Reports
+            // Reports & Announcements
             Route::prefix('reports')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
-                Route::get('/export/{job_id}', [ReportController::class, 'exportApplications']);
+                Route::get('/export/{job_id}/excel', [ReportController::class, 'exportExcel']);
+                Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
+                Route::post('/publish-passed-results/{job_id}', [ReportController::class, 'publishPassedResults']);
+                Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
+                Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
             });
 
-            // Documents
-            Route::get('/documents/{id}/download', [DocumentController::class, 'download']);
 
             // Admin hierarchy management (admin users only, not regular users)
             Route::apiResource('users', AdminUserController::class)->only(['index', 'store', 'update']);

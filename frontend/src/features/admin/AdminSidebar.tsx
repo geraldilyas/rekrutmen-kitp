@@ -5,6 +5,7 @@ import {
   Briefcase,
   Users,
   FileText,
+  Megaphone,
   User,
   X,
   LogOut,
@@ -23,6 +24,7 @@ const menu = [
   { name: "User", path: "/admin/users", icon: Users },
   { name: "Lowongan", path: "/admin/lowongan", icon: Briefcase },
   { name: "Pendaftar", path: "/admin/applications", icon: FileText },
+  { name: "Laporan", path: "/admin/reports", icon: Megaphone },
 ];
 
 const AdminSidebar: React.FC<Props> = ({ isOpen, onClose }) => {

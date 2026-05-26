@@ -17,6 +17,7 @@ import UsersManage from "./features/admin/UsersManage";
 import ApplicationsList from "./features/admin/ApplicationsList";
 import AdminApplicantDetail from "./features/admin/ApplicantDetail";
 import AdminProfile from "./features/admin/Profile";
+import Reports from "./features/admin/Reports";
 import PenyeleksiLayout from "./features/penyeleksi/PenyeleksiLayout";
 import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
@@ -127,6 +128,7 @@ function App() {
             path="applications/:jobId"
             element={<AdminApplicantDetail />}
           />
+          <Route path="reports" element={<Reports />} />
           <Route path="profil" element={<AdminProfile />} />
         </Route>
 

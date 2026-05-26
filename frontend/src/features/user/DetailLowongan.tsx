@@ -16,8 +16,12 @@ import {
   FileText,
   Send,
   AlertCircle,
+  Zap,
+  Megaphone,
+  Loader2,
 } from "lucide-react";
 import { api } from "../../services/api";
+import { useUserDocuments } from "../shared/profileHooks";
 
 interface JobDetail {
   id: number;
@@ -31,9 +35,20 @@ interface JobDetail {
   unit_kerja: string;
   requirements: string;
   deadline: string;
-  start_date: string;
-  end_date: string;
-  required_documents?: string[] | string; 
+  required_documents: string[] | string;
+  form_fields: Array<{
+    id: number;
+    label: string;
+    type: string;
+    category: string;
+    is_required: boolean;
+  }>;
+  announcements: Array<{
+    id: number;
+    title: string;
+    file_path: string;
+    published_at: string;
+  }>;
 }
 
 const DetailLowongan: React.FC = () => {
@@ -41,6 +56,7 @@ const DetailLowongan: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const { documents: masterDocs } = useUserDocuments();
 
   // Application & Form State
   const isLoggedIn = !!localStorage.getItem("token");
@@ -81,15 +97,12 @@ const DetailLowongan: React.FC = () => {
   
       if (dynamicFields && dynamicFields.length > 0) {
         dynamicFields.forEach((field: any) => {
-          // Menjadikan ID field sebagai KEY utama state pembungkus dokumen
           initialAnswersState[field.id] = {
             field_id: Number(field.id),
             label: field.label,
             value: ""
           };
         });
-      } else {
-        console.warn("Peringatan: Tidak ada form_fields yang ditemukan untuk lowongan ini.");
       }
   
       setUploadedFiles(initialAnswersState);
@@ -107,7 +120,6 @@ const DetailLowongan: React.FC = () => {
     }
   };
 
-  // Handler update nilai input tautan berdasarkan fieldId numerik
   const handleLinkChange = (fieldId: number, e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadedFiles({
       ...uploadedFiles,
@@ -118,18 +130,29 @@ const DetailLowongan: React.FC = () => {
     });
   };
 
-  // SUBMIT DATA 100% SINKRON DENGAN STRUKTUR ARRAY VALIDATOR LARAVEL
+  const useMasterDoc = (fieldId: number, label: string) => {
+    const typeLower = label.toLowerCase();
+    const found = masterDocs.find(d => 
+      typeLower.includes(d.type.toLowerCase()) || 
+      d.type.toLowerCase().includes(typeLower)
+    );
+
+    if (found) {
+      setUploadedFiles({
+        ...uploadedFiles,
+        [fieldId]: {
+          ...uploadedFiles[fieldId],
+          value: found.file_path
+        }
+      });
+    }
+  };
+
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
 
-    // Mengubah isi Map Objek menjadi array murni [ { field_id: 1, value: "..." }, ... ]
-    const answersPayload = Object.values(uploadedFiles).map((item) => ({
-      field_id: Number(item.field_id),
-      value: item.value ? item.value.trim() : ""
-    }));
-
-    // Validasi internal frontend sebelum dikirim ke server
+    // Filter missing required fields
     const missingDocs = Object.values(uploadedFiles).filter(item => !item.value.trim());
     if (missingDocs.length > 0) {
       const missingLabels = missingDocs.map(d => d.label).join(", ");
@@ -141,27 +164,24 @@ const DetailLowongan: React.FC = () => {
       setApplyLoading(true);
       setApplyError("");
 
-      const payload = {
-        job_id: Number(id),
-        answers: answersPayload // Mengirimkan bentuk indeks array berurutan murni
-      };
+      // SINKRONISASI: Backend expects 'answers' array for dynamic form fields
+      const answersPayload = Object.values(uploadedFiles).map((item) => ({
+        field_id: Number(item.field_id),
+        value: item.value.trim()
+      }));
 
-      await api.post("/applications", payload);
+      // In this refined system, documents are handled via Form Fields (links)
+      await api.post("/applications", {
+        job_id: Number(id),
+        answers: answersPayload
+      });
 
       setApplySuccess(true);
       setAlreadyApplied(true);
       setShowApplyForm(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
-      const serverMessage = err?.response?.data?.message;
-      const validationErrors = err?.response?.data?.errors;
-
-      if (validationErrors) {
-        const errorMessages = Object.values(validationErrors).flat().join(", ");
-        setApplyError(errorMessages);
-      } else {
-        setApplyError(serverMessage || "Gagal mengirim berkas lamaran.");
-      }
+      setApplyError(err?.response?.data?.message || "Gagal mengirim berkas lamaran.");
     } finally {
       setApplyLoading(false);
     }
@@ -190,7 +210,7 @@ const DetailLowongan: React.FC = () => {
   if (loading) {
     return (
       <div className="bg-white min-h-screen font-['Poppins'] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D]"></div>
+        <Loader2 className="animate-spin text-[#0D278D]" size={48} />
       </div>
     );
   }
@@ -199,10 +219,7 @@ const DetailLowongan: React.FC = () => {
     return (
       <div className="bg-white min-h-screen font-['Poppins'] flex flex-col items-center justify-center">
         <h2 className="text-2xl font-bold text-[#0D278D]">Lowongan tidak ditemukan</h2>
-        <button
-          onClick={() => navigate("/lowongan")}
-          className="mt-4 text-[#0D278D] font-bold hover:underline"
-        >
+        <button onClick={() => navigate("/lowongan")} className="mt-4 text-[#0D278D] font-bold hover:underline">
           Kembali ke Lowongan
         </button>
       </div>
@@ -217,7 +234,7 @@ const DetailLowongan: React.FC = () => {
         <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-white">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <button
               onClick={() => navigate("/lowongan")}
@@ -236,35 +253,65 @@ const DetailLowongan: React.FC = () => {
               </span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] mb-8 max-w-4xl tracking-tight text-white">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] mb-8 max-w-4xl tracking-tight">
               {job.title}
             </h1>
-
-            <div className="flex flex-wrap items-center gap-6 text-blue-100/80 text-sm font-medium">
-              <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-[#FEB700]" />
-                {job.location || "Penempatan BBWS"}
-              </div>
-              <div className="flex items-center gap-2">
-                <GraduationCap size={18} className="text-[#FEB700]" />
-                {job.qualification}
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>
 
-      {/* --- MAIN CONTENT & SIDEBAR SECTION --- */}
+      {/* 🚀 MAIN CONTENT SECTION */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
+        
+        {/* 📢 ANNOUNCEMENT SECTION (IF ANY) */}
+        {job.announcements && job.announcements.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="mb-16 p-8 rounded-[2.5rem] bg-gradient-to-br from-[#0D278D] to-blue-800 text-white shadow-2xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-[#FEB700] flex items-center justify-center text-[#0D278D] shadow-lg shadow-amber-500/20">
+                  <Megaphone size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Pengumuman Resmi</h3>
+                  <p className="text-blue-200 text-xs font-bold uppercase tracking-widest">Informasi Kelulusan & Hasil Seleksi</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {job.announcements.map((ann) => (
+                  <a 
+                    key={ann.id}
+                    href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${ann.file_path}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-5 rounded-[24px] bg-white/10 border border-white/10 hover:bg-white/20 transition-all group/ann"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                        <FileText size={20} className="text-[#FEB700]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white">{ann.title}</p>
+                        <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Terbit: {new Date(ann.published_at).toLocaleDateString('id-ID')}</p>
+                      </div>
+                    </div>
+                    <Zap size={18} className="text-[#FEB700] opacity-0 group-hover/ann:opacity-100 transition-opacity" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           
-          {/* Info Details Left Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-8 space-y-16"
-          >
+          {/* Left Column: Details */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="lg:col-span-8 space-y-16">
             <section>
               <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-6 tracking-tight flex items-center gap-3">
                 <Briefcase size={28} className="text-[#FEB700]" />
@@ -275,6 +322,18 @@ const DetailLowongan: React.FC = () => {
                 dangerouslySetInnerHTML={{ __html: job.description }}
               />
             </section>
+
+            {job.qualification && (
+               <section>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-8 tracking-tight flex items-center gap-3">
+                  <GraduationCap size={28} className="text-[#FEB700]" />
+                  Kualifikasi
+                </h2>
+                <div className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px]">
+                  {job.qualification}
+                </div>
+              </section>
+            )}
 
             {job.requirements && (
               <section>
@@ -291,12 +350,7 @@ const DetailLowongan: React.FC = () => {
           </motion.div>
 
           {/* Action Sidebar Right Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="lg:col-span-4"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="lg:col-span-4">
             <div className="sticky top-32 lg:border-l-2 lg:border-gray-100 lg:pl-10 pb-8">
               <h3 className="text-xl font-extrabold text-[#0D278D] flex items-center gap-2 mb-8">
                 <ClipboardList size={22} className="text-[#FEB700]" />
@@ -337,7 +391,7 @@ const DetailLowongan: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status Sesi Feedback Atas */}
+              {/* Status Feedback */}
               <AnimatePresence mode="wait">
                 {applySuccess ? (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 border border-green-100 flex gap-3 mb-4">
@@ -369,7 +423,6 @@ const DetailLowongan: React.FC = () => {
                 </p>
               </div>
 
-              {/* Conditional Action Button Group */}
               {!isLoggedIn ? (
                 <button onClick={() => navigate("/login")} className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0D278D] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
                   Masuk untuk Melamar
@@ -420,7 +473,6 @@ const DetailLowongan: React.FC = () => {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
               <div className="relative">
                 
-                {/* --- EDITORIAL HEADER --- */}
                 <div className="text-left mb-12 border-b border-gray-900 pb-6">
                   <h3 className="text-2xl font-extrabold text-[#0D278D] font-['Poppins']">
                     Dokumen Kelengkapan Digital
@@ -430,7 +482,6 @@ const DetailLowongan: React.FC = () => {
                   </p>
                 </div>
 
-                {/* --- EDITORIAL INSTRUCTION NOTE --- */}
                 <div className="mb-12 p-6 bg-gray-50 border-l-2 border-[#0D278D] flex gap-4 items-start">
                   <div className="w-5 h-5 rounded-full bg-[#0D278D] flex items-center justify-center text-white shrink-0 mt-0.5">
                     <Info size={12} strokeWidth={2.5} />
@@ -438,7 +489,7 @@ const DetailLowongan: React.FC = () => {
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-[#0D278D] uppercase tracking-wider block">Petunjuk Akses Berbagi</span>
                     <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      Unggah berkas Anda ke Google Drive per item, kemudian salin tautannya masing-masing. Pastikan status berbagi berkas telah diatur ke <span className="text-amber-600 font-bold">"Siapa saja yang memiliki link (Anyone with the link)"</span> sebagai <span className="font-bold">Pelihat (Viewer)</span> agar panitia seleksi BBWSMS dapat melakukan verifikasi.
+                      Pastikan status berbagi berkas telah diatur ke <span className="text-amber-600 font-bold">"Siapa saja yang memiliki link"</span> sebagai <span className="font-bold">Pelihat (Viewer)</span>.
                     </p>
                   </div>
                 </div>
@@ -450,70 +501,49 @@ const DetailLowongan: React.FC = () => {
                   </motion.div>
                 )}
 
-                {/* --- SYSTEM FORM: ITERASI DATA BERBASIS ARRAY OBJECT --- */}
                 <form onSubmit={handleSubmitApplication} className="space-y-8">
                   <div className="space-y-8">
-                    {Object.values(uploadedFiles).map((fieldItem, index) => {
-                      return (
-                        <div 
-                          key={fieldItem.field_id} 
-                          className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300"
-                        >
-                          {/* Label Tipe Berkas (Sisi Kiri) */}
-                          <div className="w-full md:w-1/3 pt-3">
-                            <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-1.5">
+                    {Object.values(uploadedFiles).map((fieldItem, index) => (
+                      <div key={fieldItem.field_id} className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300">
+                        <div className="w-full md:w-1/3 pt-3">
+                          <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
                               <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
                               {fieldItem.label} <span className="text-red-500/80">*</span>
-                            </label>
-                          </div>
-
-                          {/* Input Kolom Tautan Teks Drive (Sisi Kanan) */}
-                          <div className="w-full md:w-2/3 relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
-                              <FileText size={16} strokeWidth={2} />
-                            </span>
-                            <input
-                              type="url"
-                              name={`drive_link_${fieldItem.field_id}`}
-                              placeholder={`Salin tautan Google Drive ${fieldItem.label} di sini`}
-                              value={fieldItem.value}
-                              onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
-                              className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800 placeholder-gray-300"
-                              required
-                            />
-                          </div>
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => useMasterDoc(fieldItem.field_id, fieldItem.label)}
+                              className="text-[9px] bg-blue-50 text-[#0D278D] px-2 py-1 rounded hover:bg-[#0D278D] hover:text-white transition-all"
+                            >
+                              Gunakan Master
+                            </button>
+                          </label>
                         </div>
-                      );
-                    })}
+
+                        <div className="w-full md:w-2/3 relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
+                            <FileText size={16} strokeWidth={2} />
+                          </span>
+                          <input
+                            type="url"
+                            placeholder={`Salin tautan Google Drive ${fieldItem.label} di sini`}
+                            value={fieldItem.value}
+                            onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
+                            className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Tombol Kontrol Bawah Form */}
                   <div className="pt-8 flex flex-col sm:flex-row justify-end gap-3 mt-4">
-                    <button
-                      type="button"
-                      disabled={applyLoading}
-                      onClick={() => setShowApplyForm(false)}
-                      className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all duration-300 cursor-pointer disabled:opacity-50"
-                    >
+                    <button type="button" disabled={applyLoading} onClick={() => setShowApplyForm(false)} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all disabled:opacity-50">
                       Batalkan
                     </button>
-                    
-                    <button
-                      type="submit"
-                      disabled={applyLoading}
-                      className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {applyLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-[#0D278D]/30 border-t-[#0D278D] rounded-full animate-spin" />
-                          <span>Mengirim...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send size={12} />
-                          <span>Kirim Lamaran Sekarang</span>
-                        </>
-                      )}
+                    <button type="submit" disabled={applyLoading} className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                      {applyLoading ? <Loader2 className="animate-spin" size={16} /> : <><Send size={12} /> Kirim Lamaran</>}
                     </button>
                   </div>
                 </form>

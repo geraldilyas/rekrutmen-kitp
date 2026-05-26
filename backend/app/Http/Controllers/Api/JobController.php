@@ -15,7 +15,7 @@ class JobController extends Controller
         $now = now();
         $upcomingThreshold = now()->addDays(7);
 
-        $query = Job::with(['formFields', 'stages'])->withCount(['applications', 'applications as accepted_count' => function($q) {
+        $query = Job::with(['formFields', 'stages', 'announcements'])->withCount(['applications', 'applications as accepted_count' => function($q) {
             $q->where('status', 'Lulus');
         }]);
 
@@ -122,6 +122,7 @@ class JobController extends Controller
         $job = \App\Models\Job::with([
             'formFields',
             'stages',
+            'announcements',
         ])->findOrFail($id);
 
         return response()->json([

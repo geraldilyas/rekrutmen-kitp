@@ -9,7 +9,8 @@ import {
   Clock,
   ChevronRight,
   Brain,
-  Filter
+  Filter,
+  FileText
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -22,6 +23,12 @@ interface Announcement {
   deadline: string;
   applications_count: number;
   accepted_count: number;
+  announcements: Array<{
+    id: number;
+    title: string;
+    file_path: string;
+    published_at: string;
+  }>;
 }
 
 const containerVariants = {
@@ -258,6 +265,29 @@ const Pengumuman: React.FC = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* 📄 DOKUMEN PENGUMUMAN RESMI */}
+                    {item.announcements && item.announcements.length > 0 && (
+                      <div className="mt-8 pt-6 border-t border-dashed border-gray-100 space-y-3">
+                        <p className="text-[10px] font-black text-[#FEB700] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                          <FileText size={12} /> Dokumen Resmi Hasil Seleksi
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          {item.announcements.map((doc) => (
+                            <a 
+                              key={doc.id}
+                              href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${doc.file_path}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
+                            >
+                              <FileText size={14} className="group-hover/link:animate-bounce" />
+                              <span>{doc.title}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                     <div className="flex items-center md:items-center">

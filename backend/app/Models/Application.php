@@ -18,6 +18,24 @@ class Application extends Model
         'applied_at',
     ];
 
+    protected $appends = ['calculated_final_score'];
+
+    public function getCalculatedFinalScoreAttribute()
+    {
+        if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job') || !$this->job->relationLoaded('stages')) {
+            return null;
+        }
+
+        $totalScore = 0;
+        foreach ($this->job->stages as $stage) {
+            $result = $this->stageResults->where('job_stage_id', $stage->id)->first();
+            $score = $result ? ($result->score ?? 0) : 0;
+            $totalScore += ($score * $stage->weight) / 100;
+        }
+
+        return round($totalScore, 2);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -27,9 +27,14 @@ class Job extends Model
             'created_by',
         ];
 
-    public function creator()
+    public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class);
     }
 
     public function applications()

@@ -26,7 +26,7 @@ class ApplicationController extends Controller
             'answers.*.value' => 'required|string|max:1000',
             'documents' => 'nullable|array',
             'documents.*.type' => 'required|string|max:50',
-            'documents.*.file_path' => 'required|string|max:255',
+            'documents.*.url' => 'required|url|max:1000',
         ]);
 
         $job = Job::with('formFields')->findOrFail($validated['job_id']);
@@ -87,7 +87,7 @@ class ApplicationController extends Controller
                     ApplicationDocument::create([
                         'application_id' => $application->id,
                         'type' => strip_tags($doc['type']),
-                        'file_path' => strip_tags($doc['file_path']),
+                        'file_path' => strip_tags($doc['url']),
                         'uploaded_at' => now()
                     ]);
                 }

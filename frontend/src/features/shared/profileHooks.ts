@@ -7,6 +7,10 @@ export function useProfile() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
+    if (!localStorage.getItem("token")) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.get("/auth/me");
@@ -64,6 +68,10 @@ export function useUserDocuments() {
   const [loading, setLoading] = useState(true);
 
   const fetchDocuments = useCallback(async () => {
+    if (!localStorage.getItem("token")) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.get("/user-documents");
