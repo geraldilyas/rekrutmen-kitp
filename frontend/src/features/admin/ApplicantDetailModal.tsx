@@ -164,45 +164,8 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
             </div>
           </section>
 
-          {/* Documents */}
-          <section>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Paperclip size={12} /> Dokumen Lamaran
-            </p>
-            {fetching ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0D278D]" />
-              </div>
-            ) : detail?.documents?.length ? (
-              <div className="space-y-2">
-                {detail.documents.map((doc) => (
-                  <a
-                    key={doc.id}
-                    href={doc.file_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white hover:border-[#0D278D]/30 hover:bg-blue-50/30 transition-all group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <FileText size={15} className="text-[#0D278D]" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">{doc.type}</p>
-                        <p className="text-[10px] text-gray-400">{fmt(doc.uploaded_at)}</p>
-                      </div>
-                    </div>
-                    <ExternalLink size={14} className="text-gray-300 group-hover:text-[#0D278D] transition-colors" />
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
-                <Paperclip size={24} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-sm text-gray-400">Tidak ada dokumen yang dilampirkan</p>
-              </div>
-            )}
-          </section>
+         
+          
 
           {/* Form answers */}
           {detail?.answers?.length ? (
