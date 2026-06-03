@@ -87,7 +87,7 @@ const ApplicantTable: React.FC<Props> = ({ applicants, onView }) => {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {applicants.map((app) => {
-              const s = statusConfig[app.status] || statusConfig.pending;
+              const s = statusConfig[app.last_stage_status ?? ""] || statusConfig.pending;
               const weightedScore = app.stage_scores.reduce((sum, sc) => {
                 return sum + ((sc.score || 0) * sc.weight) / 100;
               }, 0);
@@ -123,7 +123,7 @@ const ApplicantTable: React.FC<Props> = ({ applicants, onView }) => {
                   <td className="px-3 py-4 text-center hidden md:table-cell align-middle">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 text-[#0D278D] text-[11px] font-semibold whitespace-nowrap">
                       <Clock size={10} />
-                      {app.current_stage || "—"}
+                      {app.last_stage || "—"}
                     </span>
                   </td>
                   <td className="px-3 py-4 text-center hidden sm:table-cell align-middle">

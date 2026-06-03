@@ -22,12 +22,16 @@ const UsersManage: React.FC = () => {
   const {
     users,
     totalUsers,
+    currentPage,
+    lastPage,
+    loading,
     search,
     setSearch,
     filterRole,
     setFilterRole,
     filterVerification,
     setFilterVerification,
+    setCurrentPage,
     addUser,
     editUser,
     deleteUser,
@@ -134,12 +138,45 @@ const UsersManage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <UsersTable
-        users={users}
-        onEdit={handleEdit}
-        onDelete={deleteUser}
-        onToggleVerification={toggleVerification}
-      />
+      {loading ? (
+        <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0D278D] mx-auto" />
+        </div>
+      ) : (
+        <>
+          <UsersTable
+            users={users}
+            onEdit={handleEdit}
+            onDelete={deleteUser}
+            onToggleVerification={toggleVerification}
+          />
+
+          {/* Pagination */}
+          {lastPage > 1 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <p className="text-xs text-gray-500 font-medium">
+                Halaman {currentPage} dari {lastPage}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={currentPage === 1 || loading}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+                >
+                  Sebelumnya
+                </button>
+                <button
+                  disabled={currentPage === lastPage || loading}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  className="px-4 py-2 rounded-xl bg-[#0D278D] text-white text-xs font-bold hover:bg-[#FEB700] hover:text-[#0D278D] disabled:opacity-50 transition-all"
+                >
+                  Berikutnya
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modal — only reachable by admin since the button is hidden for penyeleksi */}
       {isAdmin && (

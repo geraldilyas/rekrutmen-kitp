@@ -4,61 +4,32 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Application;
-use App\Models\ApplicationStatusHistory;
-use App\Models\JobStage;
 use App\Models\ApplicationStageResult;
-use App\Notifications\ApplicationStatusUpdated;
+use App\Services\ApplicationService;
+use Illuminate\Support\Facades\Log;
 
 class ApplicationAdminController extends Controller
 {
-    //  GET semua lamaran + filter
-    public function index(Request $request)
+    protected $applicationService;
+
+    public function __construct(ApplicationService $applicationService)
     {
-        $query = Application::with(['user', 'job', 'stageResults.stage', 'stageResults.reviewer']);
-
-        // filter status
-        if ($request->status) {
-            $query->where('status', $request->status);
-        }
-
-        // filter kategori job
-        if ($request->category) {
-            $query->whereHas('job', function ($q) use ($request) {
-                $q->where('category', $request->category);
-            });
-        }
-
-        if ($request->has('job_id')) {
-            $query->where('job_id', $request->job_id);
-        }
-
-        if ($request->search) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('email', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        return response()->json($query->latest()->get());
+        $this->applicationService = $applicationService;
     }
 
-    public function search(Request $request)
+    /**
+     * GET all applications with filters.
+     */
+    public function index(Request $request)
     {
-        $keyword = $request->keyword;
-
-        $applications = Application::with(['user', 'job'])
-            ->whereHas('user', function ($query) use ($keyword) {
-                $query->where('name', 'like', "%{$keyword}%")
-                    ->orWhere('email', 'like', "%{$keyword}%");
-            })
-            ->get();
-
+        $applications = $this->applicationService->getApplications($request->all());
         return response()->json($applications);
     }
 
-    //  DETAIL lamaran
+    /**
+     * Show application detail.
+     */
     public function show($id)
     {
         $application = Application::with([
@@ -73,7 +44,9 @@ class ApplicationAdminController extends Controller
         return response()->json($application);
     }
 
-    //  VALIDASI lamaran
+    /**
+     * Update application overall status.
+     */
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
@@ -82,97 +55,41 @@ class ApplicationAdminController extends Controller
         ]);
 
         $application = Application::findOrFail($id);
-
-        // update status
-        $application->update([
-            'status' => $validated['status']
-        ]);
-
-        // simpan histori
-        ApplicationStatusHistory::create([
-            'application_id' => $application->id,
-            'status' => $validated['status'],
-            'notes' => strip_tags($validated['notes'] ?? ''),
-            'created_at' => now()
-        ]);
-
-        // Send notification if exists
-        try {
-            if ($application->user) {
-                $application->user->notify(new ApplicationStatusUpdated($application));
-            }
-        } catch (\Exception $e) {
-            // Log error but don't fail the request
-            \Illuminate\Support\Facades\Log::error("Failed to send notification: " . $e->getMessage());
-        }
+        $result = $this->applicationService->updateApplicationStatus($application, $validated);
 
         return response()->json([
             'message' => 'Status berhasil diperbarui',
-            'data' => $application
+            'data' => $result
         ]);
     }
 
+    /**
+     * Initialize the selection stage for an application.
+     */
     public function initStage($id)
     {
-        $application = Application::with('job.stages')->findOrFail($id);
+        try {
+            $application = Application::with('job.stages')->findOrFail($id);
+            $result = $this->applicationService->initializeFirstStage($application);
 
-        $existing = ApplicationStageResult::where('application_id', $id)
-            ->where('status', 'pending')
-            ->orderByDesc('id')
-            ->first();
-
-        if ($existing) {
-            return response()->json(['message' => 'Stage already active', 'data' => $existing]);
+            return response()->json(['message' => 'Seleksi dimulai', 'data' => $result]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $firstStage = $application->job->stages->sortBy('stage_order')->first();
-
-        if (!$firstStage) {
-            return response()->json(['message' => 'Lowongan tidak memiliki tahap seleksi'], 422);
-        }
-
-        $result = ApplicationStageResult::create([
-            'application_id' => $application->id,
-            'job_stage_id'   => $firstStage->id,
-            'status'         => 'pending',
-        ]);
-
-        return response()->json(['message' => 'Seleksi dimulai', 'data' => $result]);
     }
 
+    /**
+     * Get stages for an application.
+     */
     public function applicationStages($id)
     {
-        $application = \App\Models\Application::with([
-            'job.stages',
-            'stageResults.stage'
-        ])->find($id);
+        $application = Application::with(['job.stages', 'stageResults.stage'])->find($id);
 
         if (!$application) {
-            return response()->json([
-                'message' => 'Application not found'
-            ], 404);
+            return response()->json(['message' => 'Application not found'], 404);
         }
 
-        $stages = $application->job->stages->map(function ($stage) use ($application) {
-
-            $result = $application->stageResults
-                ->where('job_stage_id', $stage->id)
-                ->first();
-
-            return [
-                'stage_id' => $stage->id,
-                'stage_name' => $stage->name,
-                'stage_order' => $stage->stage_order,
-                'start_date' => $stage->start_date,
-                'end_date' => $stage->end_date,
-
-                'result_id' => $result ? $result->id : null,
-                'result' => $result ? $result->status : 'pending',
-                'score' => $result ? $result->score : null,
-                'notes' => $result ? $result->notes : null,
-                'updated_at' => $result ? $result->updated_at : null,
-            ];
-        });
+        $stages = $this->applicationService->getApplicationStages($application);
 
         return response()->json([
             'message' => 'Application stages retrieved successfully',
@@ -183,156 +100,53 @@ class ApplicationAdminController extends Controller
         ]);
     }
 
+    /**
+     * Update the result of a selection stage.
+     */
     public function updateStageResult(Request $request, $id)
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,lulus,tidak_lulus',
-            'score' => 'nullable|numeric|min:0|max:100',
+            'score' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string|max:1000'
         ]);
 
-        DB::beginTransaction();
-
         try {
-
             $stageResult = ApplicationStageResult::findOrFail($id);
+            $result = $this->applicationService->updateStageResult($stageResult, $validated);
 
-            $currentStage = JobStage::findOrFail($stageResult->job_stage_id);
-
-            $today = \Carbon\Carbon::today();
-            $startDate = $currentStage->start_date ? \Carbon\Carbon::parse($currentStage->start_date) : null;
-            $endDate = $currentStage->end_date ? \Carbon\Carbon::parse($currentStage->end_date) : null;
-
-            // Block grading if the stage hasn't started yet
-            if ($startDate && $today->lt($startDate)) {
-                return response()->json([
-                    'message' => 'Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . $startDate->format('d/m/Y'),
-                ], 403);
-            }
-
-            // Block grading if the stage has ended
-            if ($endDate && $today->gt($endDate)) {
-                return response()->json([
-                    'message' => 'Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $endDate->format('d/m/Y'),
-                ], 403);
-            }
-
-            $application = Application::findOrFail(
-                $stageResult->application_id
-            );
-
-            $stageResult->update([
-                'status' => $validated['status'],
-                'score' => $validated['score'],
-                'notes' => strip_tags($validated['notes'] ?? ''),
-                'reviewed_at' => now(),
-                'reviewed_by' => auth()->id()
-            ]);
-
-            if ($validated['status'] === 'tidak_lulus') {
-
-                $application->update([
-                    'status' => 'Tidak Lulus'
-                ]);
-
-                ApplicationStatusHistory::create([
-                    'application_id' => $application->id,
-                    'status' => 'Tidak Lulus',
-                    'notes' => 'Gagal pada tahap: ' . $currentStage->name . '. ' . ($validated['notes'] ?? ''),
-                    'created_at' => now(),
-                ]);
-
-                DB::commit();
-
-                return response()->json([
-                    'message' => 'Pelamar dinyatakan Tidak Lulus',
-                    'data' => $stageResult
-                ]);
-            }
-
-            $nextStage = JobStage::where('job_id', $application->job_id)
-                ->where('stage_order', '>', $currentStage->stage_order)
-                ->orderBy('stage_order')
-                ->first();
-
-
-            if ($validated['status'] === 'lulus' && $nextStage) {
-
-                $existingNextStage = ApplicationStageResult::where(
-                    'application_id',
-                    $application->id
-                )
-                ->where('job_stage_id', $nextStage->id)
-                ->first();
-
-                if (!$existingNextStage) {
-
-                    ApplicationStageResult::create([
-                        'application_id' => $application->id,
-                        'job_stage_id' => $nextStage->id,
-                        'status' => 'pending',
-                    ]);
-                }
-
-                $application->update([
-                    'status' => 'seleksi'
-                ]);
-
-                ApplicationStatusHistory::create([
-                    'application_id' => $application->id,
-                    'status' => 'seleksi',
-                    'notes' => 'Lolos tahap ' . $currentStage->name . '. Lanjut ke tahap berikutnya.',
-                    'created_at' => now(),
-                ]);
-            }
-
-
-            if ($validated['status'] === 'lulus' && !$nextStage) {
-                // Kalkulasi Skor Akhir jika ini tahap terakhir
-                $allResults = ApplicationStageResult::where('application_id', $application->id)->get();
-                $finalScore = 0;
-                
-                foreach ($allResults as $res) {
-                    $stage = JobStage::find($res->job_stage_id);
-                    $weight = $stage ? $stage->weight : 0;
-                    $finalScore += ($res->score * ($weight / 100));
-                }
-
-                $application->update([
-                    'status' => 'Lulus',
-                    'final_score' => $finalScore
-                ]);
-
-                ApplicationStatusHistory::create([
-                    'application_id' => $application->id,
-                    'status' => 'Lulus',
-                    'notes' => 'Pelamar diterima dengan skor akhir: ' . $finalScore,
-                    'created_at' => now(),
-                ]);
-            }
-
-            DB::commit();
+            $message = $validated['status'] === 'tidak_lulus' 
+                ? 'Pelamar dinyatakan Tidak Lulus' 
+                : 'Status tahapan berhasil diperbarui';
 
             return response()->json([
-                'message' => 'Status tahapan berhasil diperbarui',
-                'data' => $stageResult->load('stage')
+                'message' => $message,
+                'data' => $result->load('stage')
             ]);
-
         } catch (\Exception $e) {
-
-            DB::rollBack();
+            $code = $e->getCode() ?: 500;
             
-            \Log::error('Error updating stage result: ' . $e->getMessage(), [
+            Log::error('Error updating stage result: ' . $e->getMessage(), [
                 'id' => $id,
                 'status' => $request->status,
                 'score' => $request->score,
-                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'message' => 'Terjadi kesalahan',
+                'message' => $code == 500 ? 'Terjadi kesalahan' : $e->getMessage(),
                 'error' => $e->getMessage()
-            ], 500);
+            ], is_numeric($code) && $code >= 100 && $code < 600 ? $code : 500);
         }
+    }
+
+    /**
+     * Delete an application.
+     */
+    public function destroy($id)
+    {
+        $application = Application::findOrFail($id);
+        $this->applicationService->deleteApplication($application);
+
+        return response()->json(['message' => 'Lamaran berhasil dihapus']);
     }
 }

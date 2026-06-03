@@ -229,13 +229,12 @@ const StageUpdateModal: React.FC<Props> = ({
           {/* Catatan */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-              Catatan <span className="text-red-400">*</span>
+              Catatan
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              required
               placeholder={
                 decision === "lulus"
                   ? "Berikan catatan untuk peserta..."

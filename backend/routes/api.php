@@ -12,8 +12,6 @@ use App\Http\Controllers\Api\Admin\ApplicationAdminController;
 use App\Http\Controllers\Api\Admin\StatisticsController;
 use App\Http\Controllers\Api\Admin\ReportController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
-use App\Http\Controllers\Api\Admin\DocumentController;
-use App\Http\Controllers\Api\Admin\BulkOperationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,16 +89,9 @@ Route::middleware('throttle:api')->group(function () {
             // Jobs CRUD
             Route::apiResource('jobs', JobController::class)->only(['store', 'update', 'destroy']);
 
-            // Bulk Operations
-            Route::prefix('bulk')->group(function () {
-                Route::post('/applications/status', [BulkOperationController::class, 'updateApplicationStatus']);
-                Route::post('/applications/delete', [BulkOperationController::class, 'deleteApplications']);
-                Route::post('/jobs/delete', [BulkOperationController::class, 'deleteJobs']);
-                Route::post('/users/delete', [BulkOperationController::class, 'deleteUsers']);
-            });
-
             // Applications — admin-only actions
             Route::put('/applications/{id}/status', [ApplicationAdminController::class, 'updateStatus']);
+            Route::delete('/applications/{id}', [ApplicationAdminController::class, 'destroy']);
 
             // Statistics
             Route::prefix('statistics')->group(function () {
@@ -122,7 +113,7 @@ Route::middleware('throttle:api')->group(function () {
 
 
             // Admin hierarchy management (admin users only, not regular users)
-            Route::apiResource('users', AdminUserController::class)->only(['index', 'store', 'update']);
+            Route::apiResource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
 
             // Registered users management (role = user)
             Route::put('/users/registered/{id}', [AdminUserController::class, 'updateUser']);

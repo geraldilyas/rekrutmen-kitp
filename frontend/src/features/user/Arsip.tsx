@@ -54,16 +54,12 @@ const Arsip: React.FC = () => {
 
   const filters = ["Semua Riwayat", "Lulus", "Tidak Lulus"];
 
-  useEffect(() => {
-    fetchHistory();
-  }, []);
-
   const fetchHistory = async () => {
     try {
       setLoading(true);
       const res = await api.get("/applications/my");
       const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
-      const finished = data.filter((app: any) => ['Lulus', 'Tidak Lulus'].includes(app.status));
+      const finished = data.filter((app: ArchiveItem) => ['Lulus', 'Tidak Lulus'].includes(app.status));
       setHistory(finished);
     } catch (err) {
       console.error("Error fetching history:", err);
@@ -72,6 +68,10 @@ const Arsip: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const getCategoryDisplay = (cat: string) => {
     if (cat === "tenaga_pendukung") return "Tenaga Pendukung";

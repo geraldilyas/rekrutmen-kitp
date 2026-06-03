@@ -104,6 +104,8 @@ export interface Application {
   current_stage: string | null;
   current_stage_order: number;
   current_stage_result_id: number | null;
+  last_stage: string | null;
+  last_stage_status: string | null;
   stage_start_date: string | null;
   stage_end_date: string | null;
   stage_history: StageHistory[];

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  MapPin,
   Clock,
   CalendarClock,
   CheckCircle2,
@@ -34,7 +33,9 @@ interface JobDetail {
   location: string;
   unit_kerja: string;
   requirements: string;
-  deadline: string;
+  deadline: string | null;
+  start_date?: string;
+  end_date?: string;
   required_documents: string[] | string;
   form_fields: Array<{
     id: number;
@@ -49,6 +50,12 @@ interface JobDetail {
     file_path: string;
     published_at: string;
   }>;
+}
+
+interface Application {
+  id: number;
+  job_id: number;
+  status: string;
 }
 
 const DetailLowongan: React.FC = () => {
@@ -70,15 +77,8 @@ const DetailLowongan: React.FC = () => {
   
   // State untuk menampung object answers terstruktur dinamis berbasis ID field
   const [uploadedFiles, setUploadedFiles] = useState<{ 
-    [key: number]: { field_id: number; label: string; value: string } 
+    [key: number]: { field_id: number; label: string; value: string; is_required: boolean } 
   }>({});
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (id) {
-      fetchJobDetail(id, token);
-    }
-  }, [id]);
 
   const fetchJobDetail = async (jobId: string, token: string | null) => {
     try {
@@ -100,7 +100,8 @@ const DetailLowongan: React.FC = () => {
           initialAnswersState[field.id] = {
             field_id: Number(field.id),
             label: field.label,
-            value: ""
+            value: "",
+            is_required: !!field.is_required
           };
         });
       }
@@ -108,10 +109,10 @@ const DetailLowongan: React.FC = () => {
       setUploadedFiles(initialAnswersState);
   
       if (results[1]) {
-        const myApps = Array.isArray(results[1].data)
+        const myApps: Application[] = Array.isArray(results[1].data)
           ? results[1].data
           : results[1].data.data || [];
-        setAlreadyApplied(myApps.some((a: any) => String(a.job_id) === jobId));
+        setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
       }
     } catch (err) {
       console.error("Error fetching job detail:", err);
@@ -119,6 +120,13 @@ const DetailLowongan: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (id) {
+      fetchJobDetail(id, token);
+    }
+  }, [id]);
 
   const handleLinkChange = (fieldId: number, e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadedFiles({
@@ -130,7 +138,7 @@ const DetailLowongan: React.FC = () => {
     });
   };
 
-  const useMasterDoc = (fieldId: number, label: string) => {
+  const applyMasterDoc = (fieldId: number, label: string) => {
     const typeLower = label.toLowerCase();
     const found = masterDocs.find(d => 
       typeLower.includes(d.type.toLowerCase()) || 
@@ -153,7 +161,7 @@ const DetailLowongan: React.FC = () => {
     if (!id) return;
 
     // Filter missing required fields
-    const missingDocs = Object.values(uploadedFiles).filter(item => !item.value.trim());
+    const missingDocs = Object.values(uploadedFiles).filter(item => item.is_required && !item.value.trim());
     if (missingDocs.length > 0) {
       const missingLabels = missingDocs.map(d => d.label).join(", ");
       setApplyError(`Harap isi tautan berkas wajib berikut: ${missingLabels}`);
@@ -165,10 +173,13 @@ const DetailLowongan: React.FC = () => {
       setApplyError("");
 
       // SINKRONISASI: Backend expects 'answers' array for dynamic form fields
-      const answersPayload = Object.values(uploadedFiles).map((item) => ({
-        field_id: Number(item.field_id),
-        value: item.value.trim()
-      }));
+      // Hanya kirim field yang memiliki nilai
+      const answersPayload = Object.values(uploadedFiles)
+        .filter(item => item.value.trim() !== "")
+        .map((item) => ({
+          field_id: Number(item.field_id),
+          value: item.value.trim()
+        }));
 
       // In this refined system, documents are handled via Form Fields (links)
       await api.post("/applications", {
@@ -193,10 +204,21 @@ const DetailLowongan: React.FC = () => {
     return cat;
   };
 
-  const formatDeadline = (dateStr: string) => {
-    if (!dateStr) return "";
-    const deadline = new Date(dateStr);
+  const formatDeadline = (dateStr: string | null, startDateStr?: string) => {
     const now = new Date();
+    
+    if (startDateStr) {
+      const start = new Date(startDateStr);
+      if (now < start) {
+        const diffTime = start.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) return `Buka dalam ${diffDays} Hari`;
+        return "Segera Hadir";
+      }
+    }
+
+    if (!dateStr) return "Sesuai ketentuan";
+    const deadline = new Date(dateStr);
     const diffTime = deadline.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -206,6 +228,7 @@ const DetailLowongan: React.FC = () => {
   };
 
   const isClosed = job?.deadline ? new Date() > new Date(job.deadline) : false;
+  const isNotOpenYet = job?.start_date ? new Date() < new Date(job.start_date) : false;
 
   if (loading) {
     return (
@@ -248,8 +271,8 @@ const DetailLowongan: React.FC = () => {
               <span className="px-4 py-1.5 rounded-full bg-[#FEB700] text-[#0D278D] text-xs font-bold tracking-widest uppercase shadow-sm">
                 {getCategoryDisplay(job.category)}
               </span>
-              <span className="px-4 py-1.5 rounded-full border border-blue-300/30 text-blue-100 text-xs font-bold tracking-widest uppercase flex items-center gap-1.5">
-                <Clock size={14} /> {formatDeadline(job.deadline)}
+              <span className={`px-4 py-1.5 rounded-full border text-xs font-bold tracking-widest uppercase flex items-center gap-1.5 ${isNotOpenYet ? "border-amber-400/30 text-amber-400" : "border-blue-300/30 text-blue-100"}`}>
+                <Clock size={14} /> {formatDeadline(job.deadline, job.start_date)}
               </span>
             </div>
 
@@ -427,6 +450,10 @@ const DetailLowongan: React.FC = () => {
                 <button onClick={() => navigate("/login")} className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0D278D] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
                   Masuk untuk Melamar
                 </button>
+              ) : isNotOpenYet ? (
+                <button disabled className="w-full bg-amber-50 text-amber-600 border-2 border-amber-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
+                  <Clock size={18} /> Pendaftaran Belum Dibuka
+                </button>
               ) : isClosed ? (
                 <button disabled className="w-full bg-gray-100 text-gray-400 border-2 border-gray-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
                   Pendaftaran Ditutup
@@ -513,7 +540,7 @@ const DetailLowongan: React.FC = () => {
                             </div>
                             <button 
                               type="button" 
-                              onClick={() => useMasterDoc(fieldItem.field_id, fieldItem.label)}
+                              onClick={() => applyMasterDoc(fieldItem.field_id, fieldItem.label)}
                               className="text-[9px] bg-blue-50 text-[#0D278D] px-2 py-1 rounded hover:bg-[#0D278D] hover:text-white transition-all"
                             >
                               Gunakan Master

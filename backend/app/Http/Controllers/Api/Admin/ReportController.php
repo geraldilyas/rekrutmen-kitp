@@ -4,36 +4,27 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
-use App\Models\Application;
 use App\Models\Announcement;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ApplicationsExport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
+use App\Services\ReportService;
 
 class ReportController extends Controller
 {
+    protected $reportService;
+
+    public function __construct(ReportService $reportService)
+    {
+        $this->reportService = $reportService;
+    }
+
     /**
      * List jobs that have passed their deadline (closed) and final stage.
      */
     public function closedJobs()
     {
-        $now = now();
-        $jobs = Job::with(['stages'])
-            ->withCount('applications')
-            ->get()
-            ->filter(function($job) use ($now) {
-                // Must be past deadline
-                $isPastDeadline = $job->deadline && $job->deadline->isPast();
-                
-                // Must be past final stage end date
-                $lastStage = $job->stages->sortByDesc('stage_order')->first();
-                $isPastFinalStage = $lastStage && $lastStage->end_date && $lastStage->end_date->isPast();
-
-                return $isPastDeadline && $isPastFinalStage;
-            })->values();
+        $jobs = $this->reportService->getEligibleJobs();
 
         return response()->json([
             'message' => 'Jobs eligible for announcement retrieved successfully',
@@ -61,31 +52,7 @@ class ReportController extends Controller
     public function exportPdf(Request $request, $job_id)
     {
         $job = Job::with('stages')->findOrFail($job_id);
-        $query = Application::with(['user', 'stageResults'])->where('job_id', $job_id);
-
-        if ($request->has('passed_only')) {
-            $query->where('status', 'Lulus');
-            $title = "DAFTAR PESERTA LULUS SELEKSI AKHIR";
-        } else {
-            $title = "LAPORAN HASIL SELEKSI REKRUTMEN";
-        }
-
-        $applications = $query->get()->map(function($app) use ($job) {
-            $totalScore = 0;
-            foreach ($job->stages as $stage) {
-                $result = $app->stageResults->where('job_stage_id', $stage->id)->first();
-                $score = $result ? ($result->score ?? 0) : 0;
-                $totalScore += ($score * $stage->weight) / 100;
-            }
-            $app->calculated_final_score = round($totalScore, 2);
-            return $app;
-        })->sortByDesc('calculated_final_score')->values();
-
-        $pdf = Pdf::loadView('reports.applications-pdf', [
-            'job' => $job,
-            'applications' => $applications,
-            'report_title' => $title
-        ]);
+        $pdf = $this->reportService->generateApplicationsPdf($job, $request->has('passed_only'));
 
         $filename = 'laporan-pelamar-' . str_replace(' ', '-', strtolower($job->title)) . '.pdf';
 
@@ -104,29 +71,13 @@ class ReportController extends Controller
         ]);
 
         $job = Job::with(['stages', 'announcements'])->findOrFail($request->job_id);
-        
-        if ($job->announcements->count() > 0) {
-            return response()->json([
-                'message' => 'Pengumuman untuk lowongan ini sudah diterbitkan dan tidak dapat diubah.'
-            ], 422);
+
+        try {
+            $announcement = $this->reportService->createAnnouncement($job, $request->all());
+            return response()->json(['message' => 'Pengumuman berhasil diterbitkan', 'data' => $announcement], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        if (!$this->isJobEligible($job)) {
-            return response()->json([
-                'message' => 'Pengumuman hanya dapat diterbitkan setelah lowongan melewati deadline dan seluruh tahapan seleksi berakhir.'
-            ], 422);
-        }
-
-        $path = $request->file('file')->store('announcements', 'public');
-
-        $announcement = Announcement::create([
-            'job_id' => $request->job_id,
-            'title' => $request->title,
-            'file_path' => $path,
-            'published_at' => now()
-        ]);
-
-        return response()->json(['message' => 'Pengumuman berhasil diterbitkan', 'data' => $announcement], 201);
     }
 
     /**
@@ -135,53 +86,13 @@ class ReportController extends Controller
     public function publishPassedResults(Request $request, $job_id)
     {
         $job = Job::with(['stages', 'announcements'])->findOrFail($job_id);
-        
-        if ($job->announcements->count() > 0) {
-            return response()->json([
-                'message' => 'Pengumuman untuk lowongan ini sudah diterbitkan dan tidak dapat diubah.'
-            ], 422);
+
+        try {
+            $announcement = $this->reportService->publishPassedResults($job);
+            return response()->json(['message' => 'Pengumuman hasil seleksi berhasil diterbitkan secara otomatis.', 'data' => $announcement], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        if (!$this->isJobEligible($job)) {
-            return response()->json([
-                'message' => 'Pengumuman hanya dapat diterbitkan setelah lowongan melewati deadline dan seluruh tahapan seleksi berakhir.'
-            ], 422);
-        }
-
-        // Generate PDF Content (Passed only, Ranked)
-        $applications = Application::with(['user', 'stageResults'])
-            ->where('job_id', $job_id)
-            ->where('status', 'Lulus')
-            ->get()
-            ->map(function($app) use ($job) {
-                $totalScore = 0;
-                foreach ($job->stages as $stage) {
-                    $result = $app->stageResults->where('job_stage_id', $stage->id)->first();
-                    $score = $result ? ($result->score ?? 0) : 0;
-                    $totalScore += ($score * $stage->weight) / 100;
-                }
-                $app->calculated_final_score = round($totalScore, 2);
-                return $app;
-            })->sortByDesc('calculated_final_score')->values();
-
-        $pdf = Pdf::loadView('reports.applications-pdf', [
-            'job' => $job,
-            'applications' => $applications,
-            'report_title' => "DAFTAR PESERTA LULUS SELEKSI AKHIR"
-        ]);
-
-        $filename = 'hasil-seleksi-' . str_replace(' ', '-', strtolower($job->title)) . '-' . time() . '.pdf';
-        $path = 'announcements/' . $filename;
-        Storage::disk('public')->put($path, $pdf->output());
-
-        $announcement = Announcement::create([
-            'job_id' => $job_id,
-            'title' => 'Hasil Akhir Seleksi - ' . $job->title,
-            'file_path' => $path,
-            'published_at' => now()
-        ]);
-
-        return response()->json(['message' => 'Pengumuman hasil seleksi berhasil diterbitkan secara otomatis.', 'data' => $announcement], 201);
     }
 
     /**
@@ -192,15 +103,5 @@ class ReportController extends Controller
         $announcements = Announcement::where('job_id', $job_id)->get();
         return response()->json(['data' => $announcements]);
     }
-
-    /**
-     * Helper: Check if job is past deadline and final stage.
-     */
-    private function isJobEligible($job)
-    {
-        $isPastDeadline = $job->deadline && $job->deadline->isPast();
-        $lastStage = $job->stages->sortByDesc('stage_order')->first();
-        $isPastFinalStage = $lastStage && $lastStage->end_date && $lastStage->end_date->isPast();
-        return $isPastDeadline && $isPastFinalStage;
-    }
 }
+

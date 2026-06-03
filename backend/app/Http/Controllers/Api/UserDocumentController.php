@@ -3,30 +3,37 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserDocument;
 use Illuminate\Http\Request;
+use App\Services\UserService;
 
 class UserDocumentController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
+    /**
+     * List user documents.
+     */
     public function index(Request $request)
     {
         return response()->json($request->user()->documents);
     }
 
+    /**
+     * Store or update a user document.
+     */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'type' => 'required|string|max:50',
             'url'  => 'required|url|max:1000',
         ]);
 
-        $user = $request->user();
-        
-        // Update or create document link of same type
-        $doc = UserDocument::updateOrCreate(
-            ['user_id' => $user->id, 'type' => $request->type],
-            ['file_path' => $request->url]
-        );
+        $doc = $this->userService->saveDocument($request->user(), $validated);
 
         return response()->json([
             'message' => 'Tautan dokumen berhasil disimpan',
@@ -34,11 +41,13 @@ class UserDocumentController extends Controller
         ], 200);
     }
 
+    /**
+     * Delete a user document.
+     */
     public function destroy(Request $request, $id)
     {
-        $doc = $request->user()->documents()->findOrFail($id);
-        $doc->delete();
-
+        $this->userService->deleteDocument($request->user(), (int)$id);
         return response()->json(['message' => 'Tautan dokumen berhasil dihapus']);
     }
 }
+

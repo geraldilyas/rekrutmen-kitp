@@ -54,6 +54,9 @@ const UsersTable: React.FC<Props> = ({
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-50 bg-gray-50/50">
+              <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-12">
+                No
+              </th>
               <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                 User
               </th>
@@ -72,10 +75,13 @@ const UsersTable: React.FC<Props> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {users.map((user) => {
+            {users.map((user, index) => {
               const role = roleConfig[user.role] || roleConfig.penyeleksi;
               return (
                 <tr key={user.id} className="hover:bg-gray-50/30">
+                  <td className="px-4 py-3 text-center text-xs font-medium text-gray-400">
+                    {index + 1}
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg bg-[#0D278D] text-white flex items-center justify-center font-bold text-xs shrink-0">

@@ -8,13 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SecureHeaderMiddleware
 {
-    /**
-     * OWASP Best Practice: Defense in Depth
-     * 
-     * 1. PREVENT KEY LEAKAGE: Ensure the frontend never receives sensitive config data.
-     * 2. SECURITY HEADERS: Add standard OWASP-recommended headers (CSP, HSTS, etc).
-     * 3. REDACTION: If a response accidentally contains a field named 'api_key', redact it.
-     */
+   
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);

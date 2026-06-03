@@ -46,11 +46,6 @@ class Application extends Model
         return $this->belongsTo(Job::class);
     }
 
-    public function documents()
-    {
-        return $this->hasMany(ApplicationDocument::class);
-    }
-
     public function answers()
     {
         return $this->hasMany(ApplicationAnswer::class);

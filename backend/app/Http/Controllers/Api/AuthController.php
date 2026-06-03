@@ -3,14 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use App\Services\UserService;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    // REGISTER
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
+    /**
+     * REGISTER user.
+     */
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -27,56 +35,50 @@ class AuthController extends Controller
             ]
         ]);
 
-        $user = User::create([
-            'name' => strip_tags($validated['name']),
-            'email' => $validated['email'],
-            'password' => \Hash::make($validated['password']),
-            'nik' => $validated['nik'] ?? null,
-            'role' => $validated['role'] ?? 'user'
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $result = $this->userService->register($validated);
 
         return response()->json([
             'message' => 'Registrasi berhasil',
-            'user' => $user,
-            'token' => $token
+            'user' => $result['user'],
+            'token' => $result['token']
         ], 201);
     }
 
-    // LOGIN
+    /**
+     * LOGIN user.
+     */
     public function login(Request $request)
-{
-    $validated = $request->validate([
-        'email' => 'required|string|email|max:255',
-        'password' => 'required|string|max:100'
-    ]);
+    {
+        $validated = $request->validate([
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string|max:100'
+        ]);
 
-    $user = User::where('email', $validated['email'])->first();
+        try {
+            $result = $this->userService->login($validated['email'], $validated['password']);
 
-    if (!$user || !Hash::check($validated['password'], $user->password)) {
-        return response()->json([
-            'message' => 'Email atau password salah'
-        ], 401);
+            return response()->json([
+                'message' => 'Login berhasil',
+                'token' => $result['token'],
+                'user' => $result['user']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 401);
+        }
     }
 
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'message' => 'Login berhasil',
-        'token' => $token,
-        'user' => $user
-    ]);
-}
-
-    // LOGOUT
+    /**
+     * LOGOUT user.
+     */
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
         return response()->json(['message' => 'Logout berhasil']);
     }
 
-    // UPDATE PROFILE
+    /**
+     * UPDATE PROFILE.
+     */
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -88,7 +90,7 @@ class AuthController extends Controller
             'address' => 'sometimes|nullable|string|max:500',
         ]);
 
-        $user->update($validated);
+        $user = $this->userService->updateProfile($user, $validated);
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui',
@@ -96,7 +98,9 @@ class AuthController extends Controller
         ]);
     }
 
-    // CHANGE PASSWORD
+    /**
+     * CHANGE PASSWORD.
+     */
     public function changePassword(Request $request)
     {
         $request->validate([
@@ -104,20 +108,14 @@ class AuthController extends Controller
             'new_password'     => 'required|string|min:8|confirmed',
         ]);
 
-        $user = $request->user();
+        try {
+            $this->userService->changePassword($request->user(), $request->current_password, $request->new_password);
 
-        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
-                'message' => 'Kata sandi saat ini tidak sesuai'
-            ], 422);
+                'message' => 'Kata sandi berhasil diubah'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $user->update([
-            'password' => Hash::make($request->new_password)
-        ]);
-
-        return response()->json([
-            'message' => 'Kata sandi berhasil diubah'
-        ]);
     }
 }

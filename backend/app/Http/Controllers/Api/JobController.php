@@ -4,47 +4,30 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
-use App\Models\JobStage;
 use Illuminate\Http\Request;
+use App\Services\JobService;
 
 class JobController extends Controller
 {
-    // GET ALL JOBS
-    public function index(Request $request)
+    protected $jobService;
+
+    public function __construct(JobService $jobService)
     {
-        $now = now();
-        $upcomingThreshold = now()->addDays(7);
-
-        $query = Job::with(['formFields', 'stages', 'announcements'])->withCount(['applications', 'applications as accepted_count' => function($q) {
-            $q->where('status', 'Lulus');
-        }]);
-
-        // Pelamar can see: Active jobs OR Upcoming jobs starting within 7 days
-        // Unless they ask for 'finished' jobs for Pengumuman
-        if ($request->has('finished')) {
-            $query->where('deadline', '<', $now);
-        } else if (auth()->check() && auth()->user()->role === 'user' || !auth()->check()) {
-            $query->where(function ($q) use ($now, $upcomingThreshold) {
-                // Active jobs
-                $q->where('start_date', '<=', $now)
-                  ->where('deadline', '>=', $now);
-                
-                // OR Upcoming jobs
-                $q->orWhere(function ($sq) use ($now, $upcomingThreshold) {
-                    $sq->where('start_date', '>', $now)
-                       ->where('start_date', '<=', $upcomingThreshold);
-                });
-            });
-        }
-
-        if ($request->has('category')) {
-            $query->where('category', $request->category);
-        }
-
-        return $query->latest()->get();
+        $this->jobService = $jobService;
     }
 
-    // STORE JOB + FORM DINAMIS
+    /**
+     * GET ALL JOBS.
+     */
+    public function index(Request $request)
+    {
+        $jobs = $this->jobService->getJobs($request->all());
+        return response()->json($jobs);
+    }
+
+    /**
+     * STORE JOB + FORM DINAMIS.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -79,51 +62,20 @@ class JobController extends Controller
             ], 422);
         }
 
-        $job = Job::create([
-            'title'          => strip_tags($validated['title']),
-            'category'       => $validated['category'],
-            'description'    => strip_tags($validated['description'], '<b><i><u><ul><li><ol><p><br>'),
-            'qualification'  => $validated['qualification'] ?? null,
-            'location'       => $validated['location'] ?? null,
-            'unit_kerja'     => $validated['unit_kerja'] ?? null,
-            'duration'       => $validated['duration'] ?? null,
-            'recruiter_name' => $validated['recruiter_name'] ?? null,
-            'requirements'   => strip_tags($validated['requirements'] ?? '', '<b><i><u><ul><li><ol><p><br>'),
-            'start_date'     => $validated['start_date'],
-            'end_date'       => $validated['end_date'],
-            'deadline'       => $validated['deadline'] ?? $validated['end_date'],
-            'created_by'     => auth()->id(),
-        ]);
-
-        if (!empty($validated['form_fields'])) {
-            $job->formFields()->attach($validated['form_fields']);
-        }
-
-        foreach ($validated['stages'] as $stage) {
-            JobStage::create([
-                'job_id'      => $job->id,
-                'name'        => strip_tags($stage['name']),
-                'stage_order' => $stage['stage_order'],
-                'start_date'  => $stage['start_date'],
-                'end_date'    => $stage['end_date'],
-                'weight'      => $stage['weight'],
-                'test_link'   => $stage['test_link'] ?? null,
-            ]);
-        }
+        $job = $this->jobService->createJob($validated);
 
         return response()->json([
             'message' => 'Lowongan berhasil dibuat',
-            'data' => $job->load(['stages'])
+            'data' => $job
         ], 201);
     }
 
+    /**
+     * GET SINGLE JOB DETAIL.
+     */
     public function show($id)
     {
-        $job = \App\Models\Job::with([
-            'formFields',
-            'stages',
-            'announcements',
-        ])->findOrFail($id);
+        $job = Job::with(['formFields', 'stages', 'announcements'])->findOrFail($id);
 
         return response()->json([
             'message' => 'Job detail retrieved successfully',
@@ -131,6 +83,9 @@ class JobController extends Controller
         ]);
     }
 
+    /**
+     * UPDATE JOB.
+     */
     public function update(Request $request, $id)
     {
         $job = Job::findOrFail($id);
@@ -152,44 +107,30 @@ class JobController extends Controller
             'form_fields.*'  => 'exists:form_fields,id',
         ]);
 
-        $job->update([
-            'title'          => strip_tags($validated['title']),
-            'category'       => $validated['category'],
-            'description'    => strip_tags($validated['description'], '<b><i><u><ul><li><ol><p><br>'),
-            'qualification'  => $validated['qualification'] ?? null,
-            'location'       => $validated['location'] ?? null,
-            'unit_kerja'     => $validated['unit_kerja'] ?? null,
-            'duration'       => $validated['duration'] ?? null,
-            'recruiter_name' => $validated['recruiter_name'] ?? null,
-            'requirements'   => strip_tags($validated['requirements'] ?? '', '<b><i><u><ul><li><ol><p><br>'),
-            'start_date'     => $validated['start_date'],
-            'end_date'       => $validated['end_date'],
-            'deadline'       => $validated['deadline'] ?? $validated['end_date'],
-        ]);
-
-        if (isset($validated['form_fields'])) {
-            $job->formFields()->sync($validated['form_fields']);
-        }
+        $job = $this->jobService->updateJob($job, $validated);
 
         return response()->json([
             'message' => 'Lowongan berhasil diupdate',
-            'data' => $job->load('stages')
+            'data' => $job
         ]);
     }
 
-    //HAPUS LOWONGAN
+    /**
+     * DELETE JOB.
+     */
     public function destroy($id)
     {
         $job = Job::findOrFail($id);
-
-        $job->delete();
+        $this->jobService->deleteJob($job);
 
         return response()->json([
             'message' => 'Lowongan berhasil dihapus'
         ]);
     }
 
-    // AMBIL FORM UNTUK PELAMAR
+    /**
+     * GET FORM FOR APPLICANTS.
+     */
     public function getForm($id)
     {
         $job = Job::with('formFields')->findOrFail($id);

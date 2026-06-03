@@ -5,32 +5,32 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use App\Services\UserService;
 
 class AdminUserController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * List all users for the admin panel.
      */
     public function index(Request $request)
     {
-        $users = User::latest()->get();
+        $users = $this->userService->getUsers($request->all());
         return response()->json($users);
     }
 
     /**
-     * Create a new admin or penyeleksi user.
+     * Create a new staff user (admin or penyeleksi).
      */
     public function store(Request $request)
     {
-        $authUser = $request->user();
-        
-        // Hierarchy Check
-        if ($authUser->admin_level === 3) {
-            return response()->json(['message' => 'L3 admin cannot create users'], 422);
-        }
-
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'email'       => 'required|string|email|max:255|unique:users',
@@ -42,29 +42,20 @@ class AdminUserController extends Controller
             'parent_id'   => 'nullable|exists:users,id',
         ]);
 
-        if ($authUser->admin_level === 2 && ($validated['admin_level'] ?? 3) != 3) {
-            return response()->json(['message' => 'L2 admin can only create L3 admins'], 422);
+        try {
+            $user = $this->userService->createStaff($request->user(), $validated);
+
+            return response()->json([
+                'message' => 'User berhasil dibuat',
+                'data'    => $user,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $user = User::create([
-            'name'        => strip_tags($validated['name']),
-            'email'       => $validated['email'],
-            'password'    => Hash::make($validated['password']),
-            'phone'       => $validated['phone'] ?? null,
-            'address'     => $validated['address'] ?? null,
-            'role'        => $validated['role'],
-            'admin_level' => $validated['admin_level'] ?? null,
-            'parent_id'   => $validated['parent_id'] ?? $authUser->id,
-        ]);
-
-        return response()->json([
-            'message' => 'User berhasil dibuat',
-            'data'    => $user,
-        ], 201);
     }
 
     /**
-     * Update an existing admin or penyeleksi user.
+     * Update an existing staff user.
      */
     public function update(Request $request, $id)
     {
@@ -82,61 +73,71 @@ class AdminUserController extends Controller
         ]);
 
         if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
+            $validated['password'] = \Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
         unset($validated['password_confirmation']);
 
-        $user->update($validated);
+        $user = $this->userService->updateProfile($user, $validated);
 
         return response()->json(['message' => 'User berhasil diupdate', 'data' => $user]);
     }
 
+    /**
+     * Get registered users (role = user).
+     */
     public function users(Request $request)
-        {
-            $authUser = $request->user();
-            
-            $query = $authUser->role === 'admin'
-                ? User::query()
-                : User::where('role', 'user');
+    {
+        $users = $this->userService->getRegisteredUsers($request->user(), $request->all());
+        return response()->json($users);
+    }
 
-            if ($request->search) {
-                $q = $request->search;
-                $query->where(function ($q2) use ($q) {
-                    $q2->where('name', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%")
-                    ->orWhere('nik', 'like', "%{$q}%");
-                });
-            }
+    /**
+     * Update a registered user.
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::where('role', 'user')->findOrFail($id);
 
-            return response()->json($query->latest()->get());
+        $validated = $request->validate([
+            'name'    => 'sometimes|string|max:255',
+            'email'   => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+            'nik'     => ['sometimes', 'digits:16', Rule::unique('users')->ignore($user->id)],
+            'phone'   => 'sometimes|nullable|string|max:20',
+            'address' => 'sometimes|nullable|string|max:500',
+        ]);
+
+        $user = $this->userService->updateProfile($user, $validated);
+
+        return response()->json(['message' => 'User berhasil diupdate', 'data' => $user]);
+    }
+
+    /**
+     * Toggle email verification for a registered user.
+     */
+    public function toggleVerification($id)
+    {
+        $user = User::where('role', 'user')->findOrFail($id);
+        $user = $this->userService->toggleVerification($user);
+
+        return response()->json(['message' => 'Status verifikasi diperbarui', 'data' => $user]);
+    }
+
+    /**
+     * Delete a user.
+     */
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === auth()->id()) {
+            return response()->json(['message' => 'Tidak dapat menghapus diri sendiri'], 422);
         }
 
-    
-        public function updateUser(Request $request, $id)
-        {
-            $user = User::where('role', 'user')->findOrFail($id);
+        $this->userService->deleteUser($user);
 
-            $validated = $request->validate([
-                'name'    => 'sometimes|string|max:255',
-                'email'   => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
-                'nik'     => ['sometimes', 'digits:16', Rule::unique('users')->ignore($user->id)],
-                'phone'   => 'sometimes|nullable|string|max:20',
-                'address' => 'sometimes|nullable|string|max:500',
-            ]);
-
-            $user->update($validated);
-
-            return response()->json(['message' => 'User berhasil diupdate', 'data' => $user]);
-        }
-
-        public function toggleVerification($id)
-        {
-            $user = User::where('role', 'user')->findOrFail($id);
-            $user->email_verified_at = $user->email_verified_at ? null : now();
-            $user->save();
-
-            return response()->json(['message' => 'Status verifikasi diperbarui', 'data' => $user]);
-        }
+        return response()->json(['message' => 'User berhasil dihapus']);
+    }
 }
+

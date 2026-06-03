@@ -10,7 +10,6 @@ use App\Models\JobStage;
 use App\Models\Application;
 use App\Models\ApplicationAnswer;
 use App\Models\ApplicationStageResult;
-use App\Models\ApplicationDocument;
 use App\Models\UserDocument;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -208,19 +207,6 @@ class DummyDataSeeder extends Seeder
                 ]);
             }
 
-            // Create ApplicationDocuments (Mock URLs)
-            ApplicationDocument::create([
-                'application_id' => $application->id,
-                'type' => 'CV_File',
-                'file_path' => 'https://drive.google.com/cv_' . strtolower(str_replace(' ', '_', $candidate->name)) . '.pdf',
-                'uploaded_at' => now(),
-            ]);
-            ApplicationDocument::create([
-                'application_id' => $application->id,
-                'type' => 'Identity_Card',
-                'file_path' => 'https://example.com/id_' . strtolower(str_replace(' ', '_', $candidate->name)) . '.jpg',
-                'uploaded_at' => now(),
-            ]);
         };
 
         // Application 1: Budi melamar TPM (New - Not Graded)

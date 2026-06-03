@@ -3,18 +3,29 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\FormField;
 use Illuminate\Http\Request;
+use App\Services\FormFieldService;
 
 class FormFieldController extends Controller
 {
-    // GET semua field
-    public function index()
+    protected $formFieldService;
+
+    public function __construct(FormFieldService $formFieldService)
     {
-        return FormField::all();
+        $this->formFieldService = $formFieldService;
     }
 
-    // STORE field 
+    /**
+     * Get all fields.
+     */
+    public function index()
+    {
+        return response()->json($this->formFieldService->getAllFields());
+    }
+
+    /**
+     * Store field.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -25,13 +36,7 @@ class FormFieldController extends Controller
             'category' => 'required|in:data_diri,berkas,tahapan'
         ]);
 
-        $field = FormField::create([
-            'label' => strip_tags($validated['label']),
-            'type' => $validated['type'],
-            'options' => $validated['options'],
-            'is_required' => $validated['is_required'] ?? false,
-            'category' => $validated['category']
-        ]);
+        $field = $this->formFieldService->createField($validated);
 
         return response()->json([
             'message' => 'Field berhasil dibuat',

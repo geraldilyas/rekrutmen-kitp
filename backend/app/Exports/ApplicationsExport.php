@@ -37,7 +37,6 @@ class ApplicationsExport implements FromCollection, WithHeadings, WithMapping, S
     public function map($application): array
     {
         return [
-            $application->id,
             $application->user->name ?? '-',
             $application->user->email ?? '-',
             $application->job->title ?? '-',
@@ -50,7 +49,6 @@ class ApplicationsExport implements FromCollection, WithHeadings, WithMapping, S
     public function headings(): array
     {
         return [
-            'ID',
             'Nama Lengkap',
             'Email',
             'Lowongan',

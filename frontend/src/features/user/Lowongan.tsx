@@ -66,10 +66,6 @@ const Lowongan: React.FC = () => {
     "Konsultan Individu",
   ];
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -84,6 +80,10 @@ const Lowongan: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
   const getCategoryDisplay = (cat: string) => {
     if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
     if (cat === "konsultan_individu") return "Konsultan Individu";
@@ -94,8 +94,16 @@ const Lowongan: React.FC = () => {
     if (!start || !end) return "";
     const startDate = new Date(start);
     const endDate = new Date(end);
+    const now = new Date();
     const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     
+    if (now < startDate) {
+      const diffTime = startDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays <= 7) return `Buka dalam ${diffDays} Hari`;
+      return "Segera Hadir";
+    }
+
     return `${startDate.getDate()} ${months[startDate.getMonth()]} - ${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
   };
 
@@ -236,28 +244,34 @@ const Lowongan: React.FC = () => {
           ) : (
             <AnimatePresence mode="popLayout">
               {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => (
+                filteredJobs.map((job) => {
+                  const isComingSoon = new Date() < new Date(job.start_date);
+                  return (
                   <motion.div
                     layout
                     key={job.id}
                     variants={itemVariants}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    whileHover={{ y: -8 }}
+                    whileHover={isComingSoon ? {} : { y: -8 }}
                     transition={{ duration: 0.3 }}
-                    className="p-8 rounded-3xl border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-500 flex flex-col relative overflow-hidden"
+                    className={`p-8 rounded-3xl border border-gray-100 bg-white transition-all duration-500 flex flex-col relative overflow-hidden ${
+                      isComingSoon ? "opacity-95" : "hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
+                    }`}
                   >
                     {/* ... job content ... */}
                     <div className="flex justify-between items-start mb-6">
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <Clock size={14} className="text-[#FEB700]" />
+                      <span className={`text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${isComingSoon ? "text-amber-500" : "text-gray-400"}`}>
+                        <Clock size={14} className={isComingSoon ? "text-amber-500" : "text-[#FEB700]"} />
                         {formatDateRange(job.start_date, job.deadline)}
                       </span>
 
                       <span
                         className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                          isComingSoon ? "bg-gray-50 text-gray-400" : (
                           job.category === "konsultan_individu"
                             ? "bg-amber-50 text-[#FEB700]"
                             : "bg-blue-50 text-[#0D278D]"
+                          )
                         }`}
                       >
                         {job.category === "konsultan_individu" ? (
@@ -269,7 +283,7 @@ const Lowongan: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-xl font-extrabold text-[#0D278D] mb-4 leading-tight">
+                    <h3 className={`text-xl font-extrabold mb-4 leading-tight ${isComingSoon ? "text-gray-400" : "text-[#0D278D]"}`}>
                       {job.title}
                     </h3>
 
@@ -287,19 +301,23 @@ const Lowongan: React.FC = () => {
 
                       <button
                         onClick={() => navigate(`/detail-lowongan/${job.id}`)}
-                        className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-6 py-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+                        className={`group px-6 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center overflow-hidden transition-all duration-300 border-1 ${
+                          isComingSoon 
+                          ? "bg-amber-50 border-amber-200 text-amber-700 cursor-pointer hover:bg-amber-100" 
+                          : "bg-transparent border-[#0D278D] text-[#0D278D] cursor-pointer hover:bg-[#0D278D] hover:text-white"
+                        }`}
                       >
                         <span className="transition-transform duration-300">
-                          Lihat Lowongan
+                          {isComingSoon ? "Lihat Detail" : "Lihat Lowongan"}
                         </span>
                         <ChevronRight
                           size={18}
-                          className="opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 transition-all duration-300 ease-out shrink-0"
+                          className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 max-w-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[20px] group-hover:ml-2 shrink-0"}`}
                         />
                       </button>
                     </div>
                   </motion.div>
-                ))
+                );})
               ) : (
                 <div className="col-span-full text-center py-32 flex flex-col items-center">
                   <Sparkles size={48} className="text-gray-200 mb-4" />

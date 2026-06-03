@@ -88,10 +88,21 @@ const Beranda: React.FC = () => {
     return cat;
   };
 
-  const formatDeadline = (dateStr: string) => {
+  const formatDeadline = (dateStr: string, startDateStr?: string) => {
+    const now = new Date();
+    
+    if (startDateStr) {
+      const start = new Date(startDateStr);
+      if (now < start) {
+        const diffTime = start.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) return `Buka dalam ${diffDays} Hari`;
+        return "Segera Hadir";
+      }
+    }
+
     if (!dateStr) return "";
     const deadline = new Date(dateStr);
-    const now = new Date();
     const diffTime = deadline.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -113,15 +124,12 @@ const Beranda: React.FC = () => {
     HANDLER AKSI CONDITIONAL UTK PADA BUTTON LAMAR
     ==================================================
   */
-  const handleActionPendaftaran = (jobId?: number) => {
-    if (!isLoggedIn) {
-      navigate("/login");
+  const handleActionPendaftaran = (job: Job) => {
+    // Allow viewing detail even if coming soon
+    if (job.id) {
+      navigate(`/detail-lowongan/${job.id}`); 
     } else {
-      if (jobId) {
-        navigate(`/detail-lowongan/${jobId}`); 
-      } else {
-        navigate("/lowongan");
-      }
+      navigate("/lowongan");
     }
   };
 
@@ -239,7 +247,9 @@ const Beranda: React.FC = () => {
               <div className="col-span-full text-center py-20">
                   <p className="text-gray-500">Belum ada lowongan aktif.</p>
               </div>
-          ) : jobs.map((job) => (
+          ) : jobs.map((job) => {
+            const isComingSoon = new Date() < new Date(job.start_date);
+            return (
             /* 🚀 SINKRONISASI EMAS: Kita tambahkan initial="hidden" dan animate="visible" langsung di card individu ini 
                 sama persis dengan cara halaman Lowongan.tsx merender list-nya! */
             <motion.div
@@ -247,18 +257,21 @@ const Beranda: React.FC = () => {
               variants={itemVariants}
               initial="hidden"
               animate="visible"
-              whileHover={{ y: -8 }}
-
-              className="p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 bg-white hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)] transition-all duration-300 flex flex-col justify-between"
+              whileHover={isComingSoon ? {} : { y: -8 }}
+              className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 bg-white transition-all duration-300 flex flex-col justify-between ${
+                isComingSoon ? "opacity-95" : "hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
+              }`}
             >
               <div>
                 <div className="flex justify-between items-center mb-6 gap-2">
-                  <span className="px-3 sm:px-4 py-1.5 rounded-xl bg-blue-50/50 text-[#0D278D] text-xs font-bold tracking-wider border border-blue-100 truncate">
+                  <span className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold tracking-wider border truncate ${
+                    isComingSoon ? "bg-gray-50 text-gray-400 border-gray-100" : "bg-blue-50/50 text-[#0D278D] border-blue-100"
+                  }`}>
                     {job.qualification}
                   </span>
-                  <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium shrink-0">
+                  <div className={`flex items-center gap-1.5 text-xs font-medium shrink-0 ${isComingSoon ? "text-amber-500" : "text-gray-400"}`}>
                     <Clock size={14} />
-                    <span>{formatDeadline(job.deadline)}</span>
+                    <span>{formatDeadline(job.deadline, job.start_date)}</span>
                   </div>
                 </div>
 
@@ -266,9 +279,11 @@ const Beranda: React.FC = () => {
                   <Briefcase
                     size={16}
                     className={
+                      isComingSoon ? "text-gray-300" : (
                       job.category === "konsultan_individu"
                         ? "text-[#FEB700]"
                         : "text-[#0D278D]"
+                      )
                     }
                   />
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -277,7 +292,7 @@ const Beranda: React.FC = () => {
                 </div>
 
                 {/* 🚀 RESPONSIVE FIX: Ukuran font judul posisi dibikin text-xl sm:text-2xl */}
-                <h3 className="text-xl sm:text-2xl font-bold text-[#0D278D] mb-3 sm:mb-4 group-hover:text-[#FEB700] transition-colors leading-tight">
+                <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isComingSoon ? "text-gray-400" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>
                   {job.title}
                 </h3>
                 <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">
@@ -294,18 +309,22 @@ const Beranda: React.FC = () => {
                 </div>
                 
                 <button 
-                  onClick={() => handleActionPendaftaran(job.id)}
-                  className="group bg-transparent border-1 border-[#0D278D] text-[#0D278D] px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-[#0D278D] cursor-pointer hover:text-white transition-all duration-300 shadow-sm flex items-center shrink-0"
+                  onClick={() => handleActionPendaftaran(job)}
+                  className={`group px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm flex items-center shrink-0 border-1 ${
+                    isComingSoon 
+                    ? "bg-amber-50 border-amber-200 text-amber-700 cursor-pointer hover:bg-amber-100" 
+                    : "bg-transparent border-[#0D278D] text-[#0D278D] cursor-pointer hover:bg-[#0D278D] hover:text-white"
+                  }`}
                 >
-                  <span>Lamar</span>
+                  <span>{isComingSoon ? "Lihat Detail" : "Lamar"}</span>
                   <ChevronRight
                     size={18}
-                    className="opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4 transition-all duration-300"
+                    className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4"}`}
                   />
                 </button>
               </div>
             </motion.div>
-          ))}
+          );})}
         </div>
       </motion.section>
 

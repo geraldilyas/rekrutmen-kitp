@@ -76,6 +76,8 @@ function mapApplication(app: any): Application {
     current_stage: pendingResult?.stage?.name ?? null,
     current_stage_order: pendingResult?.stage?.stage_order ?? null,
     current_stage_result_id: pendingResult?.id ?? null,
+    last_stage: completedResults.length > 0 ? completedResults[completedResults.length - 1].stage?.name ?? null : null,
+    last_stage_status: completedResults.length > 0 ? completedResults[completedResults.length - 1].status ?? null : null,
     stage_history: completedResults.map((sr: any) => ({
       stage_name: sr.stage?.name,
       status: sr.status,

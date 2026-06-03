@@ -231,22 +231,62 @@ export function useUsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterVerification, setFilterVerification] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
-  const fetchUsers = async () => {
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1); // Reset page on search change
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset to page 1 on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterRole, filterVerification]);
+
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/admin/users");
-      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
-      setUsers(data);
+      const res = await api.get("/admin/users", {
+        params: {
+          page: currentPage,
+          search: debouncedSearch || undefined,
+          role: filterRole !== "all" ? filterRole : undefined,
+          verification: filterVerification !== "all" ? filterVerification : undefined,
+        }
+      });
+      
+      const responseData = res.data;
+      if (responseData && responseData.data) {
+        setUsers(responseData.data);
+        setLastPage(responseData.last_page);
+        setTotalUsers(responseData.total);
+        // Note: We don't sync currentPage back to responseData.current_page here
+        // to avoid potential loops, but we trust the requested currentPage state.
+      } else {
+        setUsers([]);
+        setTotalUsers(0);
+      }
     } catch (err) {
       console.error("Error fetching users:", err);
       setUsers([]);
+      setTotalUsers(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, filterRole, filterVerification, currentPage]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const editUser = useCallback(async (id: number, data: any, role?: string) => {
     try {
@@ -260,7 +300,7 @@ export function useUsersManagement() {
       console.error("Error editing user:", err);
       throw err;
     }
-  }, []);
+  }, [fetchUsers]);
 
   const toggleVerification = useCallback(async (id: number) => {
     try {
@@ -269,55 +309,33 @@ export function useUsersManagement() {
     } catch (err) {
       console.error("Error toggling verification:", err);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const filteredUsers = useMemo(() => {
-    if (!Array.isArray(users)) return [];
-    let result = users;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (u) =>
-          u.name?.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q) ||
-          u.phone?.toLowerCase().includes(q),
-      );
-    }
-    if (filterRole !== "all")
-      result = result.filter((u) => u.role === filterRole);
-    if (filterVerification === "verified")
-      result = result.filter((u) => u.email_verified_at !== null);
-    else if (filterVerification === "unverified")
-      result = result.filter((u) => u.email_verified_at === null);
-    return result;
-  }, [users, search, filterRole, filterVerification]);
+  }, [fetchUsers]);
 
   const addUser = useCallback(async (data: UserFormData) => {
     try {
         await api.post("/admin/users", data);
+        setCurrentPage(1);
         fetchUsers();
     } catch (err) {
         console.error("Error adding user:", err);
         throw err;
     }
-  }, []);
+  }, [fetchUsers]);
 
   const deleteUser = useCallback(async (id: number) => {
       try {
-          await api.post("/admin/bulk/users/delete", { ids: [id] });
+          await api.delete(`/admin/users/${id}`);
           fetchUsers();
       } catch (err) {
           console.error("Error deleting user:", err);
       }
-  }, []);
+  }, [fetchUsers]);
 
   return {
-    users: filteredUsers,
-    totalUsers: users?.length || 0,
+    users,
+    totalUsers,
+    currentPage,
+    lastPage,
     loading,
     search,
     setSearch,
@@ -325,6 +343,7 @@ export function useUsersManagement() {
     setFilterRole,
     filterVerification,
     setFilterVerification,
+    setCurrentPage,
     addUser,
     editUser,
     deleteUser,
@@ -376,6 +395,8 @@ export function useApplications() {
                 current_stage_result_id: pendingResult?.id ?? null,
                 stage_start_date: pendingResult?.stage?.start_date ?? null,
                 stage_end_date: pendingResult?.stage?.end_date ?? null,
+                last_stage: completedResults.length > 0 ? completedResults[completedResults.length - 1].stage?.name ?? null : null,
+                last_stage_status: completedResults.length > 0 ? completedResults[completedResults.length - 1].status ?? null : null,
                 stage_history: completedResults.map((sr: any) => ({
                     stage_name: sr.stage?.name,
                     status: sr.status,

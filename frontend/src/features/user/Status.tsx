@@ -73,15 +73,6 @@ const StatusLamaran: React.FC = () => {
 
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    fetchMyApplications();
-  }, []);
-
   const fetchMyApplications = async () => {
     try {
       setLoading(true);
@@ -95,6 +86,15 @@ const StatusLamaran: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    fetchMyApplications();
+  }, [navigate]);
 
   const getCategoryDisplay = (cat: string) => {
     if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
