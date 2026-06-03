@@ -388,7 +388,7 @@ const DetailLowongan: React.FC = () => {
                   <div className="flex flex-col justify-center">
                     <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Batas Waktu</p>
                     <p className="font-semibold text-gray-800 text-[15px]">
-                      {new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                      {job.deadline ? new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : '-'}
                     </p>
                   </div>
                 </div>

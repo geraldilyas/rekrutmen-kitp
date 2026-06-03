@@ -6,7 +6,6 @@ import {
   Users,
   FileText,
   Megaphone,
-  User,
   X,
   LogOut,
   AlertTriangle,

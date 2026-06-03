@@ -37,7 +37,7 @@ const itemVariants = {
 
 const UserProfile: React.FC = () => {
   const { user, loading: profileLoading, updateProfile, changePassword } = useProfile();
-  const { documents, loading: docsLoading, saveDocumentLink, deleteDocument } = useUserDocuments();
+  const { documents, saveDocumentLink, deleteDocument } = useUserDocuments();
   
   const [formData, setFormData] = useState({
     name: "",

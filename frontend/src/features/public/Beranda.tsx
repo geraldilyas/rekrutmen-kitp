@@ -117,17 +117,15 @@ const Beranda: React.FC = () => {
     STATE SIMULASI LOGIN (Ubah sesuai Auth Context lo)
     ==================================================
   */
-  const isLoggedIn = !!localStorage.getItem("token"); 
 
   /*
     ==================================================
     HANDLER AKSI CONDITIONAL UTK PADA BUTTON LAMAR
     ==================================================
   */
-  const handleActionPendaftaran = (job: Job) => {
-    // Allow viewing detail even if coming soon
-    if (job.id) {
-      navigate(`/detail-lowongan/${job.id}`); 
+  const handleActionPendaftaran = (job?: Job) => {
+    if (job?.id) {
+      navigate(`/detail-lowongan/${job.id}`);
     } else {
       navigate("/lowongan");
     }
