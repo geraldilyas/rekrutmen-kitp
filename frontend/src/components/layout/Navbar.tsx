@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // 🚀 Optimasi AnimatePresence
+import { motion, AnimatePresence } from "framer-motion"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
 

@@ -5,14 +5,11 @@ import {
   Mail,
   Phone,
   CreditCard,
-  FileText,
-  ExternalLink,
   Star,
   Clock,
   Calendar,
   CheckCircle2,
   XCircle,
-  Paperclip,
   MessageSquare,
   AlertCircle,
 } from "lucide-react";
@@ -58,15 +55,12 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }) => {
   const [detail, setDetail] = useState<FullApplicationData | null>(null);
-  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     if (!application) { setDetail(null); return; }
-    setFetching(true);
     api.get(`/admin/applications/${application.id}`)
       .then((res) => setDetail(res.data))
-      .catch(() => setDetail(null))
-      .finally(() => setFetching(false));
+      .catch(() => setDetail(null));
   }, [application?.id]);
 
   if (!application) return null;
