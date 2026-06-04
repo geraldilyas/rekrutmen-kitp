@@ -1,9 +1,7 @@
 FROM php:8.3-apache
 
-# Enable mod_rewrite for Laravel routing
 RUN a2enmod rewrite
 
-# Install system deps
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
@@ -25,29 +23,26 @@ RUN apt-get update && apt-get install -y \
         opcache \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Point Apache to Laravel's public directory
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-    /etc/apache2/sites-available/*.conf \
-    /etc/apache2/apache2.conf \
-    /etc/apache2/conf-available/*.conf
 
 WORKDIR /var/www/html
 
-# Install PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
 
-# Copy application
 COPY . .
 
-RUN chmod -R 775 storage bootstrap/cache \
-    && php artisan config:clear \
-    && php artisan route:clear \
-    && php artisan view:clear
+RUN chmod -R 775 storage bootstrap/cache
+
+# Write a clean Apache vhost pointing to Laravel's public/ with AllowOverride All
+RUN printf '<VirtualHost *:80>\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Require all granted\n\
+        Options -Indexes\n\
+    </Directory>\n\
+</VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
