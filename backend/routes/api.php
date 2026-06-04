@@ -27,6 +27,12 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok'
+    ]);
+});
+
 Route::middleware('throttle:api')->group(function () {
 
     // Jobs (Public access)
