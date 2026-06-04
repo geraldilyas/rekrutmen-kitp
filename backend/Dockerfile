@@ -1,6 +1,9 @@
-FROM php:8.3-fpm
+FROM php:8.3-apache
 
-# System deps needed for GD and other extensions
+# Enable mod_rewrite for Laravel routing
+RUN a2enmod rewrite
+
+# Install system deps
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
@@ -25,9 +28,16 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www
+# Point Apache to Laravel's public directory
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
 
-# Install PHP dependencies (copy lock file first for layer caching)
+WORKDIR /var/www/html
+
+# Install PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
 
@@ -39,6 +49,9 @@ RUN chmod -R 775 storage bootstrap/cache \
     && php artisan route:clear \
     && php artisan view:clear
 
-EXPOSE 8080
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+EXPOSE 80
+
+CMD ["/usr/local/bin/entrypoint.sh"]
