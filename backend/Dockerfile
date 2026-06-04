@@ -45,7 +45,9 @@ RUN printf '<VirtualHost *:80>\n\
 </VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Fix Windows line endings and make executable
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
 
