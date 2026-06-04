@@ -1,6 +1,4 @@
-FROM php:8.3-apache
-
-RUN a2enmod rewrite
+FROM php:8.3-fpm
 
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
@@ -25,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+WORKDIR /var/www
 
 COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
@@ -34,15 +32,6 @@ COPY . .
 
 RUN chmod -R 775 storage bootstrap/cache
 
-# Apache vhost: point to Laravel public/ with AllowOverride All
-RUN printf '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>\n\
-</VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
+EXPOSE 8000
 
-EXPOSE 80
-
-CMD ["bash", "-c", "echo '=== Starting ===' && php artisan migrate --force && echo '=== Apache starting ===' && apache2-foreground"]
+CMD ["bash", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
