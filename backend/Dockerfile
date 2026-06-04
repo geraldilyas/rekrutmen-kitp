@@ -1,9 +1,9 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.3-fpm
 
 # System deps needed for GD and other extensions
-RUN apk add --no-cache \
-    freetype-dev \
-    libjpeg-turbo-dev \
+RUN apt-get update && apt-get install -y \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     libpng-dev \
     libzip-dev \
     git \
@@ -18,7 +18,8 @@ RUN apk add --no-cache \
         pcntl \
         bcmath \
         zip \
-        opcache
+        opcache \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
