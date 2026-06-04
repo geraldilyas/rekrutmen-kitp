@@ -34,21 +34,15 @@ COPY . .
 
 RUN chmod -R 775 storage bootstrap/cache
 
-# Write a clean Apache vhost pointing to Laravel's public/ with AllowOverride All
+# Apache vhost: point to Laravel public/ with AllowOverride All
 RUN printf '<VirtualHost *:80>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
         AllowOverride All\n\
         Require all granted\n\
-        Options -Indexes\n\
     </Directory>\n\
 </VirtualHost>\n' > /etc/apache2/sites-available/000-default.conf
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-# Fix Windows line endings and make executable
-RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
-    && chmod +x /usr/local/bin/entrypoint.sh
-
 EXPOSE 80
 
-CMD ["/usr/local/bin/entrypoint.sh"]
+CMD ["bash", "-c", "echo '=== Starting ===' && php artisan migrate --force && echo '=== Apache starting ===' && apache2-foreground"]
