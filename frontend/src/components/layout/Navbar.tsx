@@ -4,6 +4,8 @@ import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
+// 🚀 FIXED: Import instance api custom axios lo agar dikenali di useEffect bawah
+import { api } from "../../services/api";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -23,39 +25,60 @@ const Navbar: React.FC = () => {
     return cached ? JSON.parse(cached) : null;  
   });
 
-  // Pemicu sinkronisasi status login setiap rute berubah
+ // 🚀 PERBAIKAN SAKTI: Sinkronisasi profil aman, anti-tendang & anti-reset sepihak!
+  // 🚀 PERBAIKAN SAKTI: Mengunci state data user agar tidak ter-reset secara sepihak saat pindah rute
   useEffect(() => {
     const currentToken = localStorage.getItem("token");
     const cachedUser = localStorage.getItem("user");
-    const checkLogin = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
     
-    setIsLoggedIn(checkLogin);
+    // Pengecekan token yang valid dan bersih dari string aneh
+    const hasValidToken = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
+    
+    setIsLoggedIn(hasValidToken);
 
-    if (!currentToken || !checkLogin) {
+    // 🚀 PENGAMAN 1: Jika bener-bener ga ada token, baru hapus state dan stop request
+    if (!hasValidToken) {
       setUserData(null);
       return;
     }
 
-    if (cachedUser) {
-      setUserData(JSON.parse(cachedUser));
+    // 🚀 PENGAMAN 2: Gunakan data cache yang ada dulu secara mutlak, JANGAN di-set null di awal!
+    if (cachedUser && cachedUser !== "undefined" && cachedUser !== "null") {
+      try {
+        const parsed = JSON.parse(cachedUser);
+        // Hanya set form jika data state saat ini masih kosong atau berbeda
+        if (!userData || userData.id !== parsed.id) {
+          setUserData(parsed);
+        }
+      } catch (e) {
+        console.error("Format cache user rusak:", e);
+      }
     }
 
-    fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${currentToken}` },
-      credentials: "include",
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Gagal mengambil data profil terbaru");
-        return r.json();
-      })
-      .then((data) => {
-        setUserData(data);
-        localStorage.setItem("user", JSON.stringify(data));
-      })
-      .catch((err) => {
+    // 🚀 PENGAMAN 3: Jalankan sync background ke Laravel dengan aman menggunakan custom Axios instance
+    api.get("/auth/me")
+  .then((res: any) => {
+    console.log(res.data);
+
+    const user = res.data.user || res.data;
+
+    setUserData(user);
+    localStorage.setItem("user", JSON.stringify(user));
+  })
+
+      .catch((err: any) => {
         console.warn("Background profile fetch skipped/failed:", err.message);
+        
+        // 🚀 PENGAMAN 4: Hanya hapus session jika backend terbukti merespon dengan status 401 (Token Expired)
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setIsLoggedIn(false);
+          setUserData(null);
+          window.location.replace("/beranda");
+        }
       });
-  }, [location.pathname]);
+  }, [location.pathname]); // <-- Tetap berjalan aman tiap rute berganti
 
   // Otomatis tutup menu mobile jika rute berganti
   useEffect(() => {
@@ -72,26 +95,30 @@ const Navbar: React.FC = () => {
     { name: "Lowongan", path: "/lowongan" },
     { name: "Status Lamaran", path: "/status" },
     { name: "Pengumuman", path: "/pengumuman" },
-    { name: "Arsip", path: "/arsip" },
+    // { name: "Arsip", path: "/arsip" },
     { name: "Profil", path: "/profil" },
   ];
 
   const menuItems = isLoggedIn ? privateMenu : publicMenu;
 
-  const handleLogout = () => {
+ const handleLogout = () => {
+    // 🚀 MEMBERSIHKAN SESSION CACHE
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUserData(null);
     setIsLoggedIn(false);
     setShowLogoutModal(false);
     setIsMobileMenuOpen(false);
-    navigate("/beranda?status=logout");
+    
+    // 🚀 SOLUSI EMAS: Paksa browser melakukan hard-clearing path ke /beranda 
+    // Ini menjamin file Beranda.tsx lo terbangun ulang dan membaca status token yang sudah kosong!
+    window.location.replace("/beranda");
   };
 
   return (
     <>
       {/* ================= 1. FIXED TOP NAVBAR SECTION ================= */}
-      <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
+      <nav className="fixed top-0 w-full z-50 bg-white backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
         <div className="w-full px-4 sm:px-8 md:px-12">
           <div className="flex justify-between h-20 items-center">
             
@@ -118,7 +145,8 @@ const Navbar: React.FC = () => {
                 return (
                   <Link
                     key={item.name}
-                    to={`${item.path}${!isLoggedIn ? "?status=logout" : ""}`}
+                    // 🚀 FIXED: Ganti jadi path murni, hapus embel-embel ?status=logout bikin mental
+                    to={item.path}
                     className={`group relative text-sm font-semibold transition-all duration-300 px-1 py-0.5 ${
                       isActive
                         ? "text-[#FEB700]"
@@ -170,10 +198,11 @@ const Navbar: React.FC = () => {
                       {userData?.name?.charAt(0) || <User size={16} />}
                     </div>
 
-                    <Link 
-                      to="/profil"
-                      className="leading-tight pr-1 text-left cursor-pointer group block text-decoration-none select-none"
-                    >
+                    <Link
+  to="/profil"
+  onClick={() => console.log("Klik Profil")}
+  className="leading-tight pr-1 text-left cursor-pointer group block text-decoration-none select-none"
+>
                       <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate group-hover:text-blue-600 transition-colors duration-200">
                         {userData?.name || "Memuat..."}
                       </h4>
@@ -235,6 +264,7 @@ const Navbar: React.FC = () => {
             >
               <div className="px-6 pt-4 pb-6 flex flex-col space-y-3">
                 {/* List link navigasi mobile */}
+              
                 {menuItems.map((item, idx) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -245,7 +275,8 @@ const Navbar: React.FC = () => {
                       transition={{ delay: idx * 0.05, duration: 0.35 }}
                     >
                       <Link
-                        to={`${item.path}${!isLoggedIn ? "?status=logout" : ""}`}
+                        // 🚀 FIXED JUGA DI SINI: Samakan jadi path murni tanpa query string hantu
+                        to={item.path}
                         className={`block py-2 text-sm font-bold transition-all rounded-lg pl-2 ${
                           isActive ? "text-[#FEB700] bg-amber-50/50" : "text-[#0D278D] hover:text-[#FEB700]"
                         }`}

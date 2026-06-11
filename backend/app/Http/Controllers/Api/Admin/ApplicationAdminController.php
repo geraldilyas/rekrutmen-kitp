@@ -30,8 +30,9 @@ class ApplicationAdminController extends Controller
     /**
      * Show application detail.
      */
-    public function show($id)
-    {
+   public function show($id)
+{
+    try {
         $application = Application::with([
             'user',
             'job',
@@ -42,7 +43,14 @@ class ApplicationAdminController extends Controller
         ])->findOrFail($id);
 
         return response()->json($application);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
     }
+}
 
     /**
      * Update application overall status.

@@ -22,14 +22,22 @@ class Application extends Model
 
     public function getCalculatedFinalScoreAttribute()
     {
-        if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job') || !$this->job->relationLoaded('stages')) {
+        if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job')) {
+            return null;
+        }
+
+        $job = $this->job;
+
+        if (!$job->relationLoaded('stages')) {
             return null;
         }
 
         $totalScore = 0;
-        foreach ($this->job->stages as $stage) {
+
+        foreach ($job->stages as $stage) {
             $result = $this->stageResults->where('job_stage_id', $stage->id)->first();
             $score = $result ? ($result->score ?? 0) : 0;
+
             $totalScore += ($score * $stage->weight) / 100;
         }
 
@@ -43,7 +51,7 @@ class Application extends Model
 
     public function job()
     {
-        return $this->belongsTo(Job::class);
+        return $this->belongsTo(Job::class, 'job_id');
     }
 
     public function answers()
@@ -59,6 +67,19 @@ class Application extends Model
     public function histories()
     {
         return $this->hasMany(ApplicationStatusHistory::class);
+    }
+
+    // TAMBAHAN INI
+    public function documents()
+    {
+        return $this->hasManyThrough(
+            UserDocument::class,
+            User::class,
+            'id',       // users.id
+            'user_id',  // user_documents.user_id
+            'user_id',  // applications.user_id
+            'id'
+        );
     }
 
     protected static function booted()

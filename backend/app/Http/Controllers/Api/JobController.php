@@ -21,7 +21,46 @@ class JobController extends Controller
      */
     public function index(Request $request)
     {
-        $jobs = $this->jobService->getJobs($request->all());
+        // 1. Ambil data lowongan asli menggunakan service bawaan lo
+        $rawJobs = $this->jobService->getJobs($request->all());
+
+        // 2. Kita bungkus pakai collection dan re-mapping datanya sebelum dikirim ke React
+        $jobs = collect($rawJobs)->map(function($job) {
+            
+            // Mencari tahapan seleksi yang saat ini sedang aktif berdasarkan tanggal hari ini
+            // Menggunakan properti 'stages' sesuai dengan eager load di fungsi show() lo
+            $activeStage = collect($job->stages)->first(function($stage) {
+                return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
+            });
+
+            return [
+                'id'               => $job->id,
+                'title'            => $job->title,
+                'category'         => $job->category,
+                'description'      => $job->description,
+                'qualification'    => $job->qualification,
+                'requirements'     => $job->requirements,
+                'location'         => $job->location,
+                'unit_kerja'       => $job->unit_kerja,
+                'duration'         => $job->duration,
+                'recruiter_name'   => $job->recruiter_name,
+                'start_date'       => $job->start_date,
+                'end_date'         => $job->end_date,
+                'status'           => $job->status ?? 'active', // Status penanda berlangsung/selesai
+                
+                // 🚀 BY SYSTEM 1: Hitung total pendaftar asli di database
+                'totalPendaftar'   => $job->applications()->count(),
+                
+                // 🚀 BY SYSTEM 2: Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
+                // Pastikan model JobStage.php sudah punya fungsi relasi results() ya bro!
+                'jumlah_lolos'     => $activeStage ? $activeStage->results()->where('status', 'lulus')->count() : 0,
+                'jumlah_gagal'     => $activeStage ? $activeStage->results()->where('status', 'tidak_lulus')->count() : 0,
+                
+                'selection_stages' => $job->stages
+            ];
+        });
+
+        // 3. Kirim ke React frontend lo
         return response()->json($jobs);
     }
 
