@@ -16,19 +16,22 @@ class JobController extends Controller
         $this->jobService = $jobService;
     }
 
-    /**
+   /**
      * GET ALL JOBS.
      */
     public function index(Request $request)
     {
-        // 1. Ambil data lowongan asli menggunakan service bawaan lo
-        $rawJobs = $this->jobService->getJobs($request->all());
+        // 1. Ambil data dengan Eager Loading agar query super cepat dan tidak merusak data relasi
+        // Kita bypass default filter jika ingin menampilkan seluruh riwayat lowongan di beranda umum
+        $rawJobs = Job::with(['stages'])
+            ->withCount('applications')
+            ->latest()
+            ->get();
 
         // 2. Kita bungkus pakai collection dan re-mapping datanya sebelum dikirim ke React
-        $jobs = collect($rawJobs)->map(function($job) {
+        $jobs = $rawJobs->map(function($job) {
             
             // Mencari tahapan seleksi yang saat ini sedang aktif berdasarkan tanggal hari ini
-            // Menggunakan properti 'stages' sesuai dengan eager load di fungsi show() lo
             $activeStage = collect($job->stages)->first(function($stage) {
                 return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
             });
@@ -46,13 +49,13 @@ class JobController extends Controller
                 'recruiter_name'   => $job->recruiter_name,
                 'start_date'       => $job->start_date,
                 'end_date'         => $job->end_date,
-                'status'           => $job->status ?? 'active', // Status penanda berlangsung/selesai
+                'deadline'         => $job->deadline, // 🚀 FIX 1: Wajib di-return agar filter "Sudah Tutup" di React jalan!
+                'status'           => $job->status ?? 'active',
                 
-                // 🚀 BY SYSTEM 1: Hitung total pendaftar asli di database
-                'totalPendaftar'   => $job->applications()->count(),
+                // 🚀 FIX 2: Menggunakan properti hasil withCount (Jauh lebih cepat daripada query manual)
+                'totalPendaftar'   => $job->applications_count,
                 
                 // 🚀 BY SYSTEM 2: Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
-                // Pastikan model JobStage.php sudah punya fungsi relasi results() ya bro!
                 'jumlah_lolos'     => $activeStage ? $activeStage->results()->where('status', 'lulus')->count() : 0,
                 'jumlah_gagal'     => $activeStage ? $activeStage->results()->where('status', 'tidak_lulus')->count() : 0,
                 
@@ -63,7 +66,6 @@ class JobController extends Controller
         // 3. Kirim ke React frontend lo
         return response()->json($jobs);
     }
-
     /**
      * STORE JOB + FORM DINAMIS.
      */
@@ -113,14 +115,22 @@ class JobController extends Controller
      * GET SINGLE JOB DETAIL.
      */
     public function show($id)
-    {
-        $job = Job::with(['formFields', 'stages', 'announcements'])->findOrFail($id);
+{
+    // 🚀 PASTIKAN menggunakan ->with(['announcements', 'formFields']) sebelum ->find() atau ->findOrFail()
+    $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields'])->find($id);
 
+    if (!$job) {
         return response()->json([
-            'message' => 'Job detail retrieved successfully',
-            'data' => $job
-        ]);
+            'status' => 'error',
+            'message' => 'Lowongan tidak ditemukan.'
+        ], 404);
     }
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $job
+    ], 200);
+}
 
     /**
      * UPDATE JOB.

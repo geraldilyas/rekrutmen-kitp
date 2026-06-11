@@ -30,27 +30,48 @@ class ApplicationAdminController extends Controller
     /**
      * Show application detail.
      */
-   public function show($id)
-{
-    try {
-        $application = Application::with([
-            'user',
-            'job',
-            'documents',
-            'answers.formField',
-            'histories',
-            'stageResults.stage'
-        ])->findOrFail($id);
+   /**
+     * Show application detail.
+     */
+    public function show($id)
+    {
+        try {
+            $application = Application::with([
+                'user',
+                'job.stages', // 🚀 Pastikan stages dari job di-eager load juga
+                'documents',
+                'answers.formField',
+                'histories',
+                'stageResults.stage'
+            ])->findOrFail($id);
 
-        return response()->json($application);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ], 500);
+            // 🚀 Solusi: Cari tahapan (stage) yang saat ini sedang aktif berdasarkan tanggal hari ini
+            $activeStage = collect($application->job->stages)->first(function($stage) {
+                return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
+            });
+
+            // Jika tidak ada yang aktif (misal semua tanggal sudah lewat), fallback ke stage terakhir yang diikuti pelamar
+            if (!$activeStage && $application->stageResults->isNotEmpty()) {
+                $lastResult = $application->stageResults->sortByDesc('created_at')->first();
+                $activeStage = $lastResult ? $lastResult->stage : null;
+            }
+
+            // Ubah model menjadi array agar kita bisa menyisipkan field tambahan untuk React
+            $responseData = $application->toArray();
+
+            // 🚀 Sisipkan data tanggal tahapan yang paling update ke level teratas JSON
+            $responseData['current_stage_start_date'] = $activeStage ? $activeStage->start_date : null;
+            $responseData['current_stage_end_date'] = $activeStage ? $activeStage->end_date : null;
+
+            return response()->json($responseData);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
+        }
     }
-}
 
     /**
      * Update application overall status.

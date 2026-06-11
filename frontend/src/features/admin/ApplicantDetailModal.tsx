@@ -21,6 +21,9 @@ interface FullApplicationData {
   job: { title: string };
   documents: { id: number; type: string; file_path: string; uploaded_at: string }[];
   answers: { answer: string; form_field: { field_name: string } | null }[];
+  // 🚀 Tambahkan data tahapan yang fresh dari database agar tidak terkunci tanggal lama
+  current_stage_start_date?: string | null;
+  current_stage_end_date?: string | null;
 }
 
 interface Props {
@@ -70,8 +73,12 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const start = application.stage_start_date ? new Date(application.stage_start_date) : null;
-  const end = application.stage_end_date ? new Date(application.stage_end_date) : null;
+  // 🚀 FIX: Gunakan tanggal dari API detail jika ada, kalau belum ke-load baru fallback ke props application
+  const activeStartDate = detail?.current_stage_start_date ?? application.stage_start_date;
+  const activeEndDate = detail?.current_stage_end_date ?? application.stage_end_date;
+
+  const start = activeStartDate ? new Date(activeStartDate) : null;
+  const end = activeEndDate ? new Date(activeEndDate) : null;
   if (start) start.setHours(0, 0, 0, 0);
   if (end) end.setHours(0, 0, 0, 0);
 
@@ -128,8 +135,8 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
                 <p className="text-xs font-bold uppercase tracking-tight">Penilaian Belum Tersedia</p>
                 <p className="text-xs font-medium leading-relaxed">
                   {isTooEarly 
-                    ? `Tahap "${application.current_stage}" baru akan dimulai pada ${fmt(application.stage_start_date)}.` 
-                    : `Masa penilaian untuk tahap "${application.current_stage}" telah berakhir pada ${fmt(application.stage_end_date)}.`}
+                    ? `Tahap "${application.current_stage}" baru akan dimulai pada ${fmt(activeStartDate)}.` 
+                    : `Masa penilaian untuk tahap "${application.current_stage}" telah berakhir pada ${fmt(activeEndDate)}.`}
                 </p>
               </div>
             </div>
@@ -157,9 +164,6 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
               ))}
             </div>
           </section>
-
-         
-          
 
           {/* Form answers */}
           {detail?.answers?.length ? (

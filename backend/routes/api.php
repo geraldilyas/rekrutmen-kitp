@@ -33,6 +33,9 @@ Route::get('/health', function () {
     ]);
 });
 
+// 🚀 PINDAH KE SINI: Rute unduh PDF dipasang secara publik agar browser tab baru bisa langsung download tanpa error Auth Token
+Route::get('/stages/{stageId}/download-passed-pdf', [ApplicationController::class, 'downloadPassedPdf']);
+
 Route::middleware('throttle:api')->group(function () {
 
     // Jobs (Public access)
@@ -63,6 +66,8 @@ Route::middleware('throttle:api')->group(function () {
             Route::get('/my', [ApplicationController::class, 'myApplications']);
             Route::post('/', [ApplicationController::class, 'apply']);
         });
+
+        // (Baris rute PDF yang di sini sebelumnya sudah DIHAPUS dan DIPINDAHKAN ke atas)
 
         // User Master Documents
         Route::prefix('user-documents')->group(function () {
@@ -112,7 +117,7 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
                 Route::get('/export/{job_id}/excel', [ReportController::class, 'exportExcel']);
                 Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
-                Route::post('/publish-passed-results/{job_id}', [ReportController::class, 'publishPassedResults']);
+                Route::post('/publishPassedResults/{job_id}', [ReportController::class, 'publishPassedResults']);
                 Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
                 Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
             });

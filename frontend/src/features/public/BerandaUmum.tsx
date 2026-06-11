@@ -31,6 +31,7 @@ const dropdownVariants = {
     y: 0, 
     scale: 1, 
   },
+  exit: { opacity: 0, y: -5, scale: 0.95, transition: { duration: 0.15 } }
 };
 
 const listMonths = [
@@ -94,7 +95,7 @@ export const BerandaUmum: React.FC = () => {
     fetchLatestJobs();
   }, []);
 
-  // 🛠️ MURNI FETCH DATA ASLI BAWAAN LO
+  // 🛠️ FETCH DATA ASLI DARI BACKEND
   const fetchLatestJobs = async () => {
     try {
       setLoading(true);
@@ -116,6 +117,8 @@ export const BerandaUmum: React.FC = () => {
   };
 
   const getStatusJob = (startDateStr: string, deadlineStr: string) => {
+    if (!startDateStr || !deadlineStr) return "sedang_dibuka";
+    
     const now = new Date();
     const start = new Date(startDateStr);
     const deadline = new Date(deadlineStr);
@@ -155,13 +158,27 @@ export const BerandaUmum: React.FC = () => {
     return deadline.toLocaleDateString("id-ID", optionsWithYear);
   };
 
-  // Filter Data Gabungan dari DB
+  // 🔥 FIX: Penyempurnaan Filter Data Gabungan secara Client-Side Dinamis
   const filteredJobs = jobs.filter((job) => {
+    // 1. Kategori Filter
     const matchesCategory = filterCategory === "all" || job.category === filterCategory;
+    
+    // 2. Status Filter
     const status = getStatusJob(job.start_date, job.deadline);
     const matchesStatus = filterStatus === "all" || status === filterStatus;
-    const jobMonth = job.start_date ? job.start_date.split("-")[1] : "";
-    const matchesMonth = filterMonth === "all" || jobMonth === filterMonth;
+    
+    // 3. Bulan Filter (Menggunakan Parsing Objek Date yang Aman & Kebal Format String)
+    let matchesMonth = true;
+    if (filterMonth !== "all" && job.start_date) {
+      const dateObj = new Date(job.start_date);
+      if (!isNaN(dateObj.getTime())) {
+        // String padStart memastikan format "01", "02", sampai "12"
+        const paddedMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
+        matchesMonth = paddedMonth === filterMonth;
+      } else {
+        matchesMonth = false;
+      }
+    }
 
     return matchesCategory && matchesStatus && matchesMonth;
   });
@@ -189,9 +206,6 @@ export const BerandaUmum: React.FC = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            {/* =========================================================
-                🚀 KATA-KATA HERO SECTION KHUSUS SEBELUM LOGIN (PERSUASIF & CLEAR)
-                ========================================================= */}
             <span className="inline-block px-4 sm:px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-[10px] sm:text-xs mb-6 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest max-w-full truncate sm:whitespace-normal">
                 Selamat Datang di Portal Rekrutmen Resmi BBWS Mesuji Sekampung
             </span>
@@ -199,12 +213,12 @@ export const BerandaUmum: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 leading-tight tracking-tight">
                Temukan Peluang Karier Terbaik, <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-yellow-200">
-                Berkontribusi untuk Negeri
+                 Berkontribusi untuk Negeri
               </span>
             </h1>
 
             <p className="text-blue-100/90 mb-8 text-base md:text-xl leading-relaxed max-w-4xl font-light">
-                Jelajahi berbagai lowongan Konsultan Individu dan Tenaga Pendukung yang tersedia. Temukan posisi yang sesuai dengan kompetensi Anda dan bergabung dalam pembangunan infrastruktur sumber daya air Indonesia.            
+               Jelajahi berbagai lowongan Konsultan Individu dan Tenaga Pendukung yang tersedia. Temukan posisi yang sesuai dengan kompetensi Anda dan bergabung dalam pembangunan infrastruktur sumber daya air Indonesia.            
                 </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center px-4 sm:px-0">
@@ -230,7 +244,6 @@ export const BerandaUmum: React.FC = () => {
           =================================================================== */}
       <section id="lowongan-sebelum-login" className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* 🔥 ANIMATED HEADLINE: Ditambahkan transisi fade-up mewah pas di-scroll */}
         <motion.div 
           className="text-center max-w-3xl mx-auto mb-16 flex flex-col items-center"
           variants={fadeUpVariants}
@@ -244,13 +257,12 @@ export const BerandaUmum: React.FC = () => {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#0D278D] tracking-tight mb-4">
             Daftar Lowongan Kerja
           </h2>
-          <div className="w-15 h-[3.5px] bg-[#FEB700] rounded-full mb-4.5" />
+          <div className="w-16 h-[3.5px] bg-[#FEB700] rounded-full mb-4.5" />
           <p className="text-gray-400 text-sm md:text-base font-medium leading-relaxed max-w-2xl">
             Transparansi formasi rekrutmen aktif Balai Wilayah Sungai. Pelamar umum dapat meninjau kualifikasi lengkap sebelum melakukan pendaftaran.
           </p>
         </motion.div>
 
-        {/* 🔥 ANIMATED FILTER BAR: Ditambahkan transisi smooth fade-up berbarengan */}
         <motion.div 
           className="flex flex-col md:flex-row md:items-center justify-center gap-4 mb-12 pb-6 border-b border-gray-200/60 relative z-30"
           variants={fadeUpVariants}
@@ -381,13 +393,13 @@ export const BerandaUmum: React.FC = () => {
                   variants={itemVariants}
                   whileHover={isClosed || isComingSoon ? {} : { y: -8 }}
                   className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 bg-white transition-all duration-300 flex flex-col justify-between ${
-                    isClosed ? "opacity-60" : isComingSoon ? "opacity-95" : "hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
+                    isClosed ? "opacity-60 bg-gray-50/30" : isComingSoon ? "opacity-95" : "hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
                   }`}
                 >
                   <div>
                     <div className="flex justify-between items-center mb-6 gap-2">
                       <span className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold tracking-wider border truncate ${
-                        isComingSoon ? "bg-gray-50 text-gray-400 border-gray-100" : "bg-blue-50/50 text-[#0D278D] border-blue-100"
+                        isComingSoon ? "bg-amber-50 text-amber-700 border-amber-100" : isClosed ? "bg-red-50 text-red-600 border-red-100" : "bg-blue-50/50 text-[#0D278D] border-blue-100"
                       }`}>{job.qualification}</span>
                       <div className={`flex items-center gap-1.5 text-xs font-medium shrink-0 ${isComingSoon ? "text-amber-500" : isClosed ? "text-red-400" : "text-gray-400"}`}>
                         <Clock size={14} />
