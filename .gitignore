@@ -17,3 +17,5 @@ package-lock.json
 Thumbs.db
 
 *.sql
+
+*vendor/
