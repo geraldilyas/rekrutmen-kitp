@@ -15,16 +15,32 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 
+// Interface yang disempurnakan agar mendukung struktur data langsung maupun relasi nested backend
 interface Announcement {
   id: number;
+  job_id?: number;
   title: string;
-  category: string;
-  description: string;
-  qualification: string;
-  deadline: string;
-  applications_count: number;
-  accepted_count: number;
-  announcements: Array<{
+  category?: string;
+  description?: string;
+  qualification?: string;
+  deadline?: string;
+  published_at?: string;
+  file_path?: string;
+  applications_count?: number;
+  accepted_count?: number;
+  // Jika backend mengembalikan relasi object job di dalam pengumuman
+  job?: {
+    id: number;
+    title: string;
+    category: string;
+    description: string;
+    qualification: string;
+    deadline: string;
+    applications_count?: number;
+    accepted_count?: number;
+  };
+  // Jika backend mengembalikan array pengumuman di dalam lowongan
+  announcements?: Array<{
     id: number;
     title: string;
     file_path: string;
@@ -68,11 +84,10 @@ const Pengumuman: React.FC = () => {
     fetchAnnouncements();
   }, []);
 
-  // 🚀 FIXED SINKRONISASI: Menembak endpoint khusus pengumuman/kelulusan ril dari backend
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/announcements"); // 🛠️ Ganti ke rute endpoint pengumuman kelulusan asli lo
+      const res = await api.get("/announcements");
       const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
       setAnnouncements(data);
     } catch (err) {
@@ -86,7 +101,7 @@ const Pengumuman: React.FC = () => {
   const getCategoryDisplay = (cat: string) => {
     if (cat === "tenaga_pendukung" || cat === "Tenaga Pendukung") return "Tenaga Pendukung";
     if (cat === "konsultan_individu" || cat === "Konsultan Individu") return "Konsultan Individu";
-    return cat;
+    return cat || "Umum";
   };
 
   const formatDate = (dateStr: string) => {
@@ -94,10 +109,14 @@ const Pengumuman: React.FC = () => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  // Memastikan ekstraksi kategori aman baik dari objek utama maupun dari nested objek .job
   const filteredData =
     activeFilter === "Semua"
       ? announcements
-      : announcements.filter((item) => getCategoryDisplay(item.category) === activeFilter);
+      : announcements.filter((item) => {
+          const category = item.job?.category || item.category || "";
+          return getCategoryDisplay(category) === activeFilter;
+        });
 
   return (
     <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setIsFilterOpen(false)}>
@@ -128,7 +147,7 @@ const Pengumuman: React.FC = () => {
             </h1>
 
             <p className="text-blue-100/80 text-[15px] md:text-base max-w-2xl mx-auto leading-relaxed">
-              Information resmi hasil kelulusan akhir, daftar nama kandidat terpilih, serta dokumen berita acara rekrutmen aktif.
+              Informasi resmi hasil kelulusan akhir, daftar nama kandidat terpilih, serta dokumen berita acara rekrutmen aktif.
             </p>
           </motion.div>
         </div>
@@ -213,107 +232,132 @@ const Pengumuman: React.FC = () => {
                     <Sparkles size={40} className="text-gray-300 mb-2" />
                     <p className="text-gray-500 font-medium text-sm">Belum ada dokumen pengumuman hasil seleksi aktif saat ini.</p>
                 </div>
-            ) : filteredData.map((item) => (
-              <motion.div
-                layout
-                key={item.id}
-                exit={{ opacity: 0, y: -10 }}
-                className="group border-b border-gray-100 py-10 relative"
-              >
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center rounded-r-full" />
+            ) : filteredData.map((item) => {
+              // Menentukan variabel fallback penampung data agar support multi-struktur API
+              const itemCategory = item.job?.category || item.category || "";
+              const itemTitle = item.job?.title || item.title;
+              const itemDescription = item.job?.description || item.description || "";
+              const itemQualification = item.job?.qualification || item.qualification || "-";
+              const itemDate = item.published_at || item.deadline || "";
+              const appCount = item.job?.applications_count || item.applications_count || 0;
+              const accCount = item.job?.accepted_count || item.accepted_count || 0;
+              const targetJobId = item.job?.id || item.job_id || item.id;
 
-                <div className="px-4 flex flex-col md:flex-row justify-between gap-8 group-hover:translate-x-2 transition-transform duration-300">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span
-                        className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                          item.category === "konsultan_individu" || item.category === "Konsultan Individu"
-                            ? "bg-amber-50 text-[#FEB700]"
-                            : "bg-blue-50 text-[#0D278D]"
-                        }`}
-                      >
-                        {item.category === "konsultan_individu" || item.category === "Konsultan Individu" ? (
-                          <Brain size={12} />
-                        ) : (
-                          <Users size={12} />
-                        )}
-                        {getCategoryDisplay(item.category)}
-                      </span>
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <Clock size={14} className="text-[#FEB700]" />{" "}
-                        Diumumkan pada {formatDate(item.deadline)}
-                      </span>
-                    </div>
+              return (
+                <motion.div
+                  layout
+                  key={item.id}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="group border-b border-gray-100 py-10 relative"
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center rounded-r-full" />
 
-                    <h3 className="text-2xl font-extrabold text-[#0D278D] mb-4 transition-colors group-hover:text-[#FEB700]">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-3xl line-clamp-2">
-                      {item.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-6">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap size={18} className="text-gray-400" />
-                        <span className="px-2 py-0.5 rounded bg-gray-50 text-[10px] font-black text-[#0D278D] border border-gray-100 uppercase">
-                            {item.qualification}
+                  <div className="px-4 flex flex-col md:flex-row justify-between gap-8 group-hover:translate-x-2 transition-transform duration-300">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
+                            itemCategory === "konsultan_individu" || itemCategory === "Konsultan Individu"
+                              ? "bg-amber-50 text-[#FEB700]"
+                              : "bg-blue-50 text-[#0D278D]"
+                          }`}
+                        >
+                          {itemCategory === "konsultan_individu" || itemCategory === "Konsultan Individu" ? (
+                            <Brain size={12} />
+                          ) : (
+                            <Users size={12} />
+                          )}
+                          {getCategoryDisplay(itemCategory)}
+                        </span>
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <Clock size={14} className="text-[#FEB700]" />{" "}
+                          Diumumkan pada {formatDate(itemDate)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-6 text-sm font-bold text-gray-400 border-l border-gray-100 pl-6">
-                        <span className="flex items-center gap-1.5">
-                          <Users size={16} /> {item.applications_count || 0} Pelamar Terdaftar
-                        </span>
-                        <span className="flex items-center gap-1.5 text-emerald-600">
-                          <Award size={16} /> {item.accepted_count || 0} Lolos Seleksi
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* 📄 DOKUMEN PENGUMUMAN RESMI (ARRAY FILE PDF REKRUTMEN) */}
-                    {item.announcements && item.announcements.length > 0 && (
-                      <div className="mt-8 pt-6 border-t border-dashed border-gray-100 space-y-3">
-                        <p className="text-[10px] font-black text-[#0D278D] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                          <FileText size={12} /> Lampiran Dokumen SK Kelulusan Resmi
-                        </p>
-                        <div className="flex flex-wrap gap-3">
-                          {item.announcements.map((doc) => (
-                            <a 
-                              key={doc.id}
-                              href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${doc.file_path}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
-                            >
-                              <FileText size={14} className="group-hover/link:animate-bounce" />
-                              <span>{doc.title}</span>
-                            </a>
-                          ))}
+                      <h3 className="text-2xl font-extrabold text-[#0D278D] mb-4 transition-colors group-hover:text-[#FEB700]">
+                        {itemTitle}
+                      </h3>
+
+                      <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-3xl line-clamp-2">
+                        {itemDescription}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap size={18} className="text-gray-400" />
+                          <span className="px-2 py-0.5 rounded bg-gray-50 text-[10px] font-black text-[#0D278D] border border-gray-100 uppercase">
+                              {itemQualification}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm font-bold text-gray-400 border-l border-gray-100 pl-6">
+                          <span className="flex items-center gap-1.5">
+                            <Users size={16} /> {appCount} Pelamar Terdaftar
+                          </span>
+                          <span className="flex items-center gap-1.5 text-emerald-600">
+                            <Award size={16} /> {accCount} Lolos Seleksi
+                          </span>
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex items-center md:items-center">
-                    <button 
-                      onClick={() => {
-                        const targetParam = !isLoggedIn ? "?status=logout" : "";
-                        navigate(`/detail-lowongan/${item.id}${targetParam}`);
-                      }}
-                      className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
-                    >
-                      <div className="group/btn flex items-center justify-center">
-                        <span className="transition-transform duration-300">Detail Formasi</span>
-                        <ChevronRight
-                          size={18}
-                          className="opacity-0 max-w-0 -translate-x-1 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 group-hover/btn:max-w-[18px] group-hover/btn:ml-1.5 transition-all duration-300 ease-out shrink-0"
-                        />
-                      </div>
-                    </button>
+                      {/* 📄 LAMPIRAN DOKUMEN SK (Otomatis mendeteksi tipe Array maupun File Tunggal) */}
+                      {((item.announcements && item.announcements.length > 0) || item.file_path) && (
+                        <div className="mt-8 pt-6 border-t border-dashed border-gray-100 space-y-3">
+                          <p className="text-[10px] font-black text-[#0D278D] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                            <FileText size={12} /> Lampiran Dokumen SK Kelulusan Resmi
+                          </p>
+                          <div className="flex flex-wrap gap-3">
+                            {item.announcements && item.announcements.length > 0 ? (
+                              item.announcements.map((doc) => (
+                                <a 
+                                  key={doc.id}
+                                  href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${doc.file_path}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
+                                >
+                                  <FileText size={14} className="group-hover/link:animate-bounce" />
+                                  <span>{doc.title}</span>
+                                </a>
+                              ))
+                            ) : (
+                              // Fallback jika item adalah object baris tunggal dari tabel announcements langsung
+                              <a 
+                                href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${item.file_path}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
+                              >
+                                <FileText size={14} className="group-hover/link:animate-bounce" />
+                                <span>{item.title || "Unduh Dokumen Pengumuman"}</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center md:items-center">
+                      <button 
+                        onClick={() => {
+                          const targetParam = !isLoggedIn ? "?status=logout" : "";
+                          navigate(`/detail-lowongan/${targetJobId}${targetParam}`);
+                        }}
+                        className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+                      >
+                        <div className="group/btn flex items-center justify-center">
+                          <span className="transition-transform duration-300">Detail Formasi</span>
+                          <ChevronRight
+                            size={18}
+                            className="opacity-0 max-w-0 -translate-x-1 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 group-hover/btn:max-w-[18px] group-hover/btn:ml-1.5 transition-all duration-300 ease-out shrink-0"
+                          />
+                        </div>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       </motion.main>
