@@ -45,12 +45,20 @@ class ApplicationController extends Controller
         }
     }
 
-    /**
+   /**
      * Get applications for the authenticated user with advanced tracking
      */
     public function myApplications(Request $request)
     {
         try {
+            // 🛡️ AMAN KAN USER: Jika user belum login, langsung kembalikan array kosong, jangan biarkan crash 500!
+            if (!$request->user()) {
+                return response()->json([
+                    'status' => 'success',
+                    'data' => []
+                ]);
+            }
+
             $userId = $request->user()->id;
 
             // 1. Ambil data lamaran beserta relasi lengkap
@@ -70,6 +78,12 @@ class ApplicationController extends Controller
 
             // 3. INJEKSI TIMELINE DINAMIS + NILAI + TOTAL PENDAFTAR + URL GENERATE PDF AUTOMATIS
             $customizedApplications = $applications->map(function ($app) {
+                // 🛡️ AMANKAN RELASI: Antisipasi jika data Lowongan (Job) bernilai null di database
+                if (!$app->job) {
+                    $app->timeline = [];
+                    return $app;
+                }
+
                 $totalApplicants = $app->job->applications_count ?? 0;
 
                 // Map tahapan kustom dari admin
@@ -148,6 +162,9 @@ class ApplicationController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Log error asli ke laravel.log agar kamu tetap bisa memantau jika ada anomali lain
+            \Log::error("Crash di myApplications: " . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()

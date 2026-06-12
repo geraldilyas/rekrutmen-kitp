@@ -23,14 +23,33 @@ class ApplicationAdminController extends Controller
      */
     public function index(Request $request)
     {
-        $applications = $this->applicationService->getApplications($request->all());
-        return response()->json($applications);
+        try {
+            // Kita panggil service utama Anda
+            $applications = $this->applicationService->getApplications($request->all());
+            
+            // Jika service mengembalikan data mentah kosong atau error tersembunyi, 
+            // pastikan response distruktur dengan baik agar React tidak membaca data undefined.
+            return response()->json($applications, 200);
+            
+        } catch (\Throwable $e) {
+            // Log error asli ke storage/logs/laravel.log agar Anda bisa melacak baris mana yang rusak di Service
+            Log::error('Error fetching admin applications: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Kembalikan detail error ke React Network Tab agar Anda langsung tahu masalahnya tanpa menebak-nebak
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memuat data pendaftar.',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 
     /**
-     * Show application detail.
-     */
-   /**
      * Show application detail.
      */
     public function show($id)
@@ -45,13 +64,16 @@ class ApplicationAdminController extends Controller
                 'stageResults.stage'
             ])->findOrFail($id);
 
-            // 🚀 Solusi: Cari tahapan (stage) yang saat ini sedang aktif berdasarkan tanggal hari ini
-            $activeStage = collect($application->job->stages)->first(function($stage) {
-                return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
-            });
+            // 🚀 Solusi Aman: Pastikan properti job tidak null sebelum memproses stages
+            $activeStage = null;
+            if ($application->job && isset($application->job->stages)) {
+                $activeStage = collect($application->job->stages)->first(function($stage) {
+                    return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
+                });
+            }
 
             // Jika tidak ada yang aktif (misal semua tanggal sudah lewat), fallback ke stage terakhir yang diikuti pelamar
-            if (!$activeStage && $application->stageResults->isNotEmpty()) {
+            if (!$activeStage && $application->stageResults && $application->stageResults->isNotEmpty()) {
                 $lastResult = $application->stageResults->sortByDesc('created_at')->first();
                 $activeStage = $lastResult ? $lastResult->stage : null;
             }

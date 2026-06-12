@@ -22,20 +22,23 @@ class Application extends Model
 
     public function getCalculatedFinalScoreAttribute()
     {
+        // 1. Pastikan relasi dasar ter-load
         if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job')) {
             return null;
         }
 
         $job = $this->job;
 
-        if (!$job->relationLoaded('stages')) {
+        // 2. AMANKAN DISINI: Cek apakah $job bernilai null (misal lowongan sudah dihapus)
+        if (!$job || !$job->relationLoaded('stages')) {
             return null;
         }
 
         $totalScore = 0;
 
         foreach ($job->stages as $stage) {
-            $result = $this->stageResults->where('job_stage_id', $stage->id)->first();
+            // Amankan pencarian nilai tahapan agar tidak error jika collection kosong
+            $result = $this->stageResults ? $this->stageResults->where('job_stage_id', $stage->id)->first() : null;
             $score = $result ? ($result->score ?? 0) : 0;
 
             $totalScore += ($score * $stage->weight) / 100;

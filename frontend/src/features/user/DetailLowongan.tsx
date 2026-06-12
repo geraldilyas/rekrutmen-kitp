@@ -83,14 +83,12 @@ const DetailLowongan: React.FC = () => {
   const fetchJobDetail = async (jobId: string, token: string | null) => {
     try {
       setLoading(true);
-      const promises: Promise<any>[] = [api.get(`/jobs/${jobId}`)];
-      if (token) {
-        promises.push(api.get("/applications/my"));
-      }
-      const results = await Promise.all(promises);
+  
+      // 1. Ambil data utama detail lowongan terlebih dahulu (Harus Sukses)
+      const jobResponse = await api.get(`/jobs/${jobId}`);
       
-      // 1. Amankan pembungkus data dari Axios/Laravel response
-      const responseData = results[0].data;
+      // Amankan pembungkus data dari Axios/Laravel response
+      const responseData = jobResponse.data;
       const jobData = responseData.data || responseData; 
       setJob(jobData);
   
@@ -113,7 +111,7 @@ const DetailLowongan: React.FC = () => {
           { id: 5, label: "Pendidikan Terakhir", type: "text", is_required: 1, category: "data_diri" }
         ];
       }
-
+  
       // 3. Bangun initial state untuk form input
       const initialAnswersState: any = {};
   
@@ -131,19 +129,31 @@ const DetailLowongan: React.FC = () => {
   
       setUploadedFiles(initialAnswersState);
   
-      if (results[1]) {
-        const myApps: Application[] = Array.isArray(results[1].data)
-          ? results[1].data
-          : results[1].data.data || [];
-        setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
+      // 4. Cek status lamaran user secara terpisah (Diisolasi dengan try-catch sendiri)
+      if (token) {
+        try {
+          const appsResponse = await api.get("/applications/my");
+          const myApps: Application[] = Array.isArray(appsResponse.data)
+            ? appsResponse.data
+            : appsResponse.data.data || [];
+            
+          setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
+        } catch (appErr) {
+          // Jika API ini Error 500 / 403, tangkap di sini agar tidak merusak tampilan utama lowongan
+          console.error("Gagal memuat status lamaran user, tetapi detail lowongan tetap ditampilkan:", appErr);
+          setAlreadyApplied(false); // Default jika backend error
+        }
       }
+  
     } catch (err) {
-      console.error("Error fetching job detail:", err);
+      // Catch utama ini hanya akan terpicu jika API lowongan utamanya memang benar-benar bermasalah/tidak ada
+      console.error("Error fetching job detail (Main Job API Error):", err);
+      setJob(null); // Memastikan component memunculkan pesan "tidak ditemukan" hanya saat job memang gagal di-load
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (id) {

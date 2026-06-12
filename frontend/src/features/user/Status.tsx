@@ -25,6 +25,9 @@ interface TimelineStep {
   name: string;
   status: "aktif" | "selesai" | "locked" | "Lulus" | "Tidak Lulus" | string;
   notes: string | null;
+  score?: number | null;
+  download_pdf_lulus?: string | null;
+  total_applicants?: number;
   end_date?: string | null;
 }
 
@@ -32,13 +35,20 @@ interface Application {
   id: number;
   status: string; // 'pending', 'seleksi', 'Lulus', 'Tidak Lulus'
   applied_at: string;
-  job: {
+  created_at?: string;
+  job?: {
     id: number;
     title: string;
     category: string;
     qualification: string;
   };
-  timeline?: TimelineStep[]; // Menggunakan array timeline injeksi dari backend
+  job_vacancy?: {
+    id: number;
+    title: string;
+    category: string;
+    qualification: string;
+  };
+  timeline?: TimelineStep[]; 
 }
 
 const mainContainerVariants = {
@@ -78,9 +88,12 @@ export const StatusLamaran: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get(`/applications/my?t=${new Date().getTime()}`);
-      // Ambil array dari response bungkus 'data' sesuai struktur return API baru
-      const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
-      setApplications(data);
+      
+      // Amankan pembungkus data response (mendukung data langsung atau data.data)
+      const responseData = res.data;
+      const rawList = responseData.data || (Array.isArray(responseData) ? responseData : []);
+      
+      setApplications(rawList);
     } catch (err) {
       console.error("Error fetching applications:", err);
       setApplications([]);
@@ -99,13 +112,14 @@ export const StatusLamaran: React.FC = () => {
   }, [navigate]);
 
   const getCategoryDisplay = (cat: string) => {
-    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
-    if (cat === "konsultan_individu") return "Konsultan Individu";
+    if (!cat) return "-";
+    if (cat === "tenaga_pendukung" || cat.toLowerCase() === "tenaga pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu" || cat.toLowerCase() === "konsultan individu") return "Konsultan Individu";
     return cat;
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
+    if (!dateStr) return "Sesuai ketentuan";
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
@@ -114,7 +128,9 @@ export const StatusLamaran: React.FC = () => {
    */
   const getTimelineProgress = (timeline: TimelineStep[]) => {
     if (!timeline || timeline.length === 0) return 0;
-    const activeOrDoneIndex = timeline.findLastIndex(step => step.status === 'selesai' || step.status === 'aktif' || step.status === 'Lulus' || step.status === 'Tidak Lulus');
+    const activeOrDoneIndex = timeline.findLastIndex(
+      step => step.status === 'selesai' || step.status === 'aktif' || step.status === 'Lulus' || step.status === 'Tidak Lulus'
+    );
     if (activeOrDoneIndex <= 0) return 0;
     return (activeOrDoneIndex / (timeline.length - 1)) * 100;
   };
@@ -126,9 +142,22 @@ export const StatusLamaran: React.FC = () => {
     }));
   };
 
+  // Ekstraksi objek job secara aman (mengantisipasi null atau variasi nama key dari backend)
+  const getSafeJobData = (app: Application) => {
+    return app.job || app.job_vacancy || {
+      id: 0,
+      title: "Posisi Lowongan Tidak Diketahui",
+      category: "Semua",
+      qualification: "Sesuai Ketentuan"
+    };
+  };
+
   const filteredJobs = activeFilter === "Semua"
     ? applications
-    : applications.filter((app) => app.job && getCategoryDisplay(app.job.category) === activeFilter);
+    : applications.filter((app) => {
+        const targetJob = getSafeJobData(app);
+        return getCategoryDisplay(targetJob.category) === activeFilter;
+      });
 
   const toggleExpand = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
@@ -217,12 +246,13 @@ export const StatusLamaran: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
               </div>
             ) : filteredJobs.map((app) => {
-              if (!app.job) return null;
+              // Menghindari kegagalan render total dengan fungsi getSafeJobData
+              const targetJob = getSafeJobData(app);
 
               const timeline = app.timeline || [];
               const currentInlineStageId = activeInlineStage[app.id] ?? null;
               
-              // Cari detail step yang sedang di-klik pelamar berdasarkan struktur .timeline baru
+              // Cari detail step yang sedang dibuka pelamar
               const activeStageDetail = timeline.find(step => step.id === currentInlineStageId);
 
               return (
@@ -233,26 +263,26 @@ export const StatusLamaran: React.FC = () => {
                     <div className="flex-1 w-full group-hover:translate-x-2 transition-transform duration-300">
                       <div className="flex flex-wrap items-center gap-4 mb-4">
                         <span className="text-[11px] font-medium text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                          <Calendar size={14} className="text-[#FEB700]" /> {formatDate(app.applied_at)}
+                          <Calendar size={14} className="text-[#FEB700]" /> {formatDate(app.applied_at || app.created_at || "")}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-gray-300 hidden md:block" />
-                        <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${app.job.category === "konsultan_individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"}`}>
-                          {app.job.category === "konsultan_individu" ? <Brain size={12} /> : <Users size={12} />}
-                          {getCategoryDisplay(app.job.category)}
+                        <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${targetJob.category === "konsultan_individu" ? "bg-amber-50 text-[#FEB700]" : "bg-blue-50 text-[#0D278D]"}`}>
+                          {targetJob.category === "konsultan_individu" ? <Brain size={12} /> : <Users size={12} />}
+                          {getCategoryDisplay(targetJob.category)}
                         </span>
                       </div>
 
-                      <h3 className="text-xl md:text-2xl font-bold text-[#0D278D] mb-3 leading-tight">{app.job.title}</h3>
+                      <h3 className="text-xl md:text-2xl font-bold text-[#0D278D] mb-3 leading-tight">{targetJob.title}</h3>
 
                       <div className="flex items-center gap-2">
                         <Briefcase size={16} className="text-gray-400 mr-1" />
-                        <span className="text-[13px] font-medium text-gray-600">{app.job.qualification}</span>
+                        <span className="text-[13px] font-medium text-gray-600">{targetJob.qualification}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between w-full md:w-auto gap-6 mt-4 md:mt-0">
-                      <div className={`px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border ${app.status === 'Tidak Lulus' ? "bg-red-50 text-red-600 border-red-100" : app.status === 'Lulus' ? "bg-green-50 text-green-600 border-green-100" : "bg-white text-[#0D278D] border-[#0D278D]"}`}>
-                        {app.status === 'Tidak Lulus' ? <XCircle size={16} /> : app.status === 'Lulus' ? <CheckCircle2 size={16} /> : <Clock size={16} className="text-[#FEB700]" />}
+                      <div className={`px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border ${app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? "bg-red-50 text-red-600 border-red-100" : app.status === 'Lulus' || app.status === 'lulus' ? "bg-green-50 text-green-600 border-green-100" : "bg-white text-[#0D278D] border-[#0D278D]"}`}>
+                        {app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? <XCircle size={16} /> : app.status === 'Lulus' || app.status === 'lulus' ? <CheckCircle2 size={16} /> : <Clock size={16} className="text-[#FEB700]" />}
                         {app.status === 'pending' || app.status === 'seleksi' ? 'Sedang Proses' : app.status}
                       </div>
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${expandedId === app.id ? "rotate-180 bg-[#0D278D] text-white shadow-md" : "text-gray-400 group-hover:bg-white group-hover:text-[#0D278D] group-hover:shadow-sm"}`}>
@@ -279,7 +309,7 @@ export const StatusLamaran: React.FC = () => {
                                 <motion.div 
                                   initial={{ width: 0 }} 
                                   animate={{ width: `${getTimelineProgress(timeline)}%` }} 
-                                  className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${app.status === 'Tidak Lulus' ? "bg-red-500" : app.status === 'Lulus' ? "bg-green-500" : "bg-[#0D278D]"}`} 
+                                  className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? "bg-red-500" : app.status === 'Lulus' || app.status === 'lulus' ? "bg-green-500" : "bg-[#0D278D]"}`} 
                                 />
                               )}
                             </div>
@@ -290,7 +320,7 @@ export const StatusLamaran: React.FC = () => {
                                 let titleClass = "text-gray-400 font-medium";
                                 let IconComponent = CircleDot;
 
-                                // Cabang Pewarnaan Step Berdasarkan Status Hasil Injeksi API
+                                // Penentuan warna step alur timeline berdasarkan response dinamis Laravel
                                 if (step.status === 'selesai') {
                                   circleClass = "bg-[#0D278D] border-[#0D278D] text-white shadow-[0_4px_15px_rgba(13,39,141,0.2)] cursor-pointer hover:scale-110";
                                   titleClass = "text-[#0D278D] font-bold";
@@ -303,7 +333,7 @@ export const StatusLamaran: React.FC = () => {
                                   circleClass = "bg-red-500 border-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)] cursor-pointer hover:scale-110";
                                   titleClass = "text-red-600 font-bold";
                                   IconComponent = XCircle;
-                                } else if (step.status === 'Lulus') {
+                                } else if (step.status === 'Lulus' || step.status === 'lulus') {
                                   circleClass = "bg-green-500 border-green-500 text-white shadow-[0_4px_15px_rgba(34,197,94,0.3)] cursor-pointer hover:scale-110";
                                   titleClass = "text-green-600 font-bold";
                                   IconComponent = CheckCircle2;
@@ -328,7 +358,7 @@ export const StatusLamaran: React.FC = () => {
                                     </button>
 
                                     <div className="text-left md:text-center w-full md:px-2">
-                                      <h3 className={`text-[14px] md:text-[14px] tracking-tight leading-snug ${titleClass}`}>
+                                      <h3 className={`text-[14px] tracking-tight leading-snug ${titleClass}`}>
                                         {step.name}
                                       </h3>
                                       <p className="text-[11px] md:text-[12px] text-gray-400 font-medium mt-0.5 capitalize">
@@ -363,7 +393,6 @@ export const StatusLamaran: React.FC = () => {
                                           Rincian Alur: {activeStageDetail.name}
                                         </h5>
                                         
-                                        {/* Format Pemisah Nilai, Status, dan Jumlah Pengaju */}
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[12px] font-bold uppercase tracking-wider">
                                           {/* INFO NILAI */}
                                           <span className="text-gray-500">
@@ -372,7 +401,7 @@ export const StatusLamaran: React.FC = () => {
                                               {activeStageDetail.score !== null && activeStageDetail.score !== undefined 
                                                 ? activeStageDetail.score 
                                                 : "-"}
-                                            </span>
+                                              </span>
                                           </span>
                                           
                                           <span className="text-gray-300 hidden sm:inline">|</span>
@@ -393,11 +422,11 @@ export const StatusLamaran: React.FC = () => {
 
                                           <span className="text-gray-300 hidden sm:inline">|</span>
 
-                                          {/* 🔥 INFO JUMLAH PENGAJU / PELAMAR */}
+                                          {/* INFO JUMLAH PENGAJU */}
                                           <span className="text-gray-500 flex items-center gap-1">
                                             Jumlah Pengaju : {" "}
                                             <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 font-extrabold">
-                                              {activeStageDetail.total_applicants ?? activeStageDetail.stage_applicants ?? 0} Orang
+                                              {activeStageDetail.total_applicants ?? 0} Orang
                                             </span>
                                           </span>
                                         </div>
@@ -422,7 +451,7 @@ export const StatusLamaran: React.FC = () => {
                                     )}
                                   </div>
 
-                                  {/* TAMPILAN CATATAN VERIFIKATOR DI BAWAH HEADER */}
+                                  {/* TAMPILAN CATATAN VERIFIKATOR */}
                                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                                       Catatan / Keterangan Resmi:
