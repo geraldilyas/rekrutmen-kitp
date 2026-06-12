@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Brain,
   Filter,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -67,21 +68,24 @@ const Pengumuman: React.FC = () => {
     fetchAnnouncements();
   }, []);
 
+  // 🚀 FIXED SINKRONISASI: Menembak endpoint khusus pengumuman/kelulusan ril dari backend
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/jobs?finished=1");
-      setAnnouncements(res.data);
+      const res = await api.get("/announcements"); // 🛠️ Ganti ke rute endpoint pengumuman kelulusan asli lo
+      const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      setAnnouncements(data);
     } catch (err) {
       console.error("Error fetching announcements:", err);
+      setAnnouncements([]);
     } finally {
       setLoading(false);
     }
   };
 
   const getCategoryDisplay = (cat: string) => {
-    if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
-    if (cat === "konsultan_individu") return "Konsultan Individu";
+    if (cat === "tenaga_pendukung" || cat === "Tenaga Pendukung") return "Tenaga Pendukung";
+    if (cat === "konsultan_individu" || cat === "Konsultan Individu") return "Konsultan Individu";
     return cat;
   };
 
@@ -96,8 +100,9 @@ const Pengumuman: React.FC = () => {
       : announcements.filter((item) => getCategoryDisplay(item.category) === activeFilter);
 
   return (
-    <div className="bg-white min-h-screen font-['Poppins']">
+    <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setIsFilterOpen(false)}>
 
+      {/* --- HERO TOP PANEL --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
@@ -111,7 +116,7 @@ const Pengumuman: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-sm">
               <Megaphone size={16} className="text-[#FEB700]" />
               <span className="text-white text-[11px] font-bold tracking-widest uppercase">
-                Pusat Informasi
+                Pusat Informasi Official
               </span>
             </div>
 
@@ -123,8 +128,7 @@ const Pengumuman: React.FC = () => {
             </h1>
 
             <p className="text-blue-100/80 text-[15px] md:text-base max-w-2xl mx-auto leading-relaxed">
-              Informasi resmi hasil seleksi akhir, daftar kandidat yang
-              nyatakan diterima, serta penutupan tahapan rekrutmen.
+              Information resmi hasil kelulusan akhir, daftar nama kandidat terpilih, serta dokumen berita acara rekrutmen aktif.
             </p>
           </motion.div>
         </div>
@@ -149,11 +153,11 @@ const Pengumuman: React.FC = () => {
               <span className="text-[#FEB700] font-bold">
                 {filteredData.length}
               </span>{" "}
-              pengumuman aktif
+              pengumuman kelulusan aktif
             </p>
           </div>
 
-          <div className="flex items-center gap-3 relative">
+          <div className="flex items-center gap-3 relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold cursor-pointer border transition-all duration-300 ${
@@ -169,36 +173,35 @@ const Pengumuman: React.FC = () => {
             <AnimatePresence>
               {isFilterOpen && (
                 <motion.div
-                  initial={{ width: 0, opacity: 0, x: 10 }}
-                  animate={{ width: "auto", opacity: 1, x: 0 }}
-                  exit={{ width: 0, opacity: 0, x: 10 }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30 whitespace-nowrap overflow-hidden"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 top-[115%] bg-white border border-gray-100 rounded-2xl shadow-xl p-1.5 z-40 min-w-[200px]"
                 >
-                  <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] ml-2 w-max whitespace-nowrap">
-                    {filters.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => {
-                          setActiveFilter(f);
-                          setIsFilterOpen(false);
-                        }}
-                        className={`px-5 h-[40px] flex items-center justify-center rounded-xl text-[14px] font-bold cursor-pointer transition-all duration-300 whitespace-nowrap ${
-                          activeFilter === f
-                            ? "bg-white border border-[#0D278D] text-[#0D278D] shadow-sm"
-                            : "text-gray-500 hover:text-[#0D278D]"
-                        }`}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
+                  {filters.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        setActiveFilter(f);
+                        setIsFilterOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-[13px] font-bold cursor-pointer transition-all duration-200 block ${
+                        activeFilter === f
+                          ? "bg-blue-50 text-[#0D278D]"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-[#0D278D]"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </motion.div>
 
+        {/* --- CONTAINER PENGUMUMAN SELEKSI LIST --- */}
         <motion.div variants={itemVariants} className="space-y-2">
           <AnimatePresence mode="popLayout">
             {loading ? (
@@ -206,8 +209,9 @@ const Pengumuman: React.FC = () => {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
                 </div>
             ) : filteredData.length === 0 ? (
-                <div className="text-center py-20">
-                    <p className="text-gray-500">Belum ada pengumuman hasil seleksi.</p>
+                <div className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100/70 p-8 flex flex-col items-center">
+                    <Sparkles size={40} className="text-gray-300 mb-2" />
+                    <p className="text-gray-500 font-medium text-sm">Belum ada dokumen pengumuman hasil seleksi aktif saat ini.</p>
                 </div>
             ) : filteredData.map((item) => (
               <motion.div
@@ -223,12 +227,12 @@ const Pengumuman: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       <span
                         className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-2.5 py-1 rounded-md ${
-                          item.category === "konsultan_individu"
+                          item.category === "konsultan_individu" || item.category === "Konsultan Individu"
                             ? "bg-amber-50 text-[#FEB700]"
                             : "bg-blue-50 text-[#0D278D]"
                         }`}
                       >
-                        {item.category === "konsultan_individu" ? (
+                        {item.category === "konsultan_individu" || item.category === "Konsultan Individu" ? (
                           <Brain size={12} />
                         ) : (
                           <Users size={12} />
@@ -237,11 +241,11 @@ const Pengumuman: React.FC = () => {
                       </span>
                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Clock size={14} className="text-[#FEB700]" />{" "}
-                        Ditutup pada {formatDate(item.deadline)}
+                        Diumumkan pada {formatDate(item.deadline)}
                       </span>
                     </div>
 
-                    <h3 className="text-2xl font-extrabold text-[#0D278D] mb-4 group- transition-colors">
+                    <h3 className="text-2xl font-extrabold text-[#0D278D] mb-4 transition-colors group-hover:text-[#FEB700]">
                       {item.title}
                     </h3>
 
@@ -258,19 +262,19 @@ const Pengumuman: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-6 text-sm font-bold text-gray-400 border-l border-gray-100 pl-6">
                         <span className="flex items-center gap-1.5">
-                          <Users size={16} /> {item.applications_count} Pendaftar
+                          <Users size={16} /> {item.applications_count || 0} Pelamar Terdaftar
                         </span>
-                        <span className="flex items-center gap-1.5 text-[#0D278D]">
-                          <Award size={16} /> {item.accepted_count} Diterima
+                        <span className="flex items-center gap-1.5 text-emerald-600">
+                          <Award size={16} /> {item.accepted_count || 0} Lolos Seleksi
                         </span>
                       </div>
                     </div>
 
-                    {/* 📄 DOKUMEN PENGUMUMAN RESMI */}
+                    {/* 📄 DOKUMEN PENGUMUMAN RESMI (ARRAY FILE PDF REKRUTMEN) */}
                     {item.announcements && item.announcements.length > 0 && (
                       <div className="mt-8 pt-6 border-t border-dashed border-gray-100 space-y-3">
-                        <p className="text-[10px] font-black text-[#FEB700] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                          <FileText size={12} /> Dokumen Resmi Hasil Seleksi
+                        <p className="text-[10px] font-black text-[#0D278D] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                          <FileText size={12} /> Lampiran Dokumen SK Kelulusan Resmi
                         </p>
                         <div className="flex flex-wrap gap-3">
                           {item.announcements.map((doc) => (
@@ -290,24 +294,23 @@ const Pengumuman: React.FC = () => {
                     )}
                   </div>
 
-                    <div className="flex items-center md:items-center">
-                      <button 
-                        onClick={() => {
-                            const targetParam = !isLoggedIn ? "?status=logout" : "";
-                            navigate(`/detail-lowongan/${item.id}${targetParam}`);
-                          }}
-                        className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
-                      >
-                        <div className="group/btn flex items-center justify-center">
-                          <span className="transition-transform duration-300">Lihat Hasil</span>
-                          <ChevronRight
-                            size={18}
-                            data-framer-appear-id="ignore"
-                            className="opacity-0 max-w-0 -translate-x-1 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 group-hover/btn:max-w-[18px] group-hover/btn:ml-1.5 transition-all duration-300 ease-out shrink-0"
-                          />
-                        </div>
-                      </button>
-                    </div>
+                  <div className="flex items-center md:items-center">
+                    <button 
+                      onClick={() => {
+                        const targetParam = !isLoggedIn ? "?status=logout" : "";
+                        navigate(`/detail-lowongan/${item.id}${targetParam}`);
+                      }}
+                      className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
+                    >
+                      <div className="group/btn flex items-center justify-center">
+                        <span className="transition-transform duration-300">Detail Formasi</span>
+                        <ChevronRight
+                          size={18}
+                          className="opacity-0 max-w-0 -translate-x-1 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 group-hover/btn:max-w-[18px] group-hover/btn:ml-1.5 transition-all duration-300 ease-out shrink-0"
+                        />
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}

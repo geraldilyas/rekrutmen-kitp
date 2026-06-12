@@ -229,63 +229,106 @@ export const BerandaLogin: React.FC = () => {
         </div>
       </motion.section>
 
-      {/* --- TAHAPAN SELEKSI SECTION (SINE WAVE TIMELINE JALUR SUNGAI) --- */}
-      <section id="tahapan" className="py-20 md:py-32 bg-white relative overflow-hidden border-y border-gray-100">
+     {/* ===================================================================
+          🌊 FIXED HORIZONTAL STREAM TIMELINE SYSTEM: DYNAMIC RIVER CLIP-PATH SYSTEM (UPDATED)
+          =================================================================== */}
+      <section id="tahapan" className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
-          <div className="absolute top-40 -right-40 w-96 h-96 bg-yellow-50 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-40 -right-40 w-96 h-96 bg-yellow-50 rounded-full blur-3xl opacity-50" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-28">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4">Tahapan Seleksi</h2>
-            <p className="text-gray-500 text-sm sm:text-lg">Proses rekrutmen dilaksanakan secara transparan, akuntabel, dan bebas biaya.</p>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+          {/* Header Title Section */}
+          <div className="text-center max-w-2xl mx-auto mb-20">
+            <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#FEB700] bg-amber-500/5 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none">
+              Alur Rekrutmen BBWSMS
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4 tracking-tight">
+              Tahapan Seleksi Resmi
+            </h2>
+            <div className="w-12 h-[3px] bg-[#FEB700] rounded-full mx-auto mb-4" />
+            <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
+              Proses rekrutmen dilaksanakan secara transparan, akuntabel, dan bebas biaya melalui sistem penyeleksian berkas digital terintegrasi.
+            </p>
           </div>
 
-          <div className="relative w-full">
-            {/* Desktop Line Stream */}
-            <div className="hidden lg:block absolute inset-x-0 top-0 h-40 z-0 pointer-events-none">
-              <svg className="w-full h-full" fill="none" viewBox="0 0 1200 160" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="desktopBlueStream" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#0D278D" /><stop offset="50%" stopColor="#3B82F6" /><stop offset="100%" stopColor="#0D278D" />
-                    <animate attributeName="x1" from="-100%" to="100%" dur="3s" repeatCount="indefinite" />
-                    <animate attributeName="x2" from="0%" to="200%" dur="3s" repeatCount="indefinite" />
-                  </linearGradient>
-                </defs>
-                <path d="M 50 110 C 130 110, 150 40, 240 40 C 330 40, 350 110, 440 110 C 530 110, 550 40, 640 40 C 730 40, 750 110, 840 110 C 930 110, 950 40, 1040 40 C 1130 40, 1140 110, 1185 110" stroke="url(#desktopBlueStream)" strokeWidth="5.5" strokeLinecap="round"/>
-              </svg>
+          {/* Container Alur Garis Lurus */}
+          <div className="relative w-full px-4 md:px-10">
+            
+            {/* 🌊 DESKTOP GRADIENT LINE: FIXED ANTI-STRETCH (Menggunakan Masking Clip-Path Berarus Mulus) */}
+            <div className="hidden lg:block absolute inset-x-[10%] top-14 h-[5px] z-0 pointer-events-none">
+              <motion.div 
+                initial={{ clipPath: "inset(0 100% 0 0)" }}
+                whileInView={{ clipPath: "inset(0 0% 0 0)" }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 1.4, ease: [0.25, 1, 0.5, 1] }}
+                className="w-full h-full bg-gradient-to-r from-[#0D278D] via-[#2563EB] to-[#FEB700] rounded-full relative overflow-hidden"
+              >
+                {/* Efek Kilauan Arus Air Bergerak Super Kontras di Dalam Garis */}
+                <motion.div 
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                  className="absolute inset-0 w-1/3 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                />
+              </motion.div>
             </div>
 
-            {/* Mobile Sine Wave */}
-            <div className="block lg:hidden absolute top-20 bottom-12 left-1/2 -translate-x-1/2 w-20 z-0 pointer-events-none overflow-hidden">
-              <svg className="w-full h-full" fill="none">
-                <defs>
-                  <linearGradient id="mobileSineGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#0D278D" /><stop offset="50%" stopColor="#60A5FA" /><stop offset="100%" stopColor="#0D278D" /></linearGradient>
-                  <pattern id="sineWavePattern" width="80" height="400" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 C 0 66, 0 133, 40 200 C 80 266, 80 333, 40 400" stroke="url(#mobileSineGrad)" fill="none" strokeWidth="6" strokeLinecap="round"/>
-                    <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="0 400" dur="15s" repeatCount="indefinite"/>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#sineWavePattern)" />
-              </svg>
+            {/* 🌊 MOBILE VERTICAL LINE: FIXED ANTI-STRETCH (Mekar Kebawah via Clip-Path) */}
+            <div className="block lg:hidden absolute top-6 bottom-6 left-10 md:left-12 w-[4px] z-0 pointer-events-none">
+              <motion.div
+                initial={{ clipPath: "inset(0 0 100% 0)" }}
+                whileInView={{ clipPath: "inset(0 0 0% 0)" }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 1.4, ease: [0.25, 1, 0.5, 1] }}
+                className="w-full h-full bg-gradient-to-b from-[#0D278D] via-[#2563EB] to-[#FEB700] rounded-full"
+              />
             </div>
 
-            <div className="flex flex-col lg:grid lg:grid-cols-6 gap-y-24 lg:gap-y-16 gap-x-4 relative z-10 w-full">
-              {tahapanSeleksi.map((step, index) => {
-                const isEven = (index + 1) % 2 === 0;
-                return (
-                  <div key={step.id} className="w-full relative z-10">
-                    <motion.div initial={{ opacity: 0, x: isEven ? 35 : -35 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.6, delay: index * 0.05, type: "spring", stiffness: 95 }} className={`flex flex-row lg:flex-col items-center justify-center text-center group relative p-2 pt-0 w-full ${isEven ? "lg:pt-0" : "lg:pt-16"}`}>
-                      {!isEven ? <div className="flex-1 text-right pr-6 sm:pr-8 lg:hidden block z-10"><span className="block text-[11px] font-black tracking-widest text-[#0D278D]/20 mb-1 font-mono">PHASE // 0{step.id}</span><h3 className="text-sm sm:text-base font-black text-[#0D278D] group-hover:text-[#FEB700] transition-colors leading-tight tracking-tight">{step.title}</h3><div className="w-6 h-[2px] bg-[#FEB700] inline-block mt-2 rounded-full transition-all group-hover:w-12" /></div> : <div className="flex-1 lg:hidden block pointer-events-none" />}
-                      <div className="relative z-10 w-24 h-24 rounded-[1.6rem] bg-white  flex items-center justify-center border border-gray-100 group-hover:border-[#FEB700] group-hover:scale-110 transition-all shrink-0 mx-auto"><div className="w-[74px] h-[74px] rounded-[1.2rem] bg-white border border-dashed border-gray-200 flex items-center justify-center"><div className="w-15 h-15 rounded-xl flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors"><step.icon size={24} strokeWidth={2.2} /></div></div><div className="absolute -top-2 -right-2 w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center border-[2.5px] border-white bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-all">{step.id}</div></div>
-                      {isEven ? <div className="flex-1 text-left pl-6 sm:pl-8 lg:hidden block z-10"><span className="block text-[11px] font-black tracking-widest text-[#0D278D]/20 mb-1 font-mono">PHASE // 0{step.id}</span><h3 className="text-sm sm:text-base font-black text-[#0D278D] group-hover:text-[#FEB700] transition-colors leading-tight tracking-tight">{step.title}</h3><div className="w-6 h-[2px] bg-[#FEB700] block mt-2 rounded-full transition-all group-hover:w-12" /></div> : <div className="flex-1 lg:hidden block pointer-events-none" />}
-                      <div className="relative z-10 bg-white px-3 py-1 rounded-md hidden lg:block mt-2"><h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#0D278D] group-hover:text-[#FEB700] transition-colors leading-snug">{step.title}</h3></div>
-                    </motion.div>
-                  </div>
-                );
-              })}
+            {/* Barisan Card Bulat: Otomatis Menjadi Grid 5 Kolom Sesuai Jumlah Tahap */}
+            <div className="flex flex-col lg:grid lg:grid-cols-5 gap-y-12 lg:gap-x-4 relative z-10 w-full">
+              {tahapanSeleksi
+                // 🚀 FILTER: Membuang Tahap Pengumuman Administrasi secara aman
+                .filter((step) => step.title !== "Pengumuman Administrasi")
+                .map((step, index) => {
+                  return (
+                    <div key={step.id} className="w-full relative">
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.85, y: 20 }} 
+                        whileInView={{ opacity: 1, scale: 1, y: 0 }} 
+                        viewport={{ once: true, margin: "-40px" }} 
+                        transition={{ duration: 0.5, delay: index * 0.12 + 0.4, type: "spring", stiffness: 120, damping: 14 }}
+                        whileHover={{ y: -8 }}
+                        className="flex flex-row lg:flex-col items-center justify-start lg:text-center group p-3 bg-transparent rounded-2xl transition-all duration-300 select-none"
+                      >
+                        {/* 🚀 CARD BULAT UTAMA */}
+                        <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-[0_10px_30px_-15px_rgba(13,39,141,0.08)] group-hover:border-[#FEB700] group-hover:shadow-[0_20px_40px_-15px_rgba(254,183,0,0.25)] transition-all duration-300 shrink-0">
+                          <div className="w-[66px] h-[66px] sm:w-[78px] sm:h-[78px] rounded-full bg-white border border-dashed border-gray-200 flex items-center justify-center group-hover:border-amber-300 transition-colors">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] transition-colors duration-300">
+                              <step.icon size={20} strokeWidth={2.2} />
+                            </div>
+                          </div>
+                          {/* Badge Angka Penanda Urutan Urutan Baru (1 Sampai 5) */}
+                          <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full font-bold text-[11px] flex items-center justify-center border-2 border-white bg-[#0D278D] text-white group-hover:bg-[#FEB700] group-hover:text-[#0D278D] font-mono shadow-sm transition-all duration-300">
+                            {index + 1}
+                          </div>
+                        </div>
+
+                        {/* Detail Deskripsi Teks */}
+                        <div className="text-left lg:text-center pl-6 lg:pl-0 lg:mt-5 flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
+                            {step.title}
+                          </h3>
+                          <div className="w-4 h-[2px] bg-[#FEB700] rounded-full mt-2 lg:mx-auto transition-all duration-300 group-hover:w-10 opacity-0 group-hover:opacity-100" />
+                        </div>
+
+                      </motion.div>
+                    </div>
+                  );
+                })}
             </div>
+
           </div>
         </div>
       </section>
