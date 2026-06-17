@@ -30,6 +30,7 @@ class User extends Authenticatable
         'parent_id',
         'phone',
         'address',
+        'avatar_path',
     ];
 
     public function parent()

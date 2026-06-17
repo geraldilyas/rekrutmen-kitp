@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\UserService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage; // 🚀 WAJIB DIIMPORT UNTUK PENGELOLAAN FILE
 
 class AuthController extends Controller
 {
@@ -117,5 +118,40 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    /**
+     * 🚀 UPDATE AVATAR / PASFOTO USER.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            // 1. Hapus pasfoto lama dari storage jika sebelumnya sudah pernah upload
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            // 2. Simpan file pasfoto baru ke folder 'storage/app/public/avatars'
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            // 3. Update field avatar_path ke record user di DB
+            $user->update([
+                'avatar_path' => $path
+            ]);
+
+            // 4. Kirim respons balik ke React beserta link URL gambar utuh
+            return response()->json([
+                'message' => 'Pasfoto berhasil diperbarui',
+                'avatar_url' => asset('storage/' . $path) 
+            ], 200);
+        }
+
+        return response()->json(['message' => 'File tidak ditemukan'], 400);
     }
 }
