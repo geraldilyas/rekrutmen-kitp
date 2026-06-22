@@ -249,9 +249,6 @@ export const BerandaUmum: React.FC = () => {
   };
 
   const getFilterSummaryText = () => {
-<<<<<<< HEAD
-    return null;
-=======
     const kategoriText = filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory);
     const statusText = filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup";
     const monthText = filterMonth === "all" ? "Semua Bulan" : listMonths.find(m => m.value === filterMonth)?.label;
@@ -264,7 +261,6 @@ export const BerandaUmum: React.FC = () => {
         {" • "} pada periode <span className="text-[#0D278D] font-bold">{monthText} {yearText !== "Semua Tahun" && yearText}</span>
       </p>
     );
->>>>>>> origin/main
   };
 
   return (

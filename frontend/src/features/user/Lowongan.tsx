@@ -248,9 +248,6 @@ const Lowongan: React.FC = () => {
   };
 
   const getFilterSummaryText = () => {
-<<<<<<< HEAD
-    return null;
-=======
     const kategoriText = filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory);
     const statusText = filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup";
     const monthText = filterMonth === "all" ? "Semua Bulan" : listMonths.find(m => m.value === filterMonth)?.label;
@@ -263,7 +260,6 @@ const Lowongan: React.FC = () => {
         {" • "} pada periode <span className="text-[#0D278D] font-bold">{monthText} {yearText}</span>
       </p>
     );
->>>>>>> origin/main
   };
 
   return (
