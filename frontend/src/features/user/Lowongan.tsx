@@ -265,6 +265,7 @@ const Lowongan: React.FC = () => {
   };
 
   const getFilterSummaryText = () => {
+    return null;
   };
 
   return (

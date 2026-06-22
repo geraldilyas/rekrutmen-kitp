@@ -180,6 +180,38 @@ class JobController extends Controller
     /**
      * GET FORM FOR APPLICANTS.
      */
+    /**
+     * GET PUBLIC ANNOUNCEMENTS (Jobs with published results)
+     */
+    public function announcements()
+    {
+        $jobs = Job::withoutGlobalScopes()
+            ->whereHas('announcements')
+            ->with(['announcements'])
+            ->withCount('applications')
+            ->withCount(['applications as accepted_count' => function ($query) {
+                $query->where('status', 'lulus');
+            }])
+            ->latest()
+            ->get();
+
+        $data = $jobs->map(function ($job) {
+            return [
+                'id'                 => $job->id,
+                'title'              => $job->title,
+                'category'           => $job->category,
+                'description'        => $job->description,
+                'qualification'      => $job->qualification,
+                'deadline'           => $job->deadline,
+                'applications_count' => $job->applications_count,
+                'accepted_count'     => $job->accepted_count,
+                'announcements'      => $job->announcements,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
     public function getForm($id)
     {
         $job = Job::with('formFields')->findOrFail($id);

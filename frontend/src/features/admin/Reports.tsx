@@ -108,7 +108,7 @@ const Reports: React.FC = () => {
     setStatus(null);
 
     try {
-      await api.post(`/admin/reports/publish-passed-results/${jobId}`);
+      await api.post(`/admin/reports/publishPassedResults/${jobId}`);
       setStatus({ type: 'success', message: "Pengumuman hasil seleksi berhasil diterbitkan secara otomatis!" });
       fetchAnnouncements(jobId);
     } catch (err: any) {

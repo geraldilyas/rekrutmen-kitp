@@ -44,6 +44,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::get('/{id}', [JobController::class, 'show']);
         Route::get('/{id}/form', [JobController::class, 'getForm']);
     });
+    Route::get('/announcements', [JobController::class, 'announcements']);
 
     // --- AUTHENTICATED ROUTES ---
     Route::middleware('auth:sanctum')->group(function () {

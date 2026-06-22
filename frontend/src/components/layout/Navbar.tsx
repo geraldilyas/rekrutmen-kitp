@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
@@ -9,7 +9,6 @@ import { api } from "../../services/api";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   

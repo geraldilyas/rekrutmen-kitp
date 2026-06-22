@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   Megaphone,
   Users,
@@ -59,9 +58,6 @@ const Pengumuman: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isLoggedIn = !location.search.includes("status=logout");
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
 
   useEffect(() => {
@@ -280,7 +276,7 @@ const Pengumuman: React.FC = () => {
                           {item.announcements.map((doc) => (
                             <a 
                               key={doc.id}
-                              href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${doc.file_path}`}
+                              href={`/storage/${doc.file_path}`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
@@ -297,13 +293,13 @@ const Pengumuman: React.FC = () => {
                   <div className="flex items-center md:items-center">
                     <button 
                       onClick={() => {
-                        const targetParam = !isLoggedIn ? "?status=logout" : "";
-                        navigate(`/detail-lowongan/${item.id}${targetParam}`);
+                        const fileUrl = `/storage/${item.announcements[0]?.file_path}`;
+                        window.open(fileUrl, "_blank");
                       }}
                       className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"
                     >
                       <div className="group/btn flex items-center justify-center">
-                        <span className="transition-transform duration-300">Detail Formasi</span>
+                        <span className="transition-transform duration-300">Lihat Pengumuman</span>
                         <ChevronRight
                           size={18}
                           className="opacity-0 max-w-0 -translate-x-1 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 group-hover/btn:max-w-[18px] group-hover/btn:ml-1.5 transition-all duration-300 ease-out shrink-0"
