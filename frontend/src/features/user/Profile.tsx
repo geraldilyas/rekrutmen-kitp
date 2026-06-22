@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   User, 
   Phone, 
@@ -32,10 +32,11 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
 const UserProfile: React.FC = () => {
+  // Ambil data user dari hook profile
   const { user, loading: profileLoading, updateProfile, changePassword } = useProfile();
   const { documents, saveDocumentLink, deleteDocument } = useUserDocuments();
   
@@ -79,7 +80,19 @@ const UserProfile: React.FC = () => {
         phone: user.phone || "",
         address: user.address || "",
       });
-      setAvatarUrl(user.avatar_url || "");
+
+      // 🚀 SOLUSI 1: Cek apakah user punya avatar_path. 
+      // Jika ada, buat full URL ke server Laravel (http://127.0.0.1:8000/storage/...)
+      if (user.avatar_path) {
+        // Jika isi avatar_path di DB sudah berupa full http, langsung pakai. Jika tidak, sambungkan dengan URL asset storage.
+        if (user.avatar_path.startsWith('http')) {
+          setAvatarUrl(user.avatar_path);
+        } else {
+          setAvatarUrl(`http://127.0.0.1:8000/storage/${user.avatar_path}`);
+        }
+      } else {
+        setAvatarUrl("");
+      }
     }
   }, [user]);
 
@@ -183,14 +196,25 @@ const UserProfile: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      const updatedAvatar = res.data.avatar_url;
-      setAvatarUrl(updatedAvatar);
+      // 🚀 SOLUSI 2: Update state visual & paksa update data object user lokal jika hook memungkinkannya
+      if (res.data && res.data.avatar_url) {
+        setAvatarUrl(res.data.avatar_url);
+        
+        // Trik manipulasi object user secara langsung jika useProfile tidak mem-expose setUser secara langsung
+        if (user) {
+          user.avatar_path = res.data.avatar_url; 
+        }
+        
+        alert("Pasfoto profil berhasil disinkronkan ke server, bro!");
+      }
     } catch (err) {
       console.error("Gagal sinkronisasi avatar:", err);
       const localPreview = URL.createObjectURL(file);
       setAvatarUrl(localPreview);
     } finally {
       setUploadingAvatar(false);
+      // Reset input file agar jika user mengupload file yang sama lagi, event onChange tetap ke-trigger
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 

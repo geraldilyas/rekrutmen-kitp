@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -27,7 +27,16 @@ interface Job {
   requirements: string;
 }
 
-// 🚀 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
+// Tambah interface internal untuk menampung data yang sudah di-parsing (Pre-computed)
+interface OptimizedJob extends Job {
+  computedStatus: string;
+  startYear: number;
+  endYear: number;
+  startMonthInt: number;
+  endMonthInt: number;
+  startTime: number;
+}
+
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: { 
@@ -59,7 +68,7 @@ const fadeUpVariants = {
   visible: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.6, },
+    transition: { duration: 0.6 },
   },
 };
 
@@ -68,14 +77,14 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.05, // Dipercepat biar animasi load tabel makin enteng
+      delayChildren: 0.05,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { y: 35, opacity: 0 },
+  hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
@@ -91,11 +100,14 @@ const Lowongan: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
-  const [filterYear, setFilterYear] = useState<string>("all"); // State baru untuk Tahun
+  
+  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const [availableYears, setAvailableYears] = useState<string[]>([new Date().getFullYear().toString()]);
+  
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  // 🚀 STATE MODE TAMPILAN (GRID VS TABLE VIEW)
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  
+  // 🚀 FIXED 1: DEFAULT VIEW UTAMA DIUBAH MENJADI TABLE VIEW SEJAK LOAD FORM
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const fetchJobs = async () => {
     try {
@@ -103,6 +115,22 @@ const Lowongan: React.FC = () => {
       const res = await api.get("/jobs");
       const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
       setJobs(data);
+
+      const yearsSet = new Set<string>();
+      yearsSet.add(new Date().getFullYear().toString());
+      
+      data.forEach((job: Job) => {
+        if (job.start_date) {
+          const year = new Date(job.start_date).getFullYear().toString();
+          if (year && year !== "NaN") yearsSet.add(year);
+        }
+        if (job.deadline) {
+          const year = new Date(job.deadline).getFullYear().toString();
+          if (year && year !== "NaN") yearsSet.add(year);
+        }
+      });
+
+      setAvailableYears(Array.from(yearsSet).sort((a, b) => parseInt(b) - parseInt(a)));
     } catch (err) {
       console.error("Error fetching jobs:", err);
       setJobs([]);
@@ -115,39 +143,10 @@ const Lowongan: React.FC = () => {
     fetchJobs();
   }, []);
 
-  // 📅 GENERATE DAFTAR TAHUN SECARA DINAMIS BERDASARKAN DATA LOWONGAN
-  const getYearOptions = () => {
-    const years = new Set<number>([2026]); // Default fallback tahun 2026
-    jobs.forEach((job) => {
-      if (job.start_date) years.add(new Date(job.start_date).getFullYear());
-      if (job.deadline) years.add(new Date(job.deadline).getFullYear());
-    });
-    
-    const sortedYears = Array.from(years).sort((a, b) => b - a); // Urutkan dari yang terbaru
-    return [
-      { value: "all", label: "Semua Tahun" },
-      ...sortedYears.map((y) => ({ value: String(y), label: String(y) })),
-    ];
-  };
-
-  const listYears = getYearOptions();
-
   const getCategoryDisplay = (cat: string) => {
     if (cat === "tenaga_pendukung") return "Tenaga Pendukung";
     if (cat === "konsultan_individu") return "Konsultan Individu";
     return cat;
-  };
-
-  const getStatusJob = (startDateStr: string, deadlineStr: string) => {
-    if (!startDateStr || !deadlineStr) return "sedang_dibuka";
-    
-    const now = new Date("2026-06-12T10:00:00Z");
-    const start = new Date(startDateStr);
-    const deadline = new Date(deadlineStr);
-
-    if (now < start) return "akan_dibuka";
-    if (now > deadline) return "sudah_tutup";
-    return "sedang_dibuka";
   };
 
   const renderStatusBadge = (status: string) => {
@@ -179,93 +178,92 @@ const Lowongan: React.FC = () => {
     return deadline.toLocaleDateString("id-ID", optionsWithYear);
   };
 
-  const filteredJobs = jobs
-    .filter((job) => {
-      const matchesCategory = filterCategory === "all" || job.category === filterCategory;
-      const status = getStatusJob(job.start_date, job.deadline);
-      const matchesStatus = filterStatus === "all" || status === filterStatus;
-      
-      // Logika Validasi Filter Bulan & Tahun Terpisah
-      let matchesMonth = true;
-      let matchesYear = true;
+  // 🚀 FIXED 2: ENGINE OPTIMIZED MEMOIZATION (Mencegah Lag / Lemot Akibat Rekursif Date Parser)
+  const filteredJobs = useMemo(() => {
+    const now = new Date().getTime();
+    const currentYearStr = new Date().getFullYear().toString();
+    const targetYear = filterYear !== "all" ? parseInt(filterYear, 10) : parseInt(currentYearStr, 10);
 
-      if (job.start_date && job.deadline) {
-        const startObj = new Date(job.start_date);
-        const endObj = new Date(job.deadline);
+    // Langkah A: Map data mentah sekali saja untuk Pre-Computing nilai Date (Sangat Cepat)
+    const optimizedList: OptimizedJob[] = jobs.map((job) => {
+      const startObj = job.start_date ? new Date(job.start_date) : null;
+      const endObj = job.deadline ? new Date(job.deadline) : null;
 
-        if (!isNaN(startObj.getTime()) && !isNaN(endObj.getTime())) {
-          const startMonthInt = startObj.getMonth() + 1;
-          const endMonthInt = endObj.getMonth() + 1;
-          const startYearInt = startObj.getFullYear();
-          const endYearInt = endObj.getFullYear();
+      const startTime = startObj ? startObj.getTime() : 0;
+      const endTime = endObj ? endObj.getTime() : 0;
 
-          // 1. Filter Tahun
-          if (filterYear !== "all") {
-            const selectedYear = parseInt(filterYear, 10);
-            matchesYear = selectedYear >= startYearInt && selectedYear <= endYearInt;
-          }
+      let computedStatus = "sedang_dibuka";
+      if (startTime && now < startTime) computedStatus = "akan_dibuka";
+      else if (endTime && now > endTime) computedStatus = "sudah_tutup";
 
-          // 2. Filter Bulan
-          if (filterMonth !== "all") {
-            const selectedMonth = parseInt(filterMonth, 10);
-            
-            if (filterYear !== "all") {
-              // Jika tahun dipilih spesifik, cek irisan bulannya di tahun tersebut
-              const selectedYear = parseInt(filterYear, 10);
-              const minMonth = selectedYear === startYearInt ? startMonthInt : 1;
-              const maxMonth = selectedYear === endYearInt ? endMonthInt : 12;
-              matchesMonth = selectedMonth >= minMonth && selectedMonth <= maxMonth;
-            } else {
-              // Jika memilih "Semua Tahun", cek irisan bulan standar
-              matchesMonth = (startYearInt === endYearInt) 
-                ? (selectedMonth >= startMonthInt && selectedMonth <= endMonthInt) : true;
-            }
-          }
-        } else {
-          if (filterMonth !== "all" || filterYear !== "all") {
-            return false;
-          }
-        }
-      }
-
-      return matchesCategory && matchesStatus && matchesMonth && matchesYear;
-    })
-    .sort((a, b) => {
-      const currentYear = 2026;
-      
-      const statusA = getStatusJob(a.start_date, a.deadline);
-      const statusB = getStatusJob(b.start_date, b.deadline);
-
-      const startYearA = a.start_date ? new Date(a.start_date).getFullYear() : currentYear;
-      const startYearB = b.start_date ? new Date(b.start_date).getFullYear() : currentYear;
-
-      // 🚀 BOBOT PRIORITAS BARU (Diperketat 1 - 5)
-      const getPriorityScore = (status: string, startYear: number) => {
-        if (status === "sedang_dibuka") return 1;
-        if (status === "akan_dibuka" && startYear === currentYear) return 2;
-        if (status === "akan_dibuka" && startYear > currentYear) return 3;
-        if (status === "sudah_tutup") return 4;
-        return 5;
+      return {
+        ...job,
+        computedStatus,
+        startTime,
+        startYear: startObj ? startObj.getFullYear() : targetYear,
+        endYear: endObj ? endObj.getFullYear() : targetYear,
+        startMonthInt: startObj ? startObj.getMonth() + 1 : 1,
+        endMonthInt: endObj ? endObj.getMonth() + 1 : 12,
       };
-
-      const scoreA = getPriorityScore(statusA, startYearA);
-      const scoreB = getPriorityScore(statusB, startYearB);
-
-      if (scoreA === scoreB) {
-        const timeA = a.start_date ? new Date(a.start_date).getTime() : 0;
-        const timeB = b.start_date ? new Date(b.start_date).getTime() : 0;
-        return timeB - timeA; 
-      }
-
-      return scoreA - scoreB;
     });
+
+    // Langkah B: Filter data yang sudah di-optimasi tanpa menggunakan instansiasi `new Date()` lagi
+    return optimizedList
+      .filter((job) => {
+        const matchesCategory = filterCategory === "all" || job.category === filterCategory;
+        const matchesStatus = filterStatus === "all" || job.computedStatus === filterStatus;
+        
+        const matchesYear = filterYear === "all" || (targetYear >= job.startYear && targetYear <= job.endYear);
+
+        let matchesMonth = true;
+        if (filterMonth !== "all") {
+          const selectedMonthInt = parseInt(filterMonth, 10);
+          matchesMonth = (selectedMonthInt >= job.startMonthInt && selectedMonthInt <= job.endMonthInt);
+        }
+        
+        return matchesCategory && matchesStatus && matchesYear && matchesMonth;
+      })
+      // Langkah C: Sorting super ngebut berbasis angka ordinal priority score
+      .sort((a, b) => {
+        const getPriorityScore = (status: string, startYear: number) => {
+          if (status === "sedang_dibuka") return 1;
+          if (status === "akan_dibuka" && startYear === targetYear) return 2;
+          if (status === "akan_dibuka" && startYear > targetYear) return 3;
+          if (status === "sudah_tutup") return 4;
+          return 5;
+        };
+
+        const scoreA = getPriorityScore(a.computedStatus, a.startYear);
+        const scoreB = getPriorityScore(b.computedStatus, b.startYear);
+
+        if (scoreA === scoreB) {
+          return b.startTime - a.startTime; 
+        }
+        return scoreA - scoreB;
+      });
+  }, [jobs, filterCategory, filterStatus, filterMonth, filterYear]);
 
   const toggleDropdown = (name: string) => {
     setOpenDropdown(openDropdown === name ? null : name);
   };
 
   const getFilterSummaryText = () => {
+<<<<<<< HEAD
     return null;
+=======
+    const kategoriText = filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory);
+    const statusText = filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup";
+    const monthText = filterMonth === "all" ? "Semua Bulan" : listMonths.find(m => m.value === filterMonth)?.label;
+    const yearText = filterYear === "all" ? "Semua Tahun" : filterYear;
+
+    return (
+      <p className="text-xs sm:text-sm text-[#0D278D]/80 font-medium tracking-wide text-center w-full select-none">
+        Menampilkan formasi <span className="text-[#0D278D] font-bold">{kategoriText}</span>
+        {" • "} dengan status <span className="text-[#0D278D] font-bold">{statusText}</span>
+        {" • "} pada periode <span className="text-[#0D278D] font-bold">{monthText} {yearText}</span>
+      </p>
+    );
+>>>>>>> origin/main
   };
 
   return (
@@ -315,10 +313,9 @@ const Lowongan: React.FC = () => {
           className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100 relative z-30"
         >
           {/* Sektor Kiri: Dropdowns Filter Input */}
-          <div className="flex flex-col xl:flex-row items-center gap-3 flex-1 w-full" onClick={(e) => e.stopPropagation()}>
-            
-            {/* 1. Dropdown Kategori */}
-            <div className="relative w-full xl:w-[170px]">
+          <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 w-full" onClick={(e) => e.stopPropagation()}>
+            {/* 1. Filter Kategori */}
+            <div className="relative w-full sm:w-[180px]">
               <button onClick={() => toggleDropdown("category")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "category" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Layers size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory)}</span>
@@ -335,8 +332,8 @@ const Lowongan: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* 2. Dropdown Status */}
-            <div className="relative w-full xl:w-[160px]">
+            {/* 2. Filter Status */}
+            <div className="relative w-full sm:w-[180px]">
               <button onClick={() => toggleDropdown("status")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "status" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Activity size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup"}</span>
@@ -353,8 +350,8 @@ const Lowongan: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* 3. Dropdown Bulan */}
-            <div className="relative w-full xl:w-[150px]">
+            {/* 3. Filter Bulan */}
+            <div className="relative w-full sm:w-[160px]">
               <button onClick={() => toggleDropdown("month")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "month" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{listMonths.find(m => m.value === filterMonth)?.label || "Semua Bulan"}</span>
@@ -371,8 +368,8 @@ const Lowongan: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* 4. Dropdown Tahun */}
-            <div className="relative w-full xl:w-[140px]">
+            {/* 4. Filter Tahun */}
+            <div className="relative w-full sm:w-[140px]">
               <button onClick={() => toggleDropdown("year")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "year" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterYear === "all" ? "Semua Tahun" : filterYear}</span>
@@ -380,15 +377,15 @@ const Lowongan: React.FC = () => {
               </button>
               <AnimatePresence>
                 {openDropdown === "year" && (
-                  <motion.div variants={dropdownVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden z-50 p-1.5">
-                    {listYears.map((y) => (
-                      <button key={y.value} onClick={() => { setFilterYear(y.value); setOpenDropdown(null); }} className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer">{y.label}</button>
+                  <motion.div variants={dropdownVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl max-h-[200px] overflow-y-auto p-1.5 z-50 scrollbar-thin">
+                    <button onClick={() => { setFilterYear("all"); setOpenDropdown(null); }} className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer">Semua Tahun</button>
+                    {availableYears.map((yr) => (
+                      <button key={yr} onClick={() => { setFilterYear(yr); setOpenDropdown(null); }} className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer">{yr}</button>
                     ))}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
           </div>
 
           {/* TOGGLE SWITCH BULAT (ICON ONLY) */}
@@ -410,7 +407,7 @@ const Lowongan: React.FC = () => {
         </motion.div>
 
         {/* --- DYNAMIC FILTER SUMMARY ROW --- */}
-        <motion.div variants={fadeUpVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="mb-12 flex justify-center items-center w-full relative z-20 text-xs font-semibold text-gray-400">
+        <motion.div variants={fadeUpVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="mb-12 flex justify-center items-center w-full relative z-20">
           {getFilterSummaryText()}
         </motion.div>
 
@@ -421,12 +418,14 @@ const Lowongan: React.FC = () => {
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100 p-8">
-            <Sparkles size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm font-medium">Belum ada lowongan aktif yang cocok dengan filter kualifikasi.</p>
+            <p className="text-gray-500 text-sm font-medium">Belum ada lowongan aktif yang cocok dengan kualifikasi filter terpilih.</p>
           </div>
         ) : (
           <AnimatePresence mode="wait">
             {viewMode === "grid" ? (
+              /* ==========================================
+                 📦 MODE 1: GRID VIEW
+                 ========================================== */
               <motion.div 
                 key="grid-layout"
                 variants={containerVariants}
@@ -436,7 +435,7 @@ const Lowongan: React.FC = () => {
                 className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10"
               >
                 {filteredJobs.map((job) => {
-                  const status = getStatusJob(job.start_date, job.deadline);
+                  const status = job.computedStatus;
                   const isComingSoon = status === "akan_dibuka";
                   const isClosed = status === "sudah_tutup";
                   
@@ -444,7 +443,7 @@ const Lowongan: React.FC = () => {
                     <motion.div
                       key={job.id}
                       variants={itemVariants}
-                      whileHover={{ y: -8 }} 
+                      whileHover={{ y: -8 }}
                       className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border bg-white transition-all duration-300 flex flex-col justify-between group ${
                         isClosed 
                           ? "opacity-60 bg-gray-50/30 border-gray-200 hover:border-gray-400 hover:shadow-lg" 
@@ -453,7 +452,6 @@ const Lowongan: React.FC = () => {
                           : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
                       }`}
                     >
-
                       <div>
                         <div className="flex justify-between items-center mb-6 gap-2">
                           {renderStatusBadge(status)}
@@ -498,12 +496,15 @@ const Lowongan: React.FC = () => {
                 })}
               </motion.div>
             ) : (
+              /* ===================================================================
+                 📦 MODE 2: MODERN DASHBOARD FLEX-ROW LAYOUT (NEO-GLASSMORPHISM)
+                 =================================================================== */
               <motion.div 
                 key="table-layout"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
                 exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full space-y-4 relative z-10"
               >
                 {/* Header Kolom (Desktop Only) */}
@@ -513,35 +514,34 @@ const Lowongan: React.FC = () => {
                   <div className="w-[22%] text-left">Periode Pendaftaran</div>
                   <div className="w-[15%] text-left">Kualifikasi</div>
                   <div className="w-[13%] text-center">Status</div>
-                  <div className="w-[160px]" />
+                  <div className="w-[190px]" />
                 </div>
         
-                {/* Looping Baris Formasi Lowongan */}
+                {/* Looping Baris */}
                 {filteredJobs.map((job) => {
-                  const status = getStatusJob(job.start_date, job.deadline);
+                  const status = job.computedStatus;
                   const isComingSoon = status === "akan_dibuka";
                   const isClosed = status === "sudah_tutup";
         
                   return (
-                  <motion.div
-                    key={job.id}
-                    variants={itemVariants}
-                    whileHover={
-                      isClosed 
-                        ? { x: 4, borderLeftColor: "#9CA3AF" } 
-                        : isComingSoon 
-                        ? { x: 6, borderLeftColor: "#F59E0B" } 
-                        : { x: 6, borderLeftColor: "#FEB700" }
-                    } 
-                    className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 lg:p-6 px-6 lg:px-8 bg-white rounded-2xl border-l-[4px] border border-gray-100 transition-all duration-300 group ${
-                      isClosed 
-                        ? "opacity-60 bg-gray-50/40 border-l-gray-300 hover:shadow-md" 
-                        : isComingSoon 
-                        ? "border-l-amber-400 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(245,158,11,0.12)]" 
-                        : "border-l-[#0D278D] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_15px_35px_-10px_rgba(13,39,141,0.08)]"
-                    }`}
-                  >
-                      {/* 1. Nama Lowongan Formasi */}
+                    <motion.div
+                      key={job.id}
+                      variants={itemVariants}
+                      whileHover={
+                        isClosed 
+                          ? { x: 4, borderLeftColor: "#9CA3AF" } 
+                          : isComingSoon 
+                          ? { x: 6, borderLeftColor: "#F59E0B" } 
+                          : { x: 6, borderLeftColor: "#FEB700" }
+                      }
+                      className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 lg:p-6 px-6 lg:px-8 bg-white rounded-2xl border-l-[4px] border border-gray-100 transition-all duration-300 group ${
+                        isClosed 
+                          ? "opacity-60 bg-gray-50/40 border-l-gray-300 hover:shadow-md" 
+                          : isComingSoon 
+                          ? "border-l-amber-400 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(245,158,11,0.12)]" 
+                          : "border-l-[#0D278D] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_15px_35px_-10px_rgba(13,39,141,0.08)]"
+                      }`}
+                    >
                       <div className="w-full lg:w-[30%] min-w-0">
                         <h4 className={`text-base font-bold tracking-tight transition-colors duration-200 ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D]"}`}>
                           {job.title}
@@ -551,18 +551,15 @@ const Lowongan: React.FC = () => {
                         </span>
                       </div>
         
-                      {/* 2. Jenis Kategori */}
                       <div className="hidden lg:block w-[20%] text-sm font-semibold text-gray-500">
                         {getCategoryDisplay(job.category)}
                       </div>
         
-                      {/* 3. Periode Tanggal Range */}
                       <div className="w-full lg:w-[22%] flex items-center gap-2 text-xs text-gray-500 font-medium">
                         <Calendar size={13} className="text-gray-400 shrink-0" />
                         <span>{formatDeadline(job.deadline, job.start_date)}</span>
                       </div>
         
-                      {/* 4. Kualifikasi Pendidikan */}
                       <div className="w-full lg:w-[15%] flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
                         <GraduationCap size={15} className="text-gray-400 shrink-0 lg:hidden" />
                         <span className="bg-gray-50 lg:bg-transparent border border-gray-100 lg:border-0 px-2.5 lg:px-0 py-1 lg:py-0 rounded-lg max-w-full truncate">
@@ -570,13 +567,11 @@ const Lowongan: React.FC = () => {
                         </span>
                       </div>
         
-                      {/* 5. Status Badge Area */}
                       <div className="w-full lg:w-[13%] flex lg:justify-center items-center">
                         {renderStatusBadge(status)}
                       </div>
         
-                      {/* 6. Action Button */}
-                      <div className="w-full lg:w-[160px] flex lg:justify-end items-center">
+                      <div className="w-full lg:w-[190px] flex lg:justify-end items-center">
                         <button 
                           onClick={() => navigate(`/detail-lowongan/${job.id}`)}
                           disabled={isClosed}

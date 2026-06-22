@@ -49,6 +49,9 @@ Route::middleware('throttle:api')->group(function () {
     // --- AUTHENTICATED ROUTES ---
     Route::middleware('auth:sanctum')->group(function () {
 
+        // 🚀 TAMBAHAN: Rute Sinkronisasi Pasfoto User Profile
+        Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
+
         // User Profile & Logout
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
@@ -67,8 +70,6 @@ Route::middleware('throttle:api')->group(function () {
             Route::get('/my', [ApplicationController::class, 'myApplications']);
             Route::post('/', [ApplicationController::class, 'apply']);
         });
-
-        // (Baris rute PDF yang di sini sebelumnya sudah DIHAPUS dan DIPINDAHKAN ke atas)
 
         // User Master Documents
         Route::prefix('user-documents')->group(function () {
