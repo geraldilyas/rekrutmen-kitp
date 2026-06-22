@@ -12,7 +12,6 @@ import {
   Activity,
   LayoutGrid,
   TableProperties,
-  Sparkles,
 } from "lucide-react";
 import { api } from "../../services/api";
 
