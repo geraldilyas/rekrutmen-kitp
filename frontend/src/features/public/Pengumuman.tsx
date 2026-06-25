@@ -111,8 +111,8 @@ const Pengumuman: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-sm">
               <Megaphone size={16} className="text-[#FEB700]" />
-              <span className="text-white text-[11px] font-bold tracking-widest uppercase">
-                Pusat Informasi Official
+              <span className="text-white text-[11px] font-bold tracking-[0.05] uppercase">
+                Pengumuman Hasil Seleksi
               </span>
             </div>
 
@@ -166,45 +166,82 @@ const Pengumuman: React.FC = () => {
               <span>{activeFilter}</span>
             </button>
 
-            <AnimatePresence>
-              {isFilterOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-[115%] bg-white border border-gray-100 rounded-2xl shadow-xl p-1.5 z-40 min-w-[200px]"
-                >
-                  {filters.map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => {
-                        setActiveFilter(f);
-                        setIsFilterOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl text-[13px] font-bold cursor-pointer transition-all duration-200 block ${
-                        activeFilter === f
-                          ? "bg-blue-50 text-[#0D278D]"
-                          : "text-gray-500 hover:bg-gray-50 hover:text-[#0D278D]"
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+           <AnimatePresence>
+                         {isFilterOpen && (
+                           <motion.div
+                             initial={{ width: 0, opacity: 0 }}
+                             animate={{ width: "auto", opacity: 1 }}
+                             exit={{ width: 0, opacity: 0 }}
+                             transition={{ duration: 0.35, ease: "easeOut" }}
+                             className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30 whitespace-nowrap overflow-hidden"
+                           >
+                             {filters.map((filter) => (
+                               <button
+                                 key={filter}
+                                 onClick={() => { setActiveFilter(filter); setIsFilterOpen(false); }}
+                                 className={`px-5 h-[40px] flex items-center justify-center rounded-xl text-[14px] font-bold cursor-pointer transition-all duration-300 whitespace-nowrap ${
+                                   activeFilter === filter ? "bg-white border border-[#0D278D] text-[#0D278D] shadow-[0_2px_10px_rgba(0,0,0,0.04)]" : "text-gray-500 hover:text-[#0D278D] hover:bg-blue-50/50"
+                                 }`}
+                               >
+                                 {filter}
+                               </button>
+                             ))}
+                           </motion.div>
+                         )}
+                       </AnimatePresence>
+                     </div>
+                   </motion.div>
 
         {/* --- CONTAINER PENGUMUMAN SELEKSI LIST --- */}
         <motion.div variants={itemVariants} className="space-y-2">
           <AnimatePresence mode="popLayout">
-            {loading ? (
-                <div className="text-center py-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
-                </div>
-            ) : filteredData.length === 0 ? (
+             {loading ? (
+                      <div className="text-center py-24 flex flex-col items-center justify-center select-none">
+                        
+                        {/* 🚀 FIXED 1: Suntik inline style webkit-mask-image untuk membuat efek blur memudar di pinggir kanan-kiri */}
+                        <div 
+                          className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+                          style={{
+                            maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+                            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+                          }}
+                        >
+                          <svg 
+                            className="absolute w-[200%] h-full left-0" 
+                            viewBox="0 0 200 40" 
+                            preserveAspectRatio="none"
+                          >
+                            <defs>
+                              {/* Gradasi Warna Sungai Senada (Aqua Blue ke Deep Blue) */}
+                              <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#3B82F6" />
+                                <stop offset="50%" stopColor="#0D278D" />
+                                <stop offset="100%" stopColor="#3B82F6" />
+                              </linearGradient>
+                            </defs>
+            
+                            {/* Jalur gelombang rapat yang berulang sempurna */}
+                            <motion.path
+                              d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+                              fill="none"
+                              stroke="url(#riverGradient)"
+                              strokeWidth="7" 
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              
+                              initial={{ x: 0 }}
+                              animate={{ x: -100 }} 
+                              transition={{
+                                duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                                ease: "linear",
+                                repeat: Infinity,
+                              }}
+                            />
+                          </svg>
+                        </div>
+                    
+                      </div>
+                    ) : filteredData.length === 0 ? (
                 <div className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100/70 p-8 flex flex-col items-center">
                     <Sparkles size={40} className="text-gray-300 mb-2" />
                     <p className="text-gray-500 font-medium text-sm">Belum ada dokumen pengumuman hasil seleksi aktif saat ini.</p>

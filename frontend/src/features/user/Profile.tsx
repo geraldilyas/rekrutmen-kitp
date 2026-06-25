@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion,  } from "framer-motion";
+// import { useNavigate } from "react-router-dom";
 import { 
   User, 
   Phone, 
@@ -31,12 +32,21 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
+// 🚀 FIXED: OBJEK TRANSISI SCROLL REVEAL SECTION UNTUK SENSASI SMOOTH
+const scrollSectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" as const }
+  }
+};
+
 const UserProfile: React.FC = () => {
-  // Ambil data user dari hook profile
   const { user, loading: profileLoading, updateProfile, changePassword } = useProfile();
   const { documents, saveDocumentLink, deleteDocument } = useUserDocuments();
   
@@ -81,10 +91,7 @@ const UserProfile: React.FC = () => {
         address: user.address || "",
       });
 
-      // 🚀 SOLUSI 1: Cek apakah user punya avatar_path. 
-      // Jika ada, buat full URL ke server Laravel (http://127.0.0.1:8000/storage/...)
       if (user.avatar_path) {
-        // Jika isi avatar_path di DB sudah berupa full http, langsung pakai. Jika tidak, sambungkan dengan URL asset storage.
         if (user.avatar_path.startsWith('http')) {
           setAvatarUrl(user.avatar_path);
         } else {
@@ -196,15 +203,11 @@ const UserProfile: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      // 🚀 SOLUSI 2: Update state visual & paksa update data object user lokal jika hook memungkinkannya
       if (res.data && res.data.avatar_url) {
         setAvatarUrl(res.data.avatar_url);
-        
-        // Trik manipulasi object user secara langsung jika useProfile tidak mem-expose setUser secara langsung
         if (user) {
           user.avatar_path = res.data.avatar_url; 
         }
-        
         alert("Pasfoto profil berhasil disinkronkan ke server, bro!");
       }
     } catch (err) {
@@ -213,15 +216,99 @@ const UserProfile: React.FC = () => {
       setAvatarUrl(localPreview);
     } finally {
       setUploadingAvatar(false);
-      // Reset input file agar jika user mengupload file yang sama lagi, event onChange tetap ke-trigger
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  if (profileLoading && !user) {
+ if (profileLoading && !user) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-[#0D278D]"></div>
+      /* 🚀 CUSTOM: SEAMLESS GRADIENT RIVER FLOW LOADER (FULL SCREEN HIGH-END CONTEXT) */
+      <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
+        
+        {/* Kontainer Garis Sungai Rapat & Pendek */}
+        <div 
+          className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+          style={{
+            maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+          }}
+        >
+          <svg 
+            className="absolute w-[200%] h-full left-0" 
+            viewBox="0 0 200 40" 
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="profileRiverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3B82F6" />
+                <stop offset="50%" stopColor="#0D278D" />
+                <stop offset="100%" stopColor="#3B82F6" />
+              </linearGradient>
+            </defs>
+
+            <motion.path
+              d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+              fill="none"
+              stroke="url(#profileRiverGradient)"
+              strokeWidth="7" 
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ x: 0 }}
+              animate={{ x: -100 }} 
+              transition={{
+                duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                ease: "linear",
+                repeat: Infinity,
+              }}
+            />
+          </svg>
+        </div>
+        
+      </div>
+    );
+  }if (profileLoading && !user) {
+    return (
+      /* 🚀 CUSTOM: SEAMLESS GRADIENT RIVER FLOW LOADER (FULL SCREEN HIGH-END CONTEXT) */
+      <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
+        
+        {/* Kontainer Garis Sungai Rapat & Pendek */}
+        <div 
+          className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+          style={{
+            maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+          }}
+        >
+          <svg 
+            className="absolute w-[200%] h-full left-0" 
+            viewBox="0 0 200 40" 
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="profileRiverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3B82F6" />
+                <stop offset="50%" stopColor="#0D278D" />
+                <stop offset="100%" stopColor="#3B82F6" />
+              </linearGradient>
+            </defs>
+
+            <motion.path
+              d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+              fill="none"
+              stroke="url(#profileRiverGradient)"
+              strokeWidth="7" 
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ x: 0 }}
+              animate={{ x: -100 }} 
+              transition={{
+                duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                ease: "linear",
+                repeat: Infinity,
+              }}
+            />
+          </svg>
+        </div>
       </div>
     );
   }
@@ -238,7 +325,7 @@ const UserProfile: React.FC = () => {
       
       <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
 
-     <motion.main 
+      <motion.main 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -249,9 +336,8 @@ const UserProfile: React.FC = () => {
           variants={itemVariants} 
           className="lg:col-span-4 lg:sticky lg:top-1 flex flex-col justify-start" 
         >
-          <div className="p-8 rounded-[2rem] bg-white border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
+          <div className="p-8 rounded-[2rem] bg-white border border-gray-100 flex flex-col items-center text-center relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
             
-            {/* Minimalist Top Animated Gradient Line */}
             <motion.div 
               className="absolute top-0 left-0 w-full h-[4px]"
               style={{
@@ -268,7 +354,6 @@ const UserProfile: React.FC = () => {
               }}
             />
             
-            {/* Interactive Passphoto (Centered) */}
             <div className="relative cursor-pointer group/avatar mb-6 mt-4 shrink-0" onClick={handleAvatarClick}>
               <div className="w-24 h-24 rounded-full bg-slate-50 border border-gray-100 overflow-hidden flex items-center justify-center text-[#0D278D] text-2xl font-black relative transition-all duration-300 group-hover/avatar:ring-4 group-hover/avatar:ring-slate-100">
                 {avatarUrl ? (
@@ -285,7 +370,6 @@ const UserProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Nama & Teks Identitas */}
             <div className="space-y-1 w-full flex flex-col items-center">
               <div className="flex flex-col items-center justify-center gap-2 w-full">
                 <h2 className="text-2xl font-extrabold text-[#0D278D] tracking-tight leading-tight break-words max-w-full text-center">
@@ -297,7 +381,6 @@ const UserProfile: React.FC = () => {
             
             <div className="w-full border-t border-gray-100 my-6" />
             
-            {/* Meta Informasi Akun Kontak */}
             <div className="w-full space-y-4 text-xs text-gray-500 font-medium">
               <div className="flex items-center gap-3">
                 <Mail size={14} className="text-gray-400 shrink-0" />
@@ -314,7 +397,6 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Alert Label Vault System */}
           <div className="p-5 rounded-2xl bg-slate-50/60 border border-gray-100 flex gap-3.5 items-start mt-5">
             <Lock size={16} className="text-[#0D278D] mt-0.5 shrink-0 opacity-70" />
             <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
@@ -326,8 +408,16 @@ const UserProfile: React.FC = () => {
         {/* ⭐ COL RIGHT (8-SPAN): CLEAN EDITORIAL PORTAL LAYOUT */}
         <div className="lg:col-span-8 space-y-14 pl-0 lg:pl-4">
           
-          {/* BARIS DATA BIODATA */}
-          <motion.section variants={itemVariants} className="space-y-8">
+          {/* ===================================================================
+              📝 SECTION 1: BIODATA FORM (🚀 FIXED: SUNTIK ANIMASI SCROLL REVEAL)
+              =================================================================== */}
+          <motion.section 
+            variants={scrollSectionVariants} 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="space-y-8"
+          >
             <div className="pb-4 border-b border-gray-900/10">
               <h3 className="text-medium font-bold text-[#0D278D] uppercase flex items-center gap-2">
                 <User size={14} className="text-[#0D278D]" /> Kualifikasi Data Personal
@@ -342,49 +432,82 @@ const UserProfile: React.FC = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+                
+                {/* Kolom NIK */}
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Induk Kependudukan (NIK)</span>
                   <div className="relative flex items-center">
-                    <CreditCard size={14} className="absolute left-0 text-gray-300 pointer-events-none" />
-                    <input type="text" value={user?.nik || "Internal System Locked"} disabled className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 text-xs font-bold text-gray-400 outline-none italic cursor-not-allowed" />
+                    <CreditCard size={14} className="absolute left-4 text-gray-300 pointer-events-none z-10" />
+                    <input 
+                      type="text" 
+                      value={user?.nik || "Internal System Locked"} 
+                      disabled 
+                      className="w-full pl-11 pr-4 h-[46px] bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-bold text-gray-400 outline-none italic cursor-not-allowed" 
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                {/* Kolom Email */}
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Email Korespondensi</span>
                   <div className="relative flex items-center">
-                    <Mail size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
-                    <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" required />
+                    <Mail size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
+                    <input 
+                      type="email" 
+                      value={formData.email} 
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                      required 
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                {/* Kolom Nama */}
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap Sesuai KTP</span>
                   <div className="relative flex items-center">
-                    <User size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
-                    <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" required />
+                    <User size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
+                    <input 
+                      type="text" 
+                      value={formData.name} 
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                      required 
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                {/* Kolom No Kontak */}
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Kontak Seluler (WhatsApp)</span>
                   <div className="relative flex items-center">
-                    <Phone size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
-                    <input type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" />
+                    <Phone size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
+                    <input 
+                      type="text" 
+                      value={formData.phone} 
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
+              {/* Kolom Domisili */}
+              <div className="space-y-2">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili Rumah Lengkap</span>
                 <div className="relative flex items-center">
-                  <MapPin size={14} className="absolute left-0 text-[#0D278D] pointer-events-none" />
-                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full pl-6 py-3 bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 outline-none transition-all" />
+                  <MapPin size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
+                  <input 
+                    type="text" 
+                    value={formData.address} 
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
+                    className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <button 
                   type="submit" 
                   disabled={isSubmitting} 
@@ -397,10 +520,18 @@ const UserProfile: React.FC = () => {
             </form>
           </motion.section>
 
-          {/* BARIS DATA PENGUBAHAN PASSWORD */}
-          <motion.section variants={itemVariants} className="space-y-8">
+          {/* ===================================================================
+              🔐 SECTION 2: PASSWORD CHANGE (🚀 FIXED: SUNTIK ANIMASI SCROLL REVEAL)
+              =================================================================== */}
+          <motion.section 
+            variants={scrollSectionVariants} 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="space-y-8"
+          >
             <div className="pb-4 border-b border-gray-900/10">
-              <h3 className="text-xs font-bold text-[#0D278D] uppercase  flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-2">
                 <KeyRound size={14} className="text-[#0D278D]" /> Otentikasi Keamanan Kredensial
               </h3>
             </div>
@@ -413,23 +544,41 @@ const UserProfile: React.FC = () => {
             )}
 
             <form onSubmit={handlePasswordSubmit} className="space-y-6">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Kata Sandi Akun Saat Ini</span>
-                <input type="password" value={passwordData.current_password} onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+                <input 
+                  type="password" 
+                  value={passwordData.current_password} 
+                  onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })} 
+                  className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                  required 
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Input Kata Sandi Baru</span>
-                  <input type="password" value={passwordData.new_password} onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+                  <input 
+                    type="password" 
+                    value={passwordData.new_password} 
+                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })} 
+                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                    required 
+                  />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Ulangi Konfirmasi Sandi Baru</span>
-                  <input type="password" value={passwordData.new_password_confirmation} onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })} className="w-full bg-transparent border-b border-gray-100 focus:border-[#0D278D] text-xs font-bold text-gray-800 py-3 px-1 outline-none transition-all" required />
+                  <input 
+                    type="password" 
+                    value={passwordData.new_password_confirmation} 
+                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })} 
+                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                    required 
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <button 
                   type="submit" 
                   disabled={isChangingPwd} 
@@ -442,8 +591,13 @@ const UserProfile: React.FC = () => {
             </form>
           </motion.section>
 
-          {/* ⭐ BARIS DOKUMEN MASTER - REFACTORED TO DRIVE LINKS */}
-          <motion.section variants={itemVariants} className="space-y-6">
+          <motion.section 
+            variants={scrollSectionVariants} 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="space-y-6"
+          >
             <div className="pb-4 border-b border-gray-900/10">
               <h3 className="text-xs font-bold text-[#0D278D] uppercase flex items-center gap-2">
                 <FileText size={14} className="text-[#0D278D]" /> Vault Master Tautan Digital
@@ -457,70 +611,82 @@ const UserProfile: React.FC = () => {
               </div>
             )}
 
-            <div className="divide-y divide-gray-900/5">
+            <div className="divide-y divide-gray-100/70">
               {documentTypes.map((type, idx) => {
                 const existing = documents.find(d => d.type === type.key);
                 const isSaving = isSavingDoc === type.key;
 
                 return (
-                  <div key={type.key} className="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group transition-colors duration-200 hover:bg-slate-50/50 px-2 rounded-xl">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <span className="font-mono text-xs text-[#0D278D] font-medium">0{idx + 1}</span>
+                  <div 
+                    key={type.key} 
+                    className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 rounded-xl transition-colors duration-200 hover:bg-slate-50/40"
+                  >
+                    {/* 🚀 FIXED 1: Kunci Lebar Sisi Kiri (w-[38%] & min-w-[280px]) Biar Sisi Kanan Auto Sejajar Lurus */}
+                    <div className="w-full sm:w-[38%] min-w-[280px] flex items-center gap-4 shrink-0">
+                      <span className="font-mono text-xs text-[#0D278D] font-black opacity-60">0{idx + 1}</span>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide group-hover:text-[#0D278D] transition-colors truncate">{type.label}</h4>
+                        <h4 className="text-xs font-extrabold text-gray-700 uppercase tracking-wide group-hover:text-[#0D278D] transition-colors truncate">
+                          {type.label}
+                        </h4>
                         <div className="mt-1 flex items-center gap-2">
                           <span className={`w-1.5 h-1.5 rounded-full ${existing ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400'}`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-wider truncate max-w-[150px] ${existing ? 'text-emerald-600' : 'text-rose-500'}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${existing ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {existing ? 'Tautan Tersimpan' : 'Belum Ada Tautan'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex-1 max-w-md relative group/input">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/input:text-[#0D278D] transition-colors">
-                        <LinkIcon size={12} />
+                    {/* 🚀 FIXED 2: Gunakan flex-1 Agar Kolom Input Melebar Seimbang & Lurus Vertikal Dari Atas ke Bawah */}
+                    <div className="flex-1 flex items-center gap-3 w-full">
+                      <div className="relative flex-1 group/input">
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/input:text-[#0D278D] transition-colors">
+                          <LinkIcon size={13} />
+                        </div>
+                        <input 
+                          type="url"
+                          value={docLinks[type.key] || ""}
+                          onChange={(e) => setDocLinks({ ...docLinks, [type.key]: e.target.value })}
+                          placeholder="https://drive.google.com/..."
+                          className="w-full pl-9 pr-24 h-[44px] bg-white border border-gray-200 focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-medium text-gray-800 rounded-xl outline-none transition-all duration-200 shadow-sm"
+                        />
+                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveDocLink(type.key)}
+                            disabled={isSaving || !docLinks[type.key]}
+                            className="h-[32px] px-4 rounded-lg bg-[#0D278D] text-white text-[9px] font-extrabold uppercase tracking-wider hover:bg-[#FEB700] hover:text-[#0D278D] transition-all duration-200 disabled:opacity-30 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          >
+                            {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                            <span>{existing ? 'Update' : 'Simpan'}</span>
+                          </button>
+                        </div>
                       </div>
-                      <input 
-                        type="url"
-                        value={docLinks[type.key] || ""}
-                        onChange={(e) => setDocLinks({ ...docLinks, [type.key]: e.target.value })}
-                        placeholder="https://drive.google.com/..."
-                        className="w-full pl-9 pr-20 py-2.5 bg-gray-50/50 border border-gray-100 focus:border-[#0D278D] focus:bg-white text-[10px] font-medium text-gray-800 rounded-xl outline-none transition-all"
-                      />
-                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-                        <button
-                          onClick={() => handleSaveDocLink(type.key)}
-                          disabled={isSaving || !docLinks[type.key]}
-                          className="px-3 py-1.5 rounded-lg bg-[#0D278D] text-white text-[9px] font-bold uppercase tracking-wider hover:bg-[#FEB700] hover:text-[#0D278D] transition-all disabled:opacity-30 flex items-center gap-1"
-                        >
-                          {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
-                          {existing ? 'Update' : 'Simpan'}
-                        </button>
+
+                      {/* Tombol Aksi (Buka & Hapus) */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {existing && (
+                          <>
+                            <a 
+                              href={existing.file_path} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="h-[44px] px-4 rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-[#0D278D] hover:text-[#0D278D] text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                            >
+                              <Eye size={13} /> <span>Buka</span>
+                            </a>
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveDoc(type.key, existing.id)}
+                              className="h-[44px] w-[44px] rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 cursor-pointer flex items-center justify-center shadow-sm"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {existing && (
-                        <>
-                          <a 
-                            href={existing.file_path} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="px-4 py-1.5 rounded-lg border border-[#0D278D] text-[#0D278D] text-[10px] font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 flex items-center gap-1"
-                          >
-                            <Eye size={12} /> Buka
-                          </a>
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveDoc(type.key, existing.id)}
-                            className="px-2 py-1.5 rounded-lg border border-rose-200 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </>
-                      )}
-                    </div>
                   </div>
                 );
               })}

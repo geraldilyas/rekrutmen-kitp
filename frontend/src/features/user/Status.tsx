@@ -195,7 +195,7 @@ export const StatusLamaran: React.FC = () => {
         {/* Riwayat Lamaran Title & Dropdown Filter */}
         <motion.div variants={mainItemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-8 relative">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] tracking-tight">Riwayat Lamaran</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] tracking-tight">Status Lamaran</h2>
             <p className="text-sm text-gray-500 font-medium mt-2">
               Menampilkan <span className="text-[#FEB700] font-bold">{filteredJobs.length}</span> data
             </p>

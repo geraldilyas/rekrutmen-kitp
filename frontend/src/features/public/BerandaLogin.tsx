@@ -16,7 +16,9 @@ import {
   Megaphone,
   LayoutGrid,
   TableProperties,
-  Calendar
+  Calendar,
+  RotateCw,
+  Sparkles
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -39,32 +41,33 @@ const tahapanSeleksi = [
   { id: 6, title: "Pengumuman Akhir", icon: Award },
 ];
 
+// 🚀 FIXED: RAGAM VARIAN ANIMASI SCROLL REVEAL UNTUK MAKSIMALISASI VISUAL
+const scrollRevealVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.75, ease: "easeOut" as const }
+  }
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
+      staggerChildren: 0.04,
+      delayChildren: 0.05,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { y: 30, opacity: 0 },
+  hidden: { opacity: 0, x: -10 },
   visible: {
-    y: 0,
     opacity: 1,
-    transition: { duration: 0.6 },
-  },
-};
-
-const fadeUpVariants = {
-  hidden: { y: 25, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.6 },
+    x: 0,
+    transition: { type: "spring" as const, stiffness: 100, damping: 15 }
   },
 };
 
@@ -73,7 +76,7 @@ export const BerandaLogin: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter & Layout View Switcher States
+  // Default View dikunci di Table View sejak load panel beranda login
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   useEffect(() => {
@@ -112,12 +115,12 @@ export const BerandaLogin: React.FC = () => {
 
   const renderStatusBadge = (status: string) => {
     if (status === "akan_dibuka") {
-      return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-100/70 select-none">Akan Datang</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200 select-none">Akan Datang</span>;
     }
     if (status === "sudah_tutup") {
-      return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-100/70 select-none">Sudah Tutup</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D278D] text-white border border-[#0D278D] select-none">Sudah Tutup</span>;
     }
-    return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100/70 select-none">Sedang Dibuka</span>;
+    return <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-white text-[#0D278D] border border-[#0D278D] select-none">Sedang Dibuka</span>;
   };
 
   const formatDeadline = (dateStr: string, startDateStr?: string) => {
@@ -147,14 +150,6 @@ export const BerandaLogin: React.FC = () => {
     }
   };
 
-  const getFilterSummaryText = () => {
-    return (
-      <p className="text-xs sm:text-sm text-[#0D278D]/80 font-medium tracking-wide text-center w-full select-none">
-        Menampilkan formasi lowongan pilihan terintegrasi Balai Wilayah Sungai
-      </p>
-    );
-  };
-
   return (
     <div className="bg-white min-h-screen pt-20 overflow-x-hidden font-['Poppins']">
 
@@ -172,7 +167,7 @@ export const BerandaLogin: React.FC = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            <span className="inline-block px-4 sm:px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-[10px] sm:text-xs mb-6 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-widest max-w-full truncate sm:whitespace-normal">
+            <span className="inline-block px-4 sm:px-5 py-2 rounded-full bg-white/10 border border-white/20 text-[#FEB700] font-bold text-[10px] sm:text-xs mb-6 shadow-[0_0_20px_rgba(254,183,0,0.15)] backdrop-blur-md uppercase tracking-[0.05em] max-w-full truncate sm:whitespace-normal">
               REKRUTMEN KONSULTAN INDIVIDU & TENAGA PENDUKUNG
             </span>
 
@@ -209,15 +204,15 @@ export const BerandaLogin: React.FC = () => {
       </section>
 
       {/* ===================================================================
-          👑 SECTION LOWONGAN UTAMA (MIGRASI PREMIUM DUAL-VIEW LAYOUT)
+          👑 SECTION 1: LOWONGAN UTAMA (🚀 SUNTIK ANIMASI SCROLL REVEAL)
           =================================================================== */}
       <motion.section
         id="lowongan"
         className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20"
-        variants={containerVariants}
+        variants={scrollRevealVariants}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
+        viewport={{ once: true, margin: "-120px" }}
       >
         {/* Row Header & Layout Switcher Button */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 pb-6 border-b border-gray-100">
@@ -227,21 +222,66 @@ export const BerandaLogin: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4 self-end w-full md:w-auto justify-end" onClick={(e) => e.stopPropagation()}>
-            {/* TOGGLE VIEW BULAT WITH SPINNING ANIMATION */}
-            <button 
-              type="button"
-              onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 text-[#0D278D] shadow-sm hover:text-[#FEB700] hover:shadow transition-all cursor-pointer outline-none shrink-0"
-              title={viewMode === "grid" ? "Ubah ke Tampilan Tabel" : "Ubah ke Tampilan Grid"}
-            >
-              <motion.div
-                animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="flex items-center justify-center"
+            
+            {/* 🔄 RADAR DUAL-LAYER TOGGLE SWITCH WITH 360° SPINNING ARROW */}
+            <div className="flex items-center justify-center shrink-0">
+              <button 
+                type="button"
+                onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
+                className="w-12 h-12 rounded-full bg-transparent hover:bg-blue-50/40 text-[#0D278D] flex items-center justify-center transition-all duration-300 border-0 outline-none cursor-pointer focus:outline-none relative group select-none"
+                title={viewMode === "grid" ? "Ubah ke Tampilan Tabel" : "Ubah ke Tampilan Grid"}
               >
-                {viewMode === "grid" ? <TableProperties size={18} /> : <LayoutGrid size={18} />}
-              </motion.div>
-            </button>
+                {/* LAYER 1 (LUAR): Ghost Arrow Ring */}
+                <motion.div
+                  key={`ring-${viewMode}`}
+                  initial={{ rotate: 0, opacity: 0, scale: 0.8 }}
+                  animate={{ 
+                    rotate: 360, 
+                    opacity: [0, 1, 1, 0], 
+                    scale: [0.8, 1.05, 1]
+                  }}
+                  transition={{ 
+                    duration: 0.55, 
+                    ease: "easeInOut",
+                    times: [0, 0.2, 0.8, 1]
+                  }}
+                  className="absolute inset-0 flex items-center justify-center text-[#0D278D] pointer-events-none"
+                >
+                  <RotateCw size={40} className="stroke-[1.0]" />
+                </motion.div>
+
+                {/* LAYER 2 (DALAM): Icon Utama */}
+                <motion.div 
+                  animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 130, damping: 13 }}
+                  className="relative z-10 flex items-center justify-center text-[#0D278D] group-hover:scale-105 transition-transform duration-300"
+                >
+                  <AnimatePresence mode="wait">
+                    {viewMode === "grid" ? (
+                      <motion.div
+                        key="grid-icon"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.12 }}
+                      >
+                        <LayoutGrid size={18} className="stroke-[2.2]" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="table-icon"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.12 }}
+                      >
+                        <TableProperties size={18} className="stroke-[2.2]" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </button>
+            </div>
 
             <button type="button" onClick={() => navigate("/lowongan")} className="text-[#0D278D] font-bold flex items-center gap-1 hover:text-[#FEB700] transition-colors group cursor-pointer text-sm md:text-base whitespace-nowrap">
               <span>Lihat Semua Posisi</span>
@@ -251,201 +291,273 @@ export const BerandaLogin: React.FC = () => {
         </motion.div>
 
         {/* --- DECK CONDITIONAL VIEWS MAIN LAYER --- */}
-        <div className="w-full">
-          {loading ? (
-            <div className="text-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto" /></div>
-          ) : jobs.length === 0 ? (
-            <div className="text-center py-20"><p className="text-gray-500">Belum ada lowongan aktif saat ini.</p></div>
-          ) : (
-            <AnimatePresence mode="wait">
-              {viewMode === "grid" ? (
-                /* ==========================================
-                   📦 OPTION A: GRID VIEW 
-                   ========================================== */
-                <motion.div 
-                  key="grid-layout"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit={{ opacity: 0, y: 15 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full"
+       <div className="w-full">
+          {/* 🚀 KUNCI FIX 1: AnimatePresence dikunci di luar agar transisi loading -> data dapat berjalan */}
+          <AnimatePresence mode="wait">
+            {loading ? (
+              /* 🌊 LAYER A: SEAMLESS GRADIENT RIVER FLOW LOADER (WITH FADE OUT) */
+              <motion.div
+                key="river-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.25 } }} // Fade out halus 0.25 detik saat kelar load
+                className="text-center py-24 flex flex-col items-center justify-center select-none"
+              >
+                {/* Kontainer Utama */}
+                <div 
+                  className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+                  style={{
+                    maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+                    WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+                  }}
                 >
-                  {jobs.map((job) => {
-                    const status = getStatusJob(job.start_date, job.deadline);
-                    const isComingSoon = status === "akan_dibuka";
-                    const isClosed = status === "sudah_tutup";
-                    
-                    return (
-                      <motion.div 
-                        key={job.id} 
-                        variants={itemVariants} 
-                        whileHover={{ y: -8 }} 
-                        className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border bg-white transition-all duration-300 flex flex-col justify-between group ${
-                          isClosed 
-                            ? "opacity-60 bg-gray-50/30 border-gray-200" 
-                            : isComingSoon 
-                            ? "opacity-95 border-amber-200 hover:border-amber-400 hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]" 
-                            : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex justify-between items-center mb-6 gap-2">
-                            {renderStatusBadge(status)}
-                            <div className={`flex items-center gap-1.5 text-xs font-medium shrink-0 ${isComingSoon ? "text-amber-500" : isClosed ? "text-red-400" : "text-gray-400"}`}>
-                              <Clock size={14} />
-                              <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                  <svg 
+                    className="absolute w-[200%] h-full left-0" 
+                    viewBox="0 0 200 40" 
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="50%" stopColor="#0D278D" />
+                        <stop offset="100%" stopColor="#3B82F6" />
+                      </linearGradient>
+                    </defs>
+
+                    <motion.path
+                      d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+                      fill="none"
+                      stroke="url(#riverGradient)"
+                      strokeWidth="7" 
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ x: 0 }}
+                      animate={{ x: -100 }} 
+                      transition={{
+                        duration: 4.5,
+                        ease: "linear",
+                        repeat: Infinity,
+                      }}
+                    />
+                  </svg>
+                </div>
+              </motion.div>
+            ) : jobs.length === 0 ? (
+              /* ✨ LAYER B: TAMPILAN DATA KOSONG DENGAN FADE ENTRANCE */
+              <motion.div
+                key="empty-jobs"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100 p-8 max-w-4xl mx-auto"
+              >
+                <Sparkles size={40} className="text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm font-medium">Belum ada lowongan aktif saat ini.</p>
+              </motion.div>
+            ) : (
+              /* 📦 LAYER C: MAIN DATA CONTAINER CONTAINER (FADE IN MELUNCUR HALUS) */
+              <motion.div
+                key="jobs-list-content"
+                initial={{ opacity: 0, y: 25 }} // Mulai dari transparan dan agak di bawah
+                animate={{ opacity: 1, y: 0 }}   // Meluncur naik memudar benderang lembut
+                exit={{ opacity: 0, y: -25 }}
+                transition={{ duration: 0.55, ease: "easeOut" }} // Durasi meluncur premium setengah detik lebih
+              >
+                {/* 🚀 KUNCI FIX 2: Di sini murni logika switch viewMode tanpa kurungan AnimatePresence ganda */}
+                {viewMode === "grid" ? (
+                  /* ==========================================
+                      📦 MODE 1: GRID VIEW 
+                     ========================================== */
+                  <motion.div 
+                    key="grid-layout"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full"
+                  >
+                    {jobs.map((job) => {
+                      const status = getStatusJob(job.start_date, job.deadline);
+                      const isComingSoon = status === "akan_dibuka";
+                      const isClosed = status === "sudah_tutup";
+                      
+                      return (
+                        <motion.div 
+                          key={job.id} 
+                          variants={itemVariants} 
+                          whileHover={{ y: -8 }} 
+                          className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border bg-white transition-all duration-300 flex flex-col justify-between group ${
+                            isClosed 
+                              ? "opacity-60 bg-gray-50/30 border-gray-200 hover:border-gray-400 hover:shadow-lg" 
+                              : isComingSoon 
+                              ? "opacity-95 border-[#FEB700] hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]" 
+                              : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex justify-between items-center mb-6 gap-2">
+                              {renderStatusBadge(status)}
+                              <div className={`flex items-center gap-1.5 text-xs font-semibold shrink-0 ${isComingSoon ? "text-[#FEB700]" : isClosed ? "text-[#0D278D]" : "text-gray-500"}`}>
+                                <Clock size={14} />
+                                <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                              </div>
                             </div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-[#FEB700]" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
+                              <span className={`text-xs font-semibold uppercase tracking-wider ${
+                                isClosed 
+                                  ? "text-gray-400" 
+                                  : job.category === "konsultan_individu" 
+                                  ? "text-[#FEB700]" 
+                                  : "text-[#0D278D]"
+                              }`}>
+                                {getCategoryDisplay(job.category)}
+                              </span>
+                            </div>
+                            <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>{job.title}</h3>
+                            <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">{job.description}</p>
                           </div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-amber-500" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
-                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{getCategoryDisplay(job.category)}</span>
+                          <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-50 gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 overflow-hidden">
+                              <GraduationCap size={18} className="text-gray-400 mr-1 shrink-0" />
+                              <span className="w-auto px-2.5 sm:px-3 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-[#0D278D] truncate">{job.qualification}</span>
+                            </div>
+                            
+                            <button 
+                              onClick={() => navigate(`/detail-lowongan/${job.id}`)}
+                              disabled={isClosed}
+                              className={`group px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm flex items-center shrink-0 border gap-1.5 cursor-pointer ${
+                                isClosed 
+                                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
+                                  : isComingSoon 
+                                  ? "bg-[#FEB700] border-[#FEB700] text-white hover:bg-[#FEB700]/80" 
+                                  : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
+                              }`}
+                            >
+                              <span>{isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}</span>
+                              {!isClosed && <ChevronRight size={18} className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4"}`} />}
+                            </button>
                           </div>
-                          <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>{job.title}</h3>
-                          <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">{job.description}</p>
-                        </div>
-                        <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-50 gap-2">
-                          <div className="flex items-center gap-1 sm:gap-2 overflow-hidden">
-                            <GraduationCap size={18} className="text-gray-400 mr-1 shrink-0" />
-                            <span className="w-auto px-2.5 sm:px-3 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-[#0D278D] truncate">{job.qualification}</span>
-                          </div>
-                          
-                          <button 
-                            onClick={() => handleActionPendaftaran(job)} 
-                            disabled={isClosed}
-                            className={`group px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm flex items-center shrink-0 border gap-1.5 cursor-pointer ${
-                              isClosed 
-                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none" 
-                                : isComingSoon 
-                                ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
-                                : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-                            }`}
-                          >
-                            <span>{isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}</span>
-                            {!isClosed && <ChevronRight size={18} className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4"}`} />}
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              ) : (
-                /* ===================================================================
-                   📦 OPTION B: MODERN DASHBOARD FLEX-ROW LAYOUT 
-                   =================================================================== */
-                <motion.div 
-                  key="table-layout"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit={{ opacity: 0, y: -15 }}
-                  className="w-full space-y-4"
-                >
-                  <div className="hidden lg:flex items-center justify-between px-8 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-[0.1em] border-b border-gray-100 select-none">
-                    <div className="w-[30%] text-left">Formasi Lowongan</div>
-                    <div className="w-[20%] text-left">Jenis Kategori</div>
-                    <div className="w-[22%] text-left">Periode Pendaftaran</div>
-                    <div className="w-[15%] text-left">Kualifikasi</div>
-                    <div className="w-[13%] text-center">Status</div>
-                    <div className="w-[190px]" />
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                ) : (
+                  /* ===================================================================
+                      📦 MODE 2: HIGH-END SLATE EDITORIAL SEAMLESS TABLE (BORDER-FREE SYSTEM)
+                     =================================================================== */
+                  <div className="w-full relative z-10 overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(13,39,141,0.02)]">
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-separate table-fixed min-w-[1150px]">
+                        <thead>
+                          <tr className="bg-white text-[#0D278D] text-[11px] font-semibold uppercase tracking-[0.05em] select-none">
+                            <th className="py-5 px-8 w-[36%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
+                            <th className="py-5 px-4 w-[16%] font-extrabold text-center">Jenis Kategori</th>
+                            <th className="py-5 px-4 w-[20%] font-extrabold text-center">Periode Pendaftaran</th>
+                            <th className="py-5 px-4 w-[15%] font-extrabold text-center">Kualifikasi</th>
+                            <th className="py-5 px-4 w-[16%] font-extrabold text-center">Status</th>
+                            <th className="py-5 pr-8 pl-2 w-[160px]" />
+                          </tr>
+                        </thead>
+                        <tbody className="text-gray-700 text-sm font-medium">
+                          {jobs.map((job) => {
+                            const status = getStatusJob(job.start_date, job.deadline);
+                            const isComingSoon = status === "akan_dibuka";
+                            const isClosed = status === "sudah_tutup";
+
+                            return (
+                              <tr 
+                                key={job.id}
+                                className={`transition-colors duration-200 group even:bg-gray-50/20 ${
+                                  isClosed ? "opacity-60 bg-gray-50/10" : "hover:bg-[#0D278D]/[0.015]"
+                                }`}
+                              >
+                                <td className={`py-5 px-8 align-middle border-l-[5px] transition-all duration-300 text-center ${
+                                  isClosed ? "border-l-gray-300" : isComingSoon ? "border-l-amber-500" : "border-l-[#0D278D]"
+                                }`}>
+                                  <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
+                                    <h4 className={`text-[14px] font-bold tracking-tight transition-colors duration-200 leading-relaxed text-center ${
+                                      isClosed ? "text-gray-400 line-through" : "text-gray-900 group-hover:text-[#0D278D]"
+                                    }`}>
+                                      {job.title}
+                                    </h4>
+                                  </div>
+                                </td>
+                                <td className="py-5 px-4 align-middle text-center">
+                                  <span className="text-gray-500 text-xs font-semibold tracking-wide block truncate text-center">
+                                    {getCategoryDisplay(job.category)}
+                                  </span>
+                                </td>
+                                <td className="py-5 px-4 align-middle text-center">
+                                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold whitespace-nowrap text-center w-full">
+                                    <Calendar size={13} className="text-gray-500 shrink-0" />
+                                    <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                                  </div>
+                                </td>
+                                <td className="py-5 px-4 align-middle text-center">
+                                  <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
+                                    <span className="inline-block text-[11px] font-bold text-[#0D278D] bg-blue-50/60 border border-blue-100/40 px-2.5 py-1 rounded-lg leading-normal text-center">
+                                      {job.qualification}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-5 px-4 align-middle text-center">
+                                  {renderStatusBadge(status)}
+                                </td>
+                                <td className="py-5 pr-8 pl-2 align-middle text-right w-[160px]">
+                                  <div className="flex justify-end items-center w-full">
+                                    <button 
+                                      onClick={() => navigate(`/detail-lowongan/${job.id}`)}
+                                      disabled={isClosed}
+                                      className={`group px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[135px] ${
+                                        isClosed 
+                                          ? "bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
+                                          : isComingSoon 
+                                          ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
+                                          : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
+                                      }`}
+                                    >
+                                      <span className="whitespace-nowrap inline-block text-center">
+                                        {isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}
+                                      </span>
+                                      {!isClosed && (
+                                        <ChevronRight 
+                                          size={15} 
+                                          className={`transition-all duration-300 transform shrink-0 ${
+                                            isComingSoon 
+                                              ? "opacity-100 ml-1" 
+                                              : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-3.5 group-hover:ml-1"
+                                          }`} 
+                                        />
+                                      )}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-          
-                  {jobs.map((job) => {
-                    const status = getStatusJob(job.start_date, job.deadline);
-                    const isComingSoon = status === "akan_dibuka";
-                    const isClosed = status === "sudah_tutup";
-          
-                    return (
-                      <motion.div
-                        key={job.id}
-                        variants={itemVariants}
-                        whileHover={
-                          isClosed 
-                            ? { x: 4, borderLeftColor: "#9CA3AF" } 
-                            : isComingSoon 
-                            ? { x: 6, borderLeftColor: "#F59E0B" } 
-                            : { x: 6, borderLeftColor: "#FEB700" }
-                        }
-                        className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 lg:p-6 px-6 lg:px-8 bg-white rounded-2xl border-l-[4px] border border-gray-100 transition-all duration-300 group ${
-                          isClosed 
-                            ? "opacity-60 bg-gray-50/40 border-l-gray-300 hover:shadow-md" 
-                            : isComingSoon 
-                            ? "border-l-amber-400 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(245,158,11,0.12)]" 
-                            : "border-l-[#0D278D] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_15px_35px_-10px_rgba(13,39,141,0.08)]"
-                        }`}
-                      >
-                        <div className="w-full lg:w-[30%] min-w-0">
-                          <h4 className={`text-base font-bold tracking-tight transition-colors duration-200 ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D]"}`}>
-                            {job.title}
-                          </h4>
-                          <span className="block text-[10px] text-gray-400 font-medium mt-1 lg:hidden">
-                            {getCategoryDisplay(job.category)}
-                          </span>
-                        </div>
-          
-                        <div className="hidden lg:block w-[20%] text-sm font-semibold text-gray-500">
-                          {getCategoryDisplay(job.category)}
-                        </div>
-          
-                        <div className="w-full lg:w-[22%] flex items-center gap-2 text-xs text-gray-500 font-medium">
-                          <Calendar size={13} className="text-gray-400 shrink-0" />
-                          <span>{formatDeadline(job.deadline, job.start_date)}</span>
-                        </div>
-          
-                        <div className="w-full lg:w-[15%] flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
-                          <GraduationCap size={15} className="text-gray-400 shrink-0 lg:hidden" />
-                          <span className="bg-gray-50 lg:bg-transparent border border-gray-100 lg:border-0 px-2.5 lg:px-0 py-1 lg:py-0 rounded-lg max-w-full truncate">
-                            {job.qualification}
-                          </span>
-                        </div>
-          
-                        <div className="w-full lg:w-[13%] flex lg:justify-center items-center">
-                          {renderStatusBadge(status)}
-                        </div>
-          
-                        <div className="w-full lg:w-[190px] flex lg:justify-end items-center">
-                          <button 
-                            onClick={() => handleActionPendaftaran(job)}
-                            disabled={isClosed}
-                            className={`group px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[145px] ${
-                              isClosed 
-                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
-                                : isComingSoon 
-                                ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
-                                : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-                            }`}
-                          >
-                            <span className="whitespace-nowrap inline-block text-center">
-                              {isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}
-                            </span>
-                            {!isClosed && (
-                              <ChevronRight 
-                                size={15} 
-                                className={`transition-all duration-300 transform shrink-0 ${
-                                  isComingSoon 
-                                    ? "opacity-100 ml-1" 
-                                    : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-3.5 group-hover:ml-1"
-                                }`} 
-                              />
-                            )}
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.section>
 
-      {/* --- FILTER SUMMARY INNER ROW --- */}
-      <motion.div variants={fadeUpVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="mb-12 flex justify-center items-center w-full relative z-20">
-        {getFilterSummaryText()}
-      </motion.div>
-
-      {/* --- TAHAPAN SELEKSI SYSTEM --- */}
-      <section id="tahapan" className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']">
+      {/* ===================================================================
+          👑 SECTION 2: TAHAPAN SELEKSI SYSTEM (🚀 SUNTIK ANIMASI SCROLL REVEAL)
+          =================================================================== */}
+      <motion.section 
+        id="tahapan" 
+        className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']"
+        variants={scrollRevealVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
+      >
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-40 -right-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
@@ -453,7 +565,7 @@ export const BerandaLogin: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-20">
-            <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#0D278D] bg-blue-50 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none border border-blue-100/50">
+            <span className="text-[11px] font-bold tracking-[0.05em] uppercase text-[#0D278D] bg-blue-50 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none border border-blue-100/50">
               Alur Rekrutmen BBWSMS
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4 tracking-tight">
@@ -528,7 +640,7 @@ export const BerandaLogin: React.FC = () => {
                         </div>
 
                         <div className="text-left lg:text-center pl-6 lg:pl-0 lg:mt-5 flex-1 min-w-0">
-                          <h3 className="text-sm sm:text-base font-bold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
+                          <h3 className="text-sm sm:text-base font-semibold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
                             {step.title}
                           </h3>
                           <div className="w-4 h-[2px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mt-2 lg:mx-auto transition-all duration-300 group-hover:w-10 opacity-0 group-hover:opacity-100" />
@@ -540,10 +652,18 @@ export const BerandaLogin: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* --- CTA SECTION --- */}
-      <section className="py-16 md:py-24 px-4 relative">
+      {/* ===================================================================
+          👑 SECTION 3: CTA REGISTER LAYER (🚀 SUNTIK ANIMASI SCROLL REVEAL)
+          =================================================================== */}
+      <motion.section 
+        className="py-16 md:py-24 px-4 relative"
+        variants={scrollRevealVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
+      >
         <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[2rem] p-8 sm:p-12 md:p-16 text-center relative overflow-hidden shadow-2xl border border-white/10">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400 rounded-full blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/3" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400 rounded-full blur-[80px] opacity-20 translate-y-1/3 -translate-x-1/3" />
@@ -557,7 +677,7 @@ export const BerandaLogin: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
     </div>
   );

@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { RotateCw, Sparkles, LayoutGrid, TableProperties, Layers, Activity, Calendar, GraduationCap, Briefcase, Clock, ChevronDown, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import {
-  ChevronRight,
-  GraduationCap,
-  Clock,
-  Briefcase,
-  Calendar,
-  ChevronDown,
-  Layers,
-  Activity,
-  LayoutGrid,
-  TableProperties,
-} from "lucide-react";
 import { api } from "../../services/api";
 
 interface Job {
@@ -26,7 +15,6 @@ interface Job {
   requirements: string;
 }
 
-// Tambah interface internal untuk menampung data yang sudah di-parsing (Pre-computed)
 interface OptimizedJob extends Job {
   computedStatus: string;
   startYear: number;
@@ -36,6 +24,7 @@ interface OptimizedJob extends Job {
   startTime: number;
 }
 
+// 🚀 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: { 
@@ -62,13 +51,14 @@ const listMonths = [
   { value: "12", label: "Desember" },
 ];
 
-const fadeUpVariants = {
-  hidden: { y: 25, opacity: 0 },
+// 🚀 FIXED: OBJEK TRANSISI SCROLL REVEAL DENGAN AS CONST (ANTI ERROR TS2322 CODES)
+const scrollRevealVariants = {
+  hidden: { opacity: 0, y: 40 },
   visible: {
-    y: 0,
     opacity: 1,
-    transition: { duration: 0.6 },
-  },
+    y: 0,
+    transition: { duration: 0.75, ease: "easeOut" as const }
+  }
 };
 
 const containerVariants = {
@@ -76,17 +66,18 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05, // Dipercepat biar animasi load tabel makin enteng
+      staggerChildren: 0.04,
       delayChildren: 0.05,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { opacity: 0, x: -10 },
   visible: {
-    y: 0,
     opacity: 1,
+    x: 0,
+    transition: { type: "spring" as const, stiffness: 100, damping: 15 }
   },
 };
 
@@ -105,7 +96,7 @@ const Lowongan: React.FC = () => {
   
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
-  // 🚀 FIXED 1: DEFAULT VIEW UTAMA DIUBAH MENJADI TABLE VIEW SEJAK LOAD FORM
+  // DEFAULT VIEW DIKUNCI DI TABLE VIEW SEJAK PERTAMA LOAD
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const fetchJobs = async () => {
@@ -177,13 +168,12 @@ const Lowongan: React.FC = () => {
     return deadline.toLocaleDateString("id-ID", optionsWithYear);
   };
 
-  // 🚀 FIXED 2: ENGINE OPTIMIZED MEMOIZATION (Mencegah Lag / Lemot Akibat Rekursif Date Parser)
+  // ENGINE OPTIMIZED MEMOIZATION
   const filteredJobs = useMemo(() => {
     const now = new Date().getTime();
     const currentYearStr = new Date().getFullYear().toString();
     const targetYear = filterYear !== "all" ? parseInt(filterYear, 10) : parseInt(currentYearStr, 10);
 
-    // Langkah A: Map data mentah sekali saja untuk Pre-Computing nilai Date (Sangat Cepat)
     const optimizedList: OptimizedJob[] = jobs.map((job) => {
       const startObj = job.start_date ? new Date(job.start_date) : null;
       const endObj = job.deadline ? new Date(job.deadline) : null;
@@ -206,12 +196,10 @@ const Lowongan: React.FC = () => {
       };
     });
 
-    // Langkah B: Filter data yang sudah di-optimasi tanpa menggunakan instansiasi `new Date()` lagi
     return optimizedList
       .filter((job) => {
         const matchesCategory = filterCategory === "all" || job.category === filterCategory;
         const matchesStatus = filterStatus === "all" || job.computedStatus === filterStatus;
-        
         const matchesYear = filterYear === "all" || (targetYear >= job.startYear && targetYear <= job.endYear);
 
         let matchesMonth = true;
@@ -222,7 +210,6 @@ const Lowongan: React.FC = () => {
         
         return matchesCategory && matchesStatus && matchesYear && matchesMonth;
       })
-      // Langkah C: Sorting super ngebut berbasis angka ordinal priority score
       .sort((a, b) => {
         const getPriorityScore = (status: string, startYear: number) => {
           if (status === "sedang_dibuka") return 1;
@@ -246,21 +233,6 @@ const Lowongan: React.FC = () => {
     setOpenDropdown(openDropdown === name ? null : name);
   };
 
-  const getFilterSummaryText = () => {
-    const kategoriText = filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory);
-    const statusText = filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup";
-    const monthText = filterMonth === "all" ? "Semua Bulan" : listMonths.find(m => m.value === filterMonth)?.label;
-    const yearText = filterYear === "all" ? "Semua Tahun" : filterYear;
-
-    return (
-      <p className="text-xs sm:text-sm text-[#0D278D]/80 font-medium tracking-wide text-center w-full select-none">
-        Menampilkan formasi <span className="text-[#0D278D] font-bold">{kategoriText}</span>
-        {" • "} dengan status <span className="text-[#0D278D] font-bold">{statusText}</span>
-        {" • "} pada periode <span className="text-[#0D278D] font-bold">{monthText} {yearText}</span>
-      </p>
-    );
-  };
-
   return (
     <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setOpenDropdown(null)}>
 
@@ -278,7 +250,7 @@ const Lowongan: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-sm">
             <Briefcase size={16} className="text-[#FEB700]" />
             <span className="text-white text-[11px] font-bold tracking-widest uppercase">
-              Pilihan Karir
+              Pilihan Lowongan bbwsms 
             </span>
           </div>
 
@@ -296,21 +268,24 @@ const Lowongan: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* ===================================================================
+          👑 MAIN COMPONENT: SUNTIK SCROLL REVEAL PADA PANEL FILTER & DATA TABEL
+          =================================================================== */}
       <motion.main
         className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-16"
-        variants={containerVariants}
+        variants={scrollRevealVariants}
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-120px" }}
       >
-        {/* Header Title Formasi */}
+        {/* Dropdowns Filter Input - FIXED: ADVANCED STAGGERED ENTRANCE ANIMATION */}
         <motion.div
-          variants={itemVariants}
-          className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100 relative z-30"
+          variants={containerVariants}
+          className="flex flex-row flex-wrap items-center justify-center gap-4 mb-12 pb-6 border-b border-gray-100 relative z-30 w-full"
         >
-          {/* Sektor Kiri: Dropdowns Filter Input */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 w-full" onClick={(e) => e.stopPropagation()}>
-            {/* 1. Filter Kategori */}
-            <div className="relative w-full sm:w-[180px]">
+          <div className="flex flex-row flex-wrap items-center justify-center gap-3 w-auto" onClick={(e) => e.stopPropagation()}>
+            {/* 1. Dropdown Kategori */}
+            <motion.div variants={itemVariants} className="relative w-full sm:w-[180px]">
               <button onClick={() => toggleDropdown("category")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "category" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Layers size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterCategory === "all" ? "Semua Kategori" : getCategoryDisplay(filterCategory)}</span>
@@ -325,10 +300,10 @@ const Lowongan: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
 
-            {/* 2. Filter Status */}
-            <div className="relative w-full sm:w-[180px]">
+            {/* 2. Dropdown Status */}
+            <motion.div variants={itemVariants} className="relative w-full sm:w-[180px]">
               <button onClick={() => toggleDropdown("status")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "status" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Activity size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterStatus === "all" ? "Semua Status" : filterStatus === "sedang_dibuka" ? "Sedang Dibuka" : filterStatus === "akan_dibuka" ? "Akan Dibuka" : "Sudah Tutup"}</span>
@@ -343,10 +318,10 @@ const Lowongan: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
 
-            {/* 3. Filter Bulan */}
-            <div className="relative w-full sm:w-[160px]">
+            {/* 3. Dropdown Bulan */}
+            <motion.div variants={itemVariants} className="relative w-full sm:w-[160px]">
               <button onClick={() => toggleDropdown("month")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "month" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{listMonths.find(m => m.value === filterMonth)?.label || "Semua Bulan"}</span>
@@ -361,10 +336,10 @@ const Lowongan: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
 
-            {/* 4. Filter Tahun */}
-            <div className="relative w-full sm:w-[140px]">
+            {/* 4. Dropdown Tahun */}
+            <motion.div variants={itemVariants} className="relative w-full sm:w-[140px]">
               <button onClick={() => toggleDropdown("year")} className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "year" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"}`}>
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{filterYear === "all" ? "Semua Tahun" : filterYear}</span>
@@ -380,46 +355,127 @@ const Lowongan: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           </div>
 
-          {/* TOGGLE SWITCH BULAT (ICON ONLY) */}
-          <div className="flex bg-gray-50 border border-gray-100 p-1.5 rounded-full self-center justify-center shrink-0" onClick={(e) => e.stopPropagation()}>
+          {/* 5. Switch View Mode (Kinetic Spinning Radar Switch) */}
+          <motion.div variants={itemVariants} className="flex items-center justify-center shrink-0" onClick={(e) => e.stopPropagation()}>
             <button 
+              type="button"
               onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-100 text-[#0D278D] shadow-sm hover:text-[#FEB700] hover:shadow transition-all cursor-pointer outline-none"
+              className="w-12 h-12 rounded-full bg-transparent hover:bg-blue-50/40 text-[#0D278D] flex items-center justify-center transition-all duration-300 border-0 outline-none cursor-pointer focus:outline-none relative group select-none"
               title={viewMode === "grid" ? "Ubah ke Tampilan Tabel" : "Ubah ke Tampilan Grid"}
             >
+              {/* LAYER 1 (LUAR): Ghost Arrow Ring */}
               <motion.div
-                animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="flex items-center justify-center"
+                key={`ring-${viewMode}`}
+                initial={{ rotate: 0, opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  rotate: 360, 
+                  opacity: [0, 1, 1, 0], 
+                  scale: [0.8, 1.05, 1]
+                }}
+                transition={{ 
+                  duration: 0.55, 
+                  ease: "easeInOut",
+                  times: [0, 0.2, 0.8, 1]
+                }}
+                className="absolute inset-0 flex items-center justify-center text-[#0D278D] pointer-events-none"
               >
-                {viewMode === "grid" ? <TableProperties size={18} /> : <LayoutGrid size={18} />}
+                <RotateCw size={40} className="stroke-[1.0]" />
+              </motion.div>
+
+              {/* LAYER 2 (DALAM): Icon Utama */}
+              <motion.div 
+                animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
+                transition={{ type: "spring", stiffness: 130, damping: 13 }}
+                className="relative z-10 flex items-center justify-center text-[#0D278D] group-hover:scale-105 transition-transform duration-300"
+              >
+                <AnimatePresence mode="wait">
+                  {viewMode === "grid" ? (
+                    <motion.div
+                      key="grid-icon"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <LayoutGrid size={18} className="stroke-[2.2]" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="table-icon"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <TableProperties size={18} className="stroke-[2.2]" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             </button>
-          </div>
+          </motion.div>
         </motion.div>
 
-        {/* --- DYNAMIC FILTER SUMMARY ROW --- */}
-        <motion.div variants={fadeUpVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="mb-12 flex justify-center items-center w-full relative z-20">
-          {getFilterSummaryText()}
-        </motion.div>
-
-        {/* --- JOB VIEW DECK LAYER --- */}
+     {/* --- JOB VIEW DECK LAYER (🌊 FADE-EDGE SEAMLESS RIVER LOADER) --- */}
         {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+          <div className="text-center py-24 flex flex-col items-center justify-center select-none">
+            
+            {/* 🚀 FIXED 1: Suntik inline style webkit-mask-image untuk membuat efek blur memudar di pinggir kanan-kiri */}
+            <div 
+              className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+              style={{
+                maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+              }}
+            >
+              <svg 
+                className="absolute w-[200%] h-full left-0" 
+                viewBox="0 0 200 40" 
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  {/* Gradasi Warna Sungai Senada (Aqua Blue ke Deep Blue) */}
+                  <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#3B82F6" />
+                    <stop offset="50%" stopColor="#0D278D" />
+                    <stop offset="100%" stopColor="#3B82F6" />
+                  </linearGradient>
+                </defs>
+
+                {/* Jalur gelombang rapat yang berulang sempurna */}
+                <motion.path
+                  d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+                  fill="none"
+                  stroke="url(#riverGradient)"
+                  strokeWidth="7" 
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  
+                  initial={{ x: 0 }}
+                  animate={{ x: -100 }} 
+                  transition={{
+                    duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                    ease: "linear",
+                    repeat: Infinity,
+                  }}
+                />
+              </svg>
+            </div>
+        
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100 p-8">
+            <Sparkles size={40} className="text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm font-medium">Belum ada lowongan aktif yang cocok dengan kualifikasi filter terpilih.</p>
           </div>
         ) : (
           <AnimatePresence mode="wait">
             {viewMode === "grid" ? (
               /* ==========================================
-                 📦 MODE 1: GRID VIEW
+                 📦 MODE 1: GRID VIEW (CLONED FROM BERANDA UMUM)
                  ========================================== */
               <motion.div 
                 key="grid-layout"
@@ -427,7 +483,7 @@ const Lowongan: React.FC = () => {
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0, y: 15 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10"
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10 w-full"
               >
                 {filteredJobs.map((job) => {
                   const status = job.computedStatus;
@@ -443,23 +499,31 @@ const Lowongan: React.FC = () => {
                         isClosed 
                           ? "opacity-60 bg-gray-50/30 border-gray-200 hover:border-gray-400 hover:shadow-lg" 
                           : isComingSoon 
-                          ? "opacity-95 border-amber-200 hover:border-amber-400 hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]" 
-                          : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
+                          ? "opacity-95 border-[#FEB700] hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]" 
+                          : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(245,183,0,0.3)]"
                       }`}
                     >
                       <div>
                         <div className="flex justify-between items-center mb-6 gap-2">
                           {renderStatusBadge(status)}
-                          <div className={`flex items-center gap-1.5 text-xs font-medium shrink-0 ${isComingSoon ? "text-amber-500" : isClosed ? "text-red-400" : "text-gray-400"}`}>
+                          <div className={`flex items-center gap-1.5 text-xs font-semibold shrink-0 ${isComingSoon ? "text-[#FEB700]" : isClosed ? "text-[#0D278D]" : "text-gray-500"}`}>
                             <Clock size={14} />
                             <span>{formatDeadline(job.deadline, job.start_date)}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 mb-3">
-                          <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-amber-500" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{getCategoryDisplay(job.category)}</span>
-                        </div>
+                         <div className="flex items-center gap-2 mb-3">
+                                                  <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-amber-500" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
+                                                  <span className={`text-xs font-semibold uppercase tracking-[0.05] ${
+                                                    isClosed 
+                                                      ? "text-gray-400" 
+                                                      : job.category === "konsultan_individu" 
+                                                      ? "text-[#FEB700]" 
+                                                      : "text-[#0D278D]"
+                                                  }`}>
+                                                    {getCategoryDisplay(job.category)}
+                                                  </span>
+                                                </div>
 
                         <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>{job.title}</h3>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">{job.description}</p>
@@ -478,11 +542,11 @@ const Lowongan: React.FC = () => {
                             isClosed 
                               ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
                               : isComingSoon 
-                              ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
+                              ? "bg-white border-[#FEB700] text-[#FEB700] hover:bg-[#FEB700] hover:text-white" 
                               : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
                           }`}
                         >
-                          <span>{isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lihat Lowongan"}</span>
+                          <span>{isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}</span>
                           {!isClosed && <ChevronRight size={18} className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4"}`} />}
                         </button>
                       </div>
@@ -492,111 +556,128 @@ const Lowongan: React.FC = () => {
               </motion.div>
             ) : (
               /* ===================================================================
-                 📦 MODE 2: MODERN DASHBOARD FLEX-ROW LAYOUT (NEO-GLASSMORPHISM)
+                 👑 MODE 2: HIGH-END SLATE EDITORIAL SEAMLESS TABLE (BORDER-FREE SYSTEM)
                  =================================================================== */
               <motion.div 
                 key="table-layout"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                exit={{ opacity: 0, y: -15 }}
-                className="w-full space-y-4 relative z-10"
+                exit={{ opacity: 0, y: -10 }}
+                className="w-full relative z-10 overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(13,39,141,0.02)]"
               >
-                {/* Header Kolom (Desktop Only) */}
-                <div className="hidden lg:flex items-center justify-between px-8 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-[0.1em] border-b border-gray-100 select-none">
-                  <div className="w-[30%] text-left">Formasi Lowongan</div>
-                  <div className="w-[20%] text-left">Jenis Kategori</div>
-                  <div className="w-[22%] text-left">Periode Pendaftaran</div>
-                  <div className="w-[15%] text-left">Kualifikasi</div>
-                  <div className="w-[13%] text-center">Status</div>
-                  <div className="w-[190px]" />
-                </div>
-        
-                {/* Looping Baris */}
-                {filteredJobs.map((job) => {
-                  const status = job.computedStatus;
-                  const isComingSoon = status === "akan_dibuka";
-                  const isClosed = status === "sudah_tutup";
-        
-                  return (
-                    <motion.div
-                      key={job.id}
-                      variants={itemVariants}
-                      whileHover={
-                        isClosed 
-                          ? { x: 4, borderLeftColor: "#9CA3AF" } 
-                          : isComingSoon 
-                          ? { x: 6, borderLeftColor: "#F59E0B" } 
-                          : { x: 6, borderLeftColor: "#FEB700" }
-                      }
-                      className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 lg:p-6 px-6 lg:px-8 bg-white rounded-2xl border-l-[4px] border border-gray-100 transition-all duration-300 group ${
-                        isClosed 
-                          ? "opacity-60 bg-gray-50/40 border-l-gray-300 hover:shadow-md" 
-                          : isComingSoon 
-                          ? "border-l-amber-400 shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(245,158,11,0.12)]" 
-                          : "border-l-[#0D278D] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_15px_35px_-10px_rgba(13,39,141,0.08)]"
-                      }`}
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-separate table-fixed min-w-[1150px]">
+                    <thead>
+                      <tr className="bg-white text-[#0D278D] text-[11px] font-semibold uppercase tracking-[0.05em] select-none">
+                        <th className="py-5 px-8 w-[36%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
+                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Jenis Kategori</th>
+                        <th className="py-5 px-4 w-[20%] font-extrabold text-center">Periode Pendaftaran</th>
+                        <th className="py-5 px-4 w-[15%] font-extrabold text-center">Kualifikasi</th>
+                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Status</th>
+                        <th className="py-5 pr-8 pl-2 w-[160px]" />
+                      </tr>
+                    </thead>
+                    <motion.tbody 
+                      variants={containerVariants}
+                      className="text-gray-700 text-sm font-medium"
                     >
-                      <div className="w-full lg:w-[30%] min-w-0">
-                        <h4 className={`text-base font-bold tracking-tight transition-colors duration-200 ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D]"}`}>
-                          {job.title}
-                        </h4>
-                        <span className="block text-[10px] text-gray-400 font-medium mt-1 lg:hidden">
-                          {getCategoryDisplay(job.category)}
-                        </span>
-                      </div>
-        
-                      <div className="hidden lg:block w-[20%] text-sm font-semibold text-gray-500">
-                        {getCategoryDisplay(job.category)}
-                      </div>
-        
-                      <div className="w-full lg:w-[22%] flex items-center gap-2 text-xs text-gray-500 font-medium">
-                        <Calendar size={13} className="text-gray-400 shrink-0" />
-                        <span>{formatDeadline(job.deadline, job.start_date)}</span>
-                      </div>
-        
-                      <div className="w-full lg:w-[15%] flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
-                        <GraduationCap size={15} className="text-gray-400 shrink-0 lg:hidden" />
-                        <span className="bg-gray-50 lg:bg-transparent border border-gray-100 lg:border-0 px-2.5 lg:px-0 py-1 lg:py-0 rounded-lg max-w-full truncate">
-                          {job.qualification}
-                        </span>
-                      </div>
-        
-                      <div className="w-full lg:w-[13%] flex lg:justify-center items-center">
-                        {renderStatusBadge(status)}
-                      </div>
-        
-                      <div className="w-full lg:w-[190px] flex lg:justify-end items-center">
-                        <button 
-                          onClick={() => navigate(`/detail-lowongan/${job.id}`)}
-                          disabled={isClosed}
-                          className={`group px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[145px] ${
-                            isClosed 
-                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
-                              : isComingSoon 
-                              ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
-                              : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-                          }`}
-                        >
-                          <span className="whitespace-nowrap inline-block text-center">
-                            {isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lihat Lowongan"}
-                          </span>
-                          
-                          {!isClosed && (
-                            <ChevronRight 
-                              size={15} 
-                              className={`transition-all duration-300 transform shrink-0 ${
-                                isComingSoon 
-                                  ? "opacity-100 ml-1" 
-                                  : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-3.5 group-hover:ml-1"
-                              }`} 
-                            />
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      {filteredJobs.map((job) => {
+                        const status = job.computedStatus;
+                        const isComingSoon = status === "akan_dibuka";
+                        const isClosed = status === "sudah_tutup";
+
+                        return (
+                          <motion.tr 
+                            key={job.id}
+                            variants={itemVariants}
+                            className={`transition-colors duration-200 group even:bg-gray-50/20 ${
+                              isClosed ? "opacity-60 bg-gray-50/10" : "hover:bg-[#0D278D]/[0.015]"
+                            }`}
+                          >
+                            {/* 1. Formasi Lowongan (Pilar Status Tepi Kiri Berwarna Dinamis + Rata Tengah) */}
+                            <td className={`py-5 px-8 align-middle border-l-[5px] transition-all duration-300 text-center ${
+                              isClosed 
+                                ? "border-l-gray-300" 
+                                : isComingSoon 
+                                ? "border-l-amber-500" 
+                                : "border-l-[#0D278D]"
+                            }`}>
+                              <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
+                                <h4 className={`text-[14px] font-bold tracking-tight transition-colors duration-200 leading-relaxed text-center ${
+                                  isClosed ? "text-gray-400 line-through" : "text-gray-900 group-hover:text-[#0D278D]"
+                                }`}>
+                                  {job.title}
+                                </h4>
+                              </div>
+                            </td>
+
+                            {/* 2. Jenis Kategori */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              <span className="text-gray-500 text-xs font-semibold tracking-wide block truncate text-center">
+                                {getCategoryDisplay(job.category)}
+                              </span>
+                            </td>
+
+                            {/* 3. Periode Tanggal Range */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold whitespace-nowrap text-center w-full">
+                                <Calendar size={13} className="text-gray-500 shrink-0" />
+                                <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                              </div>
+                            </td>
+
+                            {/* 4. Kualifikasi Pendidikan */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
+                                <span className="inline-block text-[11px] font-bold text-[#0D278D] bg-blue-50/60 border border-blue-100/40 px-2.5 py-1 rounded-lg leading-normal text-center">
+                                  {job.qualification}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* 5. Status Badge */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              {renderStatusBadge(status)}
+                            </td>
+
+                            {/* 6. Action Button (Lamar / Lihat Detail) */}
+                            <td className="py-5 pr-8 pl-2 align-middle text-right w-[160px]">
+                              <div className="flex justify-end items-center w-full">
+                                <button 
+                                  onClick={() => navigate(`/detail-lowongan/${job.id}`)}
+                                  disabled={isClosed}
+                                  className={`group px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[135px] ${
+                                    isClosed 
+                                      ? "bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
+                                      : isComingSoon 
+                                      ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
+                                      : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
+                                  }`}
+                                >
+                                  <span className="whitespace-nowrap inline-block text-center">
+                                    {isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}
+                                  </span>
+                                  {!isClosed && (
+                                    <ChevronRight 
+                                      size={15} 
+                                      className={`transition-all duration-300 transform shrink-0 ${
+                                        isComingSoon 
+                                          ? "opacity-100 ml-1" 
+                                          : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-3.5 group-hover:ml-1"
+                                      }`} 
+                                    />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+
+                          </motion.tr>
+                        );
+                      })}
+                    </motion.tbody>
+                  </table>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
