@@ -10,6 +10,7 @@ use App\Notifications\ApplicationStatusUpdated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Models\Job; 
 
 class ApplicationService
 {
@@ -47,9 +48,13 @@ class ApplicationService
     /**
      * Submit a new application.
      */
+   /**
+     * Submit a new application.
+     */
     public function apply(array $data, int $userId)
     {
-        $job = Job::with('formFields')->findOrFail($data['job_id']);
+        // 🚀 FIX 1: Paksa pemanggilan Job secara Absolute path agar tidak tersesat ke Services
+        $job = \App\Models\Job::with('formFields')->findOrFail($data['job_id']);
 
         // Check if job is currently open
         $now = now();
@@ -95,7 +100,8 @@ class ApplicationService
             }
 
             // Auto-create stage result for first stage
-            $firstStage = JobStage::where('job_id', $job->id)
+            // 🚀 FIX 2: Paksa pemanggilan JobStage secara Absolute path juga demi keamanan database relasi
+            $firstStage = \App\Models\JobStage::where('job_id', $job->id)
                 ->orderBy('stage_order')
                 ->first();
 
@@ -116,7 +122,9 @@ class ApplicationService
      */
     public function getMyApplications(int $userId)
     {
-        return Application::with(['job', 'stageResults.stage'])
+        // 🚀 SOLUSI EMAS: Tambahkan 'withoutGlobalScopes()' biar ga disembunyikan scope Laravel
+        return \App\Models\Application::withoutGlobalScopes()
+            ->with(['job.stages', 'stageResults.stage']) // Eager load stages sekalian biar accessor ga crash
             ->where('user_id', $userId)
             ->latest()
             ->get();
@@ -204,10 +212,14 @@ class ApplicationService
     /**
      * Update the result of a specific selection stage.
      */
+   /**
+     * Update the result of a specific selection stage.
+     */
     public function updateStageResult(ApplicationStageResult $stageResult, array $data)
     {
         return DB::transaction(function () use ($stageResult, $data) {
-            $currentStage = JobStage::findOrFail($stageResult->job_stage_id);
+            // 🚀 FIX 1: Paksa panggil secara Absolute Path agar tidak kesasar ke App\Services\Job
+            $currentStage = \App\Models\JobStage::findOrFail($stageResult->job_stage_id);
             $application = Application::findOrFail($stageResult->application_id);
 
             // Date validation
@@ -261,7 +273,8 @@ class ApplicationService
 
     protected function handleStageSuccess(Application $application, JobStage $currentStage)
     {
-        $nextStage = JobStage::where('job_id', $application->job_id)
+        // 🚀 FIX 2: Paksa panggil JobStage secara Absolute Path juga di sini demi keamanan relasi DB
+        $nextStage = \App\Models\JobStage::where('job_id', $application->job_id)
             ->where('stage_order', '>', $currentStage->stage_order)
             ->orderBy('stage_order')
             ->first();

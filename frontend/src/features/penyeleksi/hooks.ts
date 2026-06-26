@@ -96,6 +96,8 @@ function mapApplication(app: any): Application {
     })),
     document_link: null,
     applied_at: app.applied_at,
+    stage_start_date: pendingResult?.stage?.start_date ?? null,
+    stage_end_date: pendingResult?.stage?.end_date ?? null,
   };
 }
 

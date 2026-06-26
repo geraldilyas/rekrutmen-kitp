@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // 🚀 Optimasi AnimatePresence
+import { motion, AnimatePresence } from "framer-motion"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
+// 🚀 FIXED: Import instance api custom axios lo agar dikenali di useEffect bawah
+import { api } from "../../services/api";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
+  // 🚀 KONFIGURASI BACKEND: Sesuaikan dengan URL domain lokal/production Laravel kamu
+  const BACKEND_URL = "http://localhost:8000";
+
   // Status token reaktif
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const token = localStorage.getItem("token");
@@ -23,39 +27,64 @@ const Navbar: React.FC = () => {
     return cached ? JSON.parse(cached) : null;  
   });
 
-  // Pemicu sinkronisasi status login setiap rute berubah
+  // State cadangan seandainya URL image broken/eror saat dimuat browser
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  // Reset flag eror gambar setiap kali rute atau data user berubah
+  useEffect(() => {
+    setImageError(false);
+  }, [location.pathname, userData?.avatar_path]);
+
+  // 🚀 PERBAIKAN SAKTI: Sinkronisasi profil aman, anti-tendang & anti-reset sepihak!
   useEffect(() => {
     const currentToken = localStorage.getItem("token");
     const cachedUser = localStorage.getItem("user");
-    const checkLogin = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
     
-    setIsLoggedIn(checkLogin);
+    // Pengecekan token yang valid dan bersih dari string aneh
+    const hasValidToken = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
+    
+    setIsLoggedIn(hasValidToken);
 
-    if (!currentToken || !checkLogin) {
+    // 🚀 PENGAMAN 1: Jika bener-bener ga ada token, baru hapus state dan stop request
+    if (!hasValidToken) {
       setUserData(null);
       return;
     }
 
-    if (cachedUser) {
-      setUserData(JSON.parse(cachedUser));
+    // 🚀 PENGAMAN 2: Gunakan data cache yang ada dulu secara mutlak, JANGAN di-set null di awal!
+    if (cachedUser && cachedUser !== "undefined" && cachedUser !== "null") {
+      try {
+        const parsed = JSON.parse(cachedUser);
+        // Hanya set form jika data state saat ini masih kosong atau berbeda
+        if (!userData || userData.id !== parsed.id) {
+          setUserData(parsed);
+        }
+      } catch (e) {
+        console.error("Format cache user rusak:", e);
+      }
     }
 
-    fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${currentToken}` },
-      credentials: "include",
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Gagal mengambil data profil terbaru");
-        return r.json();
+    // 🚀 PENGAMAN 3: Jalankan sync background ke Laravel dengan aman menggunakan custom Axios instance
+    api.get("/auth/me")
+      .then((res: any) => {
+        console.log("Sync User Data:", res.data);
+        const user = res.data.user || res.data;
+        setUserData(user);
+        localStorage.setItem("user", JSON.stringify(user));
       })
-      .then((data) => {
-        setUserData(data);
-        localStorage.setItem("user", JSON.stringify(data));
-      })
-      .catch((err) => {
+      .catch((err: any) => {
         console.warn("Background profile fetch skipped/failed:", err.message);
+        
+        // 🚀 PENGAMAN 4: Hanya hapus session jika backend terbukti merespon dengan status 401 (Token Expired)
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setIsLoggedIn(false);
+          setUserData(null);
+          window.location.replace("/beranda");
+        }
       });
-  }, [location.pathname]);
+  }, [location.pathname]); // <-- Tetap berjalan aman tiap rute berganti
 
   // Otomatis tutup menu mobile jika rute berganti
   useEffect(() => {
@@ -72,7 +101,6 @@ const Navbar: React.FC = () => {
     { name: "Lowongan", path: "/lowongan" },
     { name: "Status Lamaran", path: "/status" },
     { name: "Pengumuman", path: "/pengumuman" },
-    { name: "Arsip", path: "/arsip" },
     { name: "Profil", path: "/profil" },
   ];
 
@@ -85,13 +113,13 @@ const Navbar: React.FC = () => {
     setIsLoggedIn(false);
     setShowLogoutModal(false);
     setIsMobileMenuOpen(false);
-    navigate("/beranda?status=logout");
+    window.location.replace("/beranda");
   };
 
   return (
     <>
       {/* ================= 1. FIXED TOP NAVBAR SECTION ================= */}
-      <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
+      <nav className="fixed top-0 w-full z-50 bg-white backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
         <div className="w-full px-4 sm:px-8 md:px-12">
           <div className="flex justify-between h-20 items-center">
             
@@ -118,7 +146,7 @@ const Navbar: React.FC = () => {
                 return (
                   <Link
                     key={item.name}
-                    to={`${item.path}${!isLoggedIn ? "?status=logout" : ""}`}
+                    to={item.path}
                     className={`group relative text-sm font-semibold transition-all duration-300 px-1 py-0.5 ${
                       isActive
                         ? "text-[#FEB700]"
@@ -166,12 +194,23 @@ const Navbar: React.FC = () => {
                   </button>
 
                   <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider">
-                      {userData?.name?.charAt(0) || <User size={16} />}
+                    {/* 🚀 FIXED: URL DIALIRKAN KE COLOMN avatar_path TERBARU & TERINTEGRASI STORAGE LARAVEL */}
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider overflow-hidden shrink-0 border border-blue-100">
+                      {userData?.avatar_path && !imageError ? (
+                        <img 
+                          src={`${BACKEND_URL}/storage/${userData.avatar_path}`} 
+                          alt="Profil" 
+                          className="w-full h-full object-cover"
+                          onError={() => setImageError(true)}
+                        />
+                      ) : (
+                        userData?.name?.charAt(0).toUpperCase() || <User size={16} />
+                      )}
                     </div>
 
-                    <Link 
+                    <Link
                       to="/profil"
+                      onClick={() => console.log("Klik Profil")}
                       className="leading-tight pr-1 text-left cursor-pointer group block text-decoration-none select-none"
                     >
                       <h4 className="text-sm font-bold text-[#0D278D] max-w-[100px] truncate group-hover:text-blue-600 transition-colors duration-200">
@@ -186,7 +225,7 @@ const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* 🚀 FIXED ULTRA SMOOTH HAMBURGER TRIGGER BUTTON */}
+            {/* Hamburger Trigger Button */}
             <div className="flex md:hidden items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -222,19 +261,17 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* 🚀 FIXED SMOOTH & SLOW DROPDOWN DRAWER PANEL */}
+        {/* Mobile Dropdown Panel */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              /* Kurva spring lembut & sedikit lambat (damping tinggi agar tidak terlalu mantul keras) */
               transition={{ type: "spring", damping: 24, stiffness: 110, duration: 0.55 }}
               className="md:hidden overflow-hidden bg-white border-t border-gray-100"
             >
               <div className="px-6 pt-4 pb-6 flex flex-col space-y-3">
-                {/* List link navigasi mobile */}
                 {menuItems.map((item, idx) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -245,7 +282,7 @@ const Navbar: React.FC = () => {
                       transition={{ delay: idx * 0.05, duration: 0.35 }}
                     >
                       <Link
-                        to={`${item.path}${!isLoggedIn ? "?status=logout" : ""}`}
+                        to={item.path}
                         className={`block py-2 text-sm font-bold transition-all rounded-lg pl-2 ${
                           isActive ? "text-[#FEB700] bg-amber-50/50" : "text-[#0D278D] hover:text-[#FEB700]"
                         }`}
@@ -256,7 +293,6 @@ const Navbar: React.FC = () => {
                   );
                 })}
 
-                {/* Baris pemisah tombol aksi */}
                 <div className="border-t border-gray-100 my-2 pt-4 flex flex-col gap-2">
                   {!isLoggedIn ? (
                     <>
@@ -279,8 +315,18 @@ const Navbar: React.FC = () => {
                     <div className="flex flex-col gap-4">
                       {/* Info User di Mobile Drawer */}
                       <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0">
-                          {userData?.name?.charAt(0) || <User size={16} />}
+                        {/* 🚀 FIXED: PHOTO PROFILE (MOBILE DRAWER VIEW) */}
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0 overflow-hidden border border-blue-100">
+                          {userData?.avatar_path && !imageError ? (
+                            <img 
+                              src={`${BACKEND_URL}/storage/${userData.avatar_path}`} 
+                              alt="Profil" 
+                              className="w-full h-full object-cover"
+                              onError={() => setImageError(true)}
+                            />
+                          ) : (
+                            userData?.name?.charAt(0).toUpperCase() || <User size={16} />
+                          )}
                         </div>
                         <div className="leading-tight truncate">
                           <h4 className="text-sm font-bold text-[#0D278D] truncate">
@@ -292,13 +338,12 @@ const Navbar: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Tombol Keluar Mobile */}
                       <button
                         onClick={() => {
                           setIsMobileMenuOpen(false);
                           setShowLogoutModal(true);
                         }}
-                        className="w-full flex items-center justify-center gap-2 bg-transparent text-[#0D278D] border border-[#0D278D] py-3 rounded-xl text-sm font-bold transition-all cursor-pointer hover:bg-[#0d278d] hover:text-white"
+                        className="w-full flex items-center justify-center gap-2 bg-transparent text-[#0D278D] border border-[#0D278D] py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer hover:bg-[#0d278d] hover:text-white"
                       >
                         <LogOut size={16} />
                         <span>Keluar Aplikasi</span>
@@ -312,12 +357,9 @@ const Navbar: React.FC = () => {
         </AnimatePresence>
       </nav>
 
-      {/* ============================================================================
-          🚀 2. GLOBAL OVERLAY PORTAL: SEKARANG DI LUAR NAV AGAR MATIIN BLUR FULL SCREEN
-          ============================================================================ */}
+      {/* ================= 2. GLOBAL OVERLAY PORTAL LOUGOUT MODAL ================= */}
       {showLogoutModal && (
         <div className="fixed inset-0 w-screen h-screen top-0 left-0 z-[99999] flex items-center justify-center p-4">
-          
           <style dangerouslySetInnerHTML={{__html: `
             @keyframes modalBorderSpin {
               0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -328,21 +370,16 @@ const Navbar: React.FC = () => {
             }
           `}} />
 
-          {/* 🛠️ ADJUST BLUR: Menggunakan backdrop-blur-[4px] agar efek buramnya pas dan ga terlalu burem banget */}
           <div 
             className="fixed inset-0 w-full h-full bg-black/30 backdrop-blur-[5px] transition-all duration-300"
             onClick={() => setShowLogoutModal(false)}
           />
 
-          {/* MODAL BOX CONTAINER */}
           <div className="relative w-full max-w-sm p-[1.5px] rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-[0_25px_60px_-10px_rgba(8,24,90,0.5)] bg-gray-100 z-10">
-            
-            {/* LAYER BORDER BEAM */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
               <div className="absolute top-1/2 left-1/2 w-[300%] h-[300%] bg-[conic-gradient(from_0deg,transparent_40%,#FEB700_48%,#FFFFFF_50%,#FEB700_52%,transparent_60%)] animate-modal-beam" />
             </div>
 
-            {/* MODAL CONTENT INSIDE */}
             <div className="relative bg-white rounded-[1.4rem] p-6 text-center z-10">
               <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-full blur-xl pointer-events-none z-0" />
 
@@ -377,10 +414,8 @@ const Navbar: React.FC = () => {
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
-
         </div>
       )}
     </>

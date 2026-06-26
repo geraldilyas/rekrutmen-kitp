@@ -27,6 +27,15 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok'
+    ]);
+});
+
+// 🚀 PINDAH KE SINI: Rute unduh PDF dipasang secara publik agar browser tab baru bisa langsung download tanpa error Auth Token
+Route::get('/stages/{stageId}/download-passed-pdf', [ApplicationController::class, 'downloadPassedPdf']);
+
 Route::middleware('throttle:api')->group(function () {
 
     // Jobs (Public access)
@@ -35,9 +44,13 @@ Route::middleware('throttle:api')->group(function () {
         Route::get('/{id}', [JobController::class, 'show']);
         Route::get('/{id}/form', [JobController::class, 'getForm']);
     });
+    Route::get('/announcements', [JobController::class, 'announcements']);
 
     // --- AUTHENTICATED ROUTES ---
     Route::middleware('auth:sanctum')->group(function () {
+
+        // 🚀 TAMBAHAN: Rute Sinkronisasi Pasfoto User Profile
+        Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
 
         // User Profile & Logout
         Route::prefix('auth')->group(function () {
@@ -106,7 +119,7 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
                 Route::get('/export/{job_id}/excel', [ReportController::class, 'exportExcel']);
                 Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
-                Route::post('/publish-passed-results/{job_id}', [ReportController::class, 'publishPassedResults']);
+                Route::post('/publishPassedResults/{job_id}', [ReportController::class, 'publishPassedResults']);
                 Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
                 Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
             });

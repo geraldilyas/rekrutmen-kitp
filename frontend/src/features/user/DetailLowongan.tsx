@@ -83,44 +83,77 @@ const DetailLowongan: React.FC = () => {
   const fetchJobDetail = async (jobId: string, token: string | null) => {
     try {
       setLoading(true);
-      const promises: Promise<any>[] = [api.get(`/jobs/${jobId}`)];
-      if (token) {
-        promises.push(api.get("/applications/my"));
-      }
-      const results = await Promise.all(promises);
-      const jobData = results[0].data.data;
+  
+      // 1. Ambil data utama detail lowongan terlebih dahulu (Harus Sukses)
+      const jobResponse = await api.get(`/jobs/${jobId}`);
+      
+      // Amankan pembungkus data dari Axios/Laravel response
+      const responseData = jobResponse.data;
+      const jobData = responseData.data || responseData; 
       setJob(jobData);
   
-      // Baca data form_fields hasil relasi Many-to-Many dari backend
-      const dynamicFields = jobData.form_fields || [];
+      // 2. Ambil array field asli dari backend
+      let dynamicFields = 
+        jobData.form_fields || 
+        jobData.formFields || 
+        jobData.job_form_fields || 
+        jobData.jobFormFields || 
+        [];
+        
+      // 🚀 FALLBACK OTOMATIS SESUAI MASTER DATA DATABASE (Jika pivot lowongan kosong)
+      if (!dynamicFields || dynamicFields.length === 0) {
+        console.warn(`Lowongan ID ${jobId} kosong di pivot. Mengaktifkan fallback sesuai master form_fields.`);
+        dynamicFields = [
+          { id: 1, label: "Nama Lengkap", type: "text", is_required: 1, category: "data_diri" },
+          { id: 2, label: "Email Aktif", type: "email", is_required: 1, category: "data_diri" },
+          { id: 3, label: "Link CV (Google Drive)", type: "link", is_required: 1, category: "berkas" },
+          { id: 4, label: "Link Portofolio", type: "link", is_required: 0, category: "berkas" },
+          { id: 5, label: "Pendidikan Terakhir", type: "text", is_required: 1, category: "data_diri" }
+        ];
+      }
+  
+      // 3. Bangun initial state untuk form input
       const initialAnswersState: any = {};
   
-      if (dynamicFields && dynamicFields.length > 0) {
-        dynamicFields.forEach((field: any) => {
-          initialAnswersState[field.id] = {
-            field_id: Number(field.id),
-            label: field.label,
-            value: "",
-            is_required: !!field.is_required
-          };
-        });
-      }
+      dynamicFields.forEach((field: any, index: number) => {
+        const actualFieldId = field.id || field.form_field_id || (index + 1);
+        
+        initialAnswersState[actualFieldId] = {
+          field_id: Number(actualFieldId),
+          label: field.label || field.name || "Input Persyaratan",
+          value: "",
+          // Menangani is_required baik berupa angka (1/0) dari DB maupun boolean dari fallback
+          is_required: field.is_required === 1 || field.is_required === true || field.is_required === "1"
+        };
+      });
   
       setUploadedFiles(initialAnswersState);
   
-      if (results[1]) {
-        const myApps: Application[] = Array.isArray(results[1].data)
-          ? results[1].data
-          : results[1].data.data || [];
-        setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
+      // 4. Cek status lamaran user secara terpisah (Diisolasi dengan try-catch sendiri)
+      if (token) {
+        try {
+          const appsResponse = await api.get("/applications/my");
+          const myApps: Application[] = Array.isArray(appsResponse.data)
+            ? appsResponse.data
+            : appsResponse.data.data || [];
+            
+          setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
+        } catch (appErr) {
+          // Jika API ini Error 500 / 403, tangkap di sini agar tidak merusak tampilan utama lowongan
+          console.error("Gagal memuat status lamaran user, tetapi detail lowongan tetap ditampilkan:", appErr);
+          setAlreadyApplied(false); // Default jika backend error
+        }
       }
+  
     } catch (err) {
-      console.error("Error fetching job detail:", err);
+      // Catch utama ini hanya akan terpicu jika API lowongan utamanya memang benar-benar bermasalah/tidak ada
+      console.error("Error fetching job detail (Main Job API Error):", err);
+      setJob(null); // Memastikan component memunculkan pesan "tidak ditemukan" hanya saat job memang gagal di-load
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (id) {
@@ -173,7 +206,6 @@ const DetailLowongan: React.FC = () => {
       setApplyError("");
 
       // SINKRONISASI: Backend expects 'answers' array for dynamic form fields
-      // Hanya kirim field yang memiliki nilai
       const answersPayload = Object.values(uploadedFiles)
         .filter(item => item.value.trim() !== "")
         .map((item) => ({
@@ -181,7 +213,6 @@ const DetailLowongan: React.FC = () => {
           value: item.value.trim()
         }));
 
-      // In this refined system, documents are handled via Form Fields (links)
       await api.post("/applications", {
         job_id: Number(id),
         answers: answersPayload
@@ -286,7 +317,7 @@ const DetailLowongan: React.FC = () => {
       {/* 🚀 MAIN CONTENT SECTION */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
         
-        {/* 📢 ANNOUNCEMENT SECTION (IF ANY) */}
+        {/* 📢 ANNOUNCEMENT SECTION */}
         {job.announcements && job.announcements.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
@@ -530,39 +561,57 @@ const DetailLowongan: React.FC = () => {
 
                 <form onSubmit={handleSubmitApplication} className="space-y-8">
                   <div className="space-y-8">
-                    {Object.values(uploadedFiles).map((fieldItem, index) => (
-                      <div key={fieldItem.field_id} className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300">
-                        <div className="w-full md:w-1/3 pt-3">
-                          <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
-                              {fieldItem.label} <span className="text-red-500/80">*</span>
-                            </div>
-                            <button 
-                              type="button" 
-                              onClick={() => applyMasterDoc(fieldItem.field_id, fieldItem.label)}
-                              className="text-[9px] bg-blue-50 text-[#0D278D] px-2 py-1 rounded hover:bg-[#0D278D] hover:text-white transition-all"
-                            >
-                              Gunakan Master
-                            </button>
-                          </label>
-                        </div>
+                  {Object.values(uploadedFiles).map((fieldItem, index) => {
+                        // 🚀 Penentuan Tipe Input Dinamis
+                        let inputType = "text"; // Default untuk Nama Lengkap & Pendidikan Terakhir
+                        let placeholderText = `Masukkan ${fieldItem.label} Anda`;
 
-                        <div className="w-full md:w-2/3 relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
-                            <FileText size={16} strokeWidth={2} />
-                          </span>
-                          <input
-                            type="url"
-                            placeholder={`Salin tautan Google Drive ${fieldItem.label} di sini`}
-                            value={fieldItem.value}
-                            onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
-                            className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800"
-                            required
-                          />
-                        </div>
-                      </div>
-                    ))}
+                        if (fieldItem.label.toLowerCase().includes("email")) {
+                          inputType = "email";
+                          placeholderText = "Contoh: nama@email.com";
+                        } else if (
+                          fieldItem.label.toLowerCase().includes("link") || 
+                          fieldItem.label.toLowerCase().includes("cv") || 
+                          fieldItem.label.toLowerCase().includes("portofolio")
+                        ) {
+                          inputType = "url"; // 🔗 Hanya berkas/link yang divalidasi sebagai URL tautan
+                          placeholderText = `Salin tautan Google Drive / URL ${fieldItem.label} di sini`;
+                        }
+
+                        return (
+                          <div key={fieldItem.field_id} className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300">
+                            <div className="w-full md:w-1/3 pt-3">
+                              <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
+                                  {fieldItem.label} {fieldItem.is_required && <span className="text-red-500/80">*</span>}
+                                </div>
+                                <button 
+                                  type="button" 
+                                  onClick={() => applyMasterDoc(fieldItem.field_id, fieldItem.label)}
+                                  className="text-[9px] bg-blue-50 text-[#0D278D] px-2 py-1 rounded hover:bg-[#0D278D] hover:text-white transition-all"
+                                >
+                                  Gunakan Master
+                                </button>
+                              </label>
+                            </div>
+
+                            <div className="w-full md:w-2/3 relative">
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
+                                <FileText size={16} strokeWidth={2} />
+                              </span>
+                              <input
+                                type={inputType} // 🚀 Menggunakan tipe dinamis (text / email / url)
+                                placeholder={placeholderText}
+                                value={fieldItem.value}
+                                onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
+                                className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800"
+                                required={fieldItem.is_required}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
 
                   <div className="pt-8 flex flex-col sm:flex-row justify-end gap-3 mt-4">

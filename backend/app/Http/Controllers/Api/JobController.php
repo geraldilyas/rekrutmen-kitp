@@ -16,15 +16,56 @@ class JobController extends Controller
         $this->jobService = $jobService;
     }
 
-    /**
+   /**
      * GET ALL JOBS.
      */
     public function index(Request $request)
     {
-        $jobs = $this->jobService->getJobs($request->all());
+        // 1. Ambil data dengan Eager Loading agar query super cepat dan tidak merusak data relasi
+        // Kita bypass default filter jika ingin menampilkan seluruh riwayat lowongan di beranda umum
+        $rawJobs = Job::with(['stages'])
+            ->withCount('applications')
+            ->latest()
+            ->get();
+
+        // 2. Kita bungkus pakai collection dan re-mapping datanya sebelum dikirim ke React
+        $jobs = $rawJobs->map(function($job) {
+            
+            // Mencari tahapan seleksi yang saat ini sedang aktif berdasarkan tanggal hari ini
+            $activeStage = collect($job->stages)->first(function($stage) {
+                return $stage->start_date && $stage->end_date && now()->between($stage->start_date, $stage->end_date);
+            });
+
+            return [
+                'id'               => $job->id,
+                'title'            => $job->title,
+                'category'         => $job->category,
+                'description'      => $job->description,
+                'qualification'    => $job->qualification,
+                'requirements'     => $job->requirements,
+                'location'         => $job->location,
+                'unit_kerja'       => $job->unit_kerja,
+                'duration'         => $job->duration,
+                'recruiter_name'   => $job->recruiter_name,
+                'start_date'       => $job->start_date,
+                'end_date'         => $job->end_date,
+                'deadline'         => $job->deadline, // 🚀 FIX 1: Wajib di-return agar filter "Sudah Tutup" di React jalan!
+                'status'           => $job->status ?? 'active',
+                
+                // 🚀 FIX 2: Menggunakan properti hasil withCount (Jauh lebih cepat daripada query manual)
+                'totalPendaftar'   => $job->applications_count,
+                
+                // 🚀 BY SYSTEM 2: Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
+                'jumlah_lolos'     => $activeStage ? $activeStage->results()->where('status', 'lulus')->count() : 0,
+                'jumlah_gagal'     => $activeStage ? $activeStage->results()->where('status', 'tidak_lulus')->count() : 0,
+                
+                'selection_stages' => $job->stages
+            ];
+        });
+
+        // 3. Kirim ke React frontend lo
         return response()->json($jobs);
     }
-
     /**
      * STORE JOB + FORM DINAMIS.
      */
@@ -74,14 +115,22 @@ class JobController extends Controller
      * GET SINGLE JOB DETAIL.
      */
     public function show($id)
-    {
-        $job = Job::with(['formFields', 'stages', 'announcements'])->findOrFail($id);
+{
+    // 🚀 PASTIKAN menggunakan ->with(['announcements', 'formFields']) sebelum ->find() atau ->findOrFail()
+    $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields'])->find($id);
 
+    if (!$job) {
         return response()->json([
-            'message' => 'Job detail retrieved successfully',
-            'data' => $job
-        ]);
+            'status' => 'error',
+            'message' => 'Lowongan tidak ditemukan.'
+        ], 404);
     }
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $job
+    ], 200);
+}
 
     /**
      * UPDATE JOB.
@@ -131,6 +180,38 @@ class JobController extends Controller
     /**
      * GET FORM FOR APPLICANTS.
      */
+    /**
+     * GET PUBLIC ANNOUNCEMENTS (Jobs with published results)
+     */
+    public function announcements()
+    {
+        $jobs = Job::withoutGlobalScopes()
+            ->whereHas('announcements')
+            ->with(['announcements'])
+            ->withCount('applications')
+            ->withCount(['applications as accepted_count' => function ($query) {
+                $query->where('status', 'lulus');
+            }])
+            ->latest()
+            ->get();
+
+        $data = $jobs->map(function ($job) {
+            return [
+                'id'                 => $job->id,
+                'title'              => $job->title,
+                'category'           => $job->category,
+                'description'        => $job->description,
+                'qualification'      => $job->qualification,
+                'deadline'           => $job->deadline,
+                'applications_count' => $job->applications_count,
+                'accepted_count'     => $job->accepted_count,
+                'announcements'      => $job->announcements,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
     public function getForm($id)
     {
         $job = Job::with('formFields')->findOrFail($id);

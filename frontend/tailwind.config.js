@@ -14,3 +14,20 @@ export default {
   },
   plugins: [],
 }
+
+module.exports = {
+  theme: {
+    extend: {
+      keyframes: {
+        riverFlow: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        }
+      },
+      animation: {
+        // Nama animasi kustom yang kita panggil di SVG di atas
+        riverFlow: 'riverFlow linear infinite',
+      }
+    },
+  },
+}

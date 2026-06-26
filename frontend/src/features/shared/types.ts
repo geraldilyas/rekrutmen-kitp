@@ -30,6 +30,7 @@ export interface SelectionStage {
   start_date: string;
   end_date: string;
   test_link: string | null;
+  sk_path?: string | null;
 }
 
 export interface Job {

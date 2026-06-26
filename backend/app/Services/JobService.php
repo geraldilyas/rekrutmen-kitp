@@ -11,12 +11,17 @@ class JobService
     /**
      * Get all jobs with filters and counts.
      */
+    /**
+     * Get all jobs with filters and counts.
+     */
     public function getJobs(array $filters)
     {
         $now = now();
         $upcomingThreshold = now()->addDays(7);
 
-        $query = Job::with(['formFields', 'stages', 'announcements'])->withCount(['applications', 'applications as accepted_count' => function($q) {
+        // 🚀 FIX: Mengubah Job:: menjadi \App\Models\Job:: secara absolute
+        // Ini memaksa Laravel mencari murni ke folder Models, anti-bentrok dengan folder Services!
+        $query = \App\Models\Job::with(['formFields', 'stages', 'announcements'])->withCount(['applications', 'applications as accepted_count' => function($q) {
             $q->where('status', 'Lulus');
         }]);
 

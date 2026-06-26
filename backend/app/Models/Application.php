@@ -22,14 +22,25 @@ class Application extends Model
 
     public function getCalculatedFinalScoreAttribute()
     {
-        if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job') || !$this->job->relationLoaded('stages')) {
+        // 1. Pastikan relasi dasar ter-load
+        if (!$this->relationLoaded('stageResults') || !$this->relationLoaded('job')) {
+            return null;
+        }
+
+        $job = $this->job;
+
+        // 2. AMANKAN DISINI: Cek apakah $job bernilai null (misal lowongan sudah dihapus)
+        if (!$job || !$job->relationLoaded('stages')) {
             return null;
         }
 
         $totalScore = 0;
-        foreach ($this->job->stages as $stage) {
-            $result = $this->stageResults->where('job_stage_id', $stage->id)->first();
+
+        foreach ($job->stages as $stage) {
+            // Amankan pencarian nilai tahapan agar tidak error jika collection kosong
+            $result = $this->stageResults ? $this->stageResults->where('job_stage_id', $stage->id)->first() : null;
             $score = $result ? ($result->score ?? 0) : 0;
+
             $totalScore += ($score * $stage->weight) / 100;
         }
 
@@ -43,7 +54,7 @@ class Application extends Model
 
     public function job()
     {
-        return $this->belongsTo(Job::class);
+        return $this->belongsTo(Job::class, 'job_id');
     }
 
     public function answers()
@@ -59,6 +70,19 @@ class Application extends Model
     public function histories()
     {
         return $this->hasMany(ApplicationStatusHistory::class);
+    }
+
+    // TAMBAHAN INI
+    public function documents()
+    {
+        return $this->hasManyThrough(
+            UserDocument::class,
+            User::class,
+            'id',       // users.id
+            'user_id',  // user_documents.user_id
+            'user_id',  // applications.user_id
+            'id'
+        );
     }
 
     protected static function booted()

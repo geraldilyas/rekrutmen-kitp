@@ -54,8 +54,7 @@ class Job extends Model
 
     public function stages()
     {
-        return $this->hasMany(JobStage::class)->orderBy('stage_order');
-    }
+            return $this->hasMany(\App\Models\JobStage::class, 'job_id')->orderBy('stage_order');    }
 
     protected function casts(): array
     {

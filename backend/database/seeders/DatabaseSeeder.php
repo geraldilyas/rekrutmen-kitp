@@ -19,4 +19,12 @@ class DatabaseSeeder extends Seeder
             DummyDataSeeder::class,
         ]);
     }
+    public function run(): void
+    {
+        $this->call([
+            JobFromExcelSeeder::class,
+        ]);
+    }
 }
+
+
