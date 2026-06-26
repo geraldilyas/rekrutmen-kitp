@@ -10,18 +10,22 @@ return new class extends Migration
     {
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('title');
             $table->enum('category', ['tenaga_pendukung', 'konsultan_individu']);
             $table->string('type')->nullable();
             $table->text('description')->nullable();
             $table->text('qualification')->nullable();
+            $table->text('requirements')->nullable();
             $table->string('duration')->nullable();
             $table->string('location')->nullable();
             $table->string('unit_kerja')->nullable();
             $table->string('recruiter_name')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
+            $table->date('deadline')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('form_fields', function (Blueprint $table) {
@@ -32,6 +36,7 @@ return new class extends Migration
             $table->json('options')->nullable();
             $table->enum('category', ['data_diri', 'berkas', 'tahapan']);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

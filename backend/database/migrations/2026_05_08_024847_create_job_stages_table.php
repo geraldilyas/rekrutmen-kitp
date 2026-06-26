@@ -10,34 +10,17 @@ return new class extends Migration
     {
         Schema::create('job_stages', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('job_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
+            $table->foreignId('job_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-
-            // urutan tahapan
             $table->integer('stage_order');
-
-            // tanggal mulai tahapan
             $table->date('start_date')->nullable();
-
-            // tanggal selesai tahapan
             $table->date('end_date')->nullable();
-
-            // tipe tahapan
-            $table->enum('type', [
-                'registration',
-                'selection',
-                'test',
-                'interview',
-                'announcement'
-            ])->nullable();
-
+            $table->enum('type', ['registration', 'selection', 'test', 'interview', 'announcement'])->nullable();
             $table->boolean('is_active')->default(true);
-
+            $table->decimal('weight', 5, 2)->default(0);
+            $table->string('test_link')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
