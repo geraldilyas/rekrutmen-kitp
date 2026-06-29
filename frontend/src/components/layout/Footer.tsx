@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
               {/* 🚀 RESPONSIVE FIX: Diubah ke items-start & leading-relaxed agar jika alamat memanjang ke baris kedua, ikon MapPin tidak ketarik rusak ke tengah */}
               <div className="flex items-start gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors leading-relaxed">
                 <MapPin size={16} className="text-[#FEB700] mt-0.5 shrink-0" />
-                <span>Jl. Gatot Subroto No. 57, Bandar Lampung</span>
+                <span>Jl. Gatot Subroto No.57, Garuntang, Kec. Bumi Waras, Kota Bandar Lampung, Lampung 35401</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
                 <Phone size={16} className="text-[#FEB700] shrink-0" />
@@ -122,33 +122,39 @@ const Footer: React.FC = () => {
           </motion.div>
 
           {/* Tautan Penting */}
-          <motion.div
-            variants={itemVariants as any}
-
-            className="md:col-span-6 lg:col-span-3 lg:col-start-7 pt-2 md:pt-4"
-          >
-            <h5 className="font-extrabold text-[#0D278D] mb-6 text-lg">
-              Tautan Penting
-            </h5>
-            <ul className="space-y-4 text-sm font-medium text-gray-500">
-              {[
-                "Profil Balai",
-                "Peta Wilayah Sungai",
-                "Berita Terkini",
-                "E-Procurement",
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="group flex items-center cursor-pointer"
-                >
-                  <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
-                  <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
+         <motion.div
+  variants={itemVariants as any}
+  className="md:col-span-6 lg:col-span-3 lg:col-start-7 pt-2 md:pt-4"
+>
+  <h5 className="font-extrabold text-[#0D278D] mb-6 text-lg">
+    Tautan Penting
+  </h5>
+  <ul className="space-y-4 text-sm font-medium text-gray-500">
+    {[
+      { name: "Profil BBWSMS", url: "https://example.com/profil" },
+      { name: "Peta Wilayah Sungai", url: "https://hydrosmart.bbwsms.com/" },
+      { name: "Berita Terkini", url: "https://example.com/berita" },
+      { name: "WDRC", url: "https://lpse.pu.go.id" },
+    ].map((item) => (
+      <li
+        key={item.name}
+        className="group flex items-center"
+      >
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center w-full cursor-pointer"
+        >
+          <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
+          <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
+            {item.name}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</motion.div>
 
           {/* Bantuan & Sosial */}
           <motion.div

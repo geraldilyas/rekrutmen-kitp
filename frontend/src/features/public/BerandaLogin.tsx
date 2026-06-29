@@ -52,15 +52,30 @@ const scrollRevealVariants = {
 };
 
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: {},
   visible: {
-    opacity: 1,
     transition: {
-      staggerChildren: 0.04,
-      delayChildren: 0.05,
-    },
-  },
+      // Memulai kemunculan kartu setelah garis mulai bergerak
+      staggerChildren: 0.25, 
+      delayChildren: 0.2,
+    }
+  }
 };
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.85, y: 20 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", // TypeScript sekarang tahu ini murni "spring", bukan string biasa
+      stiffness: 100, 
+      damping: 15,
+      duration: 0.4
+    }
+  }
+} as const;
 
 const itemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -153,7 +168,6 @@ export const BerandaLogin: React.FC = () => {
   return (
     <div className="bg-white min-h-screen pt-20 overflow-x-hidden font-['Poppins']">
 
-      {/* --- HERO SECTION --- */}
       <section className="relative bg-[#0D278D] py-20 md:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#08185A] via-[#0D278D] to-[#0A1E6E] z-0" />
         <div className="absolute top-[-15%] left-[-10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-blue-500/20 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none z-0" />
@@ -203,9 +217,6 @@ export const BerandaLogin: React.FC = () => {
         </div>
       </section>
 
-      {/* ===================================================================
-          👑 SECTION 1: LOWONGAN UTAMA (🚀 SUNTIK ANIMASI SCROLL REVEAL)
-          =================================================================== */}
       <motion.section
         id="lowongan"
         className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20"
@@ -547,116 +558,116 @@ export const BerandaLogin: React.FC = () => {
         </div>
       </motion.section>
 
-      {/* ===================================================================
-          👑 SECTION 2: TAHAPAN SELEKSI SYSTEM (🚀 SUNTIK ANIMASI SCROLL REVEAL)
-          =================================================================== */}
+
       <motion.section 
-        id="tahapan" 
-        className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']"
-        variants={scrollRevealVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-120px" }}
-      >
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-40 -right-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
+    id="tahapan" 
+    className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']"
+    variants={scrollRevealVariants}
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true, margin: "-120px" }}
+  >
+    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
+      <div className="absolute bottom-40 -right-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
+    </div>
+
+    <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+      <div className="text-center max-w-2xl mx-auto mb-20">
+        <span className="text-[11px] font-bold tracking-[0.05em] uppercase text-[#0D278D] bg-blue-50 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none border border-blue-100/50">
+          Alur Rekrutmen BBWSMS
+        </span>
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4 tracking-tight">
+          Tahapan Seleksi Resmi
+        </h2>
+        <div className="w-12 h-[3px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mx-auto mb-4" />
+        <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
+          Proses rekrutmen dilaksanakan secara transparan, akuntabel, dan bebas biaya melalui sistem penyeleksian berkas digital terintegrasi.
+        </p>
+      </div>
+
+      <div className="relative w-full px-4 md:px-10">
+        {/* Desktop Line - Disesuaikan timing-nya agar seirama */}
+        <div className="hidden lg:block absolute inset-x-[10%] top-14 h-[5px] z-0 pointer-events-none">
+          <motion.div 
+            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            whileInView={{ clipPath: "inset(0 0% 0 0)" }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.5, ease: "linear" }} // Menggunakan linear agar sejalan konstan dengan stagger kartu
+            className="w-full h-full rounded-full relative overflow-hidden"
+          >
+            <motion.div
+              animate={{ backgroundPosition: ["0% 50%", "200% 50%"] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+              style={{ backgroundSize: "200% 100%" }}
+              className="w-full h-full bg-gradient-to-r from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
+            />
+          </motion.div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-20">
-            <span className="text-[11px] font-bold tracking-[0.05em] uppercase text-[#0D278D] bg-blue-50 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none border border-blue-100/50">
-              Alur Rekrutmen BBWSMS
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4 tracking-tight">
-              Tahapan Seleksi Resmi
-            </h2>
-            <div className="w-12 h-[3px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mx-auto mb-4" />
-            <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
-              Proses rekrutmen dilaksanakan secara transparan, akuntabel, and bebas biaya melalui sistem penyeleksian berkas digital terintegrasi.
-            </p>
-          </div>
+        {/* Mobile Line - Disesuaikan timing-nya agar seirama */}
+        <div className="block lg:hidden absolute top-6 bottom-6 left-10 md:left-12 w-[4px] z-0 pointer-events-none">
+          <motion.div
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            whileInView={{ clipPath: "inset(0 0 0% 0)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 1.5, ease: "linear" }}
+            className="w-full h-full rounded-full relative overflow-hidden"
+          >
+            <motion.div
+              animate={{ backgroundPosition: ["50% 0%", "50% 200%"] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+              style={{ backgroundSize: "100% 200%" }}
+              className="w-full h-full bg-gradient-to-b from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
+            />
+          </motion.div>
+        </div>
 
-          <div className="relative w-full px-4 md:px-10">
-            {/* Desktop Line */}
-            <div className="hidden lg:block absolute inset-x-[10%] top-14 h-[5px] z-0 pointer-events-none">
-              <motion.div 
-                initial={{ clipPath: "inset(0 100% 0 0)" }}
-                whileInView={{ clipPath: "inset(0 0% 0 0)" }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 1.4, ease: [0.25, 1, 0.5, 1] }}
-                className="w-full h-full rounded-full relative overflow-hidden"
-              >
-                <motion.div
-                  animate={{ backgroundPosition: ["0% 50%", "200% 50%"] }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  style={{ backgroundSize: "200% 100%" }}
-                  className="w-full h-full bg-gradient-to-r from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
-                />
-              </motion.div>
-            </div>
-
-            {/* Mobile Line */}
-            <div className="block lg:hidden absolute top-6 bottom-6 left-10 md:left-12 w-[4px] z-0 pointer-events-none">
-              <motion.div
-                initial={{ clipPath: "inset(0 0 100% 0)" }}
-                whileInView={{ clipPath: "inset(0 0 0% 0)" }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 1.4, ease: [0.25, 1, 0.5, 1] }}
-                className="w-full h-full rounded-full relative overflow-hidden"
-              >
-                <motion.div
-                  animate={{ backgroundPosition: ["50% 0%", "50% 200%"] }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  style={{ backgroundSize: "100% 200%" }}
-                  className="w-full h-full bg-gradient-to-b from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
-                />
-              </motion.div>
-            </div>
-
-            <div className="flex flex-col lg:grid lg:grid-cols-5 gap-y-12 lg:gap-x-4 relative z-10 w-full">
-              {tahapanSeleksi
-                .filter((step) => step.title !== "Pengumuman Administrasi")
-                .map((step, index) => {
-                  return (
-                    <div key={step.id} className="w-full relative">
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.85, y: 20 }} 
-                        whileInView={{ opacity: 1, scale: 1, y: 0 }} 
-                        viewport={{ once: true, margin: "-40px" }} 
-                        transition={{ duration: 0.5, delay: index * 0.12 + 0.4, type: "spring", stiffness: 120, damping: 14 }}
-                        whileHover={{ y: -8 }}
-                        className="flex flex-row lg:flex-col items-center justify-start lg:text-center group p-3 bg-transparent rounded-2xl transition-all duration-300 select-none"
-                      >
-                        <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-[0_10px_30px_-15px_rgba(13,39,141,0.08)] group-hover:border-[#FEB700] group-hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.2)] transition-all duration-300 shrink-0">
-                          <div className="w-[66px] h-[66px] sm:w-[78px] sm:h-[78px] rounded-full bg-white border border-dashed border-gray-200 flex items-center justify-center group-hover:border-[#FEB700] transition-colors">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] transition-colors duration-300">
-                              <step.icon size={20} strokeWidth={2.2} />
-                            </div>
-                          </div>
-                          <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full font-bold text-[11px] flex items-center justify-center border-2 border-white bg-[#0D278D] text-white group-hover:bg-[#FEB700] font-mono shadow-sm transition-all duration-300">
-                            {index + 1}
-                          </div>
+        {/* 2. Tambahkan kontainer variants di bungkus grid ini */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-40px" }}
+          className="flex flex-col lg:grid lg:grid-cols-5 gap-y-12 lg:gap-x-4 relative z-10 w-full"
+        >
+          {tahapanSeleksi
+            .filter((step) => step.title !== "Pengumuman Administrasi")
+            .map((step) => {
+              return (
+                <div key={step.id} className="w-full relative">
+                  <motion.div 
+                    variants={cardVariants} 
+                    whileHover={{ y: -8 }}
+                    className="flex flex-row lg:flex-col items-center justify-start lg:text-center group p-3 bg-transparent rounded-2xl transition-all duration-300 select-none"
+                  >
+                    <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-[0_10px_30px_-15px_rgba(13,39,141,0.08)] group-hover:border-[#FEB700] group-hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.2)] transition-all duration-300 shrink-0">
+                      <div className="w-[66px] h-[66px] sm:w-[78px] sm:h-[78px] rounded-full bg-white border border-dashed border-gray-200 flex items-center justify-center group-hover:border-[#FEB700] transition-colors">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] transition-colors duration-300">
+                          <step.icon size={20} strokeWidth={2.2} />
                         </div>
-
-                        <div className="text-left lg:text-center pl-6 lg:pl-0 lg:mt-5 flex-1 min-w-0">
-                          <h3 className="text-sm sm:text-base font-semibold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
-                            {step.title}
-                          </h3>
-                          <div className="w-4 h-[2px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mt-2 lg:mx-auto transition-all duration-300 group-hover:w-10 opacity-0 group-hover:opacity-100" />
-                        </div>
-                      </motion.div>
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full font-bold text-[11px] flex items-center justify-center border-2 border-white bg-[#0D278D] text-white group-hover:bg-[#FEB700] font-mono shadow-sm transition-all duration-300">
+                        {/* Jika ingin nomor berurutan dinamis pasca filter */}
+                        {tahapanSeleksi.filter((s) => s.title !== "Pengumuman Administrasi").indexOf(step) + 1}
+                      </div>
                     </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      </motion.section>
 
-      {/* ===================================================================
-          👑 SECTION 3: CTA REGISTER LAYER (🚀 SUNTIK ANIMASI SCROLL REVEAL)
-          =================================================================== */}
+                    <div className="text-left lg:text-center pl-6 lg:pl-0 lg:mt-5 flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
+                        {step.title}
+                      </h3>
+                      <div className="w-4 h-[2px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mt-2 lg:mx-auto transition-all duration-300 group-hover:w-10 opacity-0 group-hover:opacity-100" />
+                    </div>
+                  </motion.div>
+                </div>
+              );
+            })}
+        </motion.div>
+      </div>
+    </div>
+  </motion.section>
+
       <motion.section 
         className="py-16 md:py-24 px-4 relative"
         variants={scrollRevealVariants}
