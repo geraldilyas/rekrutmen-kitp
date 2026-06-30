@@ -4,7 +4,6 @@ import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion"; 
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
-// 🚀 FIXED: Import instance api custom axios lo agar dikenali di useEffect bawah
 import { api } from "../../services/api";
 
 const Navbar: React.FC = () => {
@@ -12,50 +11,42 @@ const Navbar: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
-  // 🚀 KONFIGURASI BACKEND: Sesuaikan dengan URL domain lokal/production Laravel kamu
   const BACKEND_URL = "http://localhost:8000";
 
-  // Status token reaktif
+
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const token = localStorage.getItem("token");
     return !!token && token !== "undefined" && token !== "null";
   });
 
-  // Data user reaktif
+
   const [userData, setUserData] = useState<any>(() => {
     const cached = localStorage.getItem("user");
     return cached ? JSON.parse(cached) : null;  
   });
 
-  // State cadangan seandainya URL image broken/eror saat dimuat browser
   const [imageError, setImageError] = useState<boolean>(false);
 
-  // Reset flag eror gambar setiap kali rute atau data user berubah
   useEffect(() => {
     setImageError(false);
   }, [location.pathname, userData?.avatar_path]);
 
-  // 🚀 PERBAIKAN SAKTI: Sinkronisasi profil aman, anti-tendang & anti-reset sepihak!
   useEffect(() => {
     const currentToken = localStorage.getItem("token");
     const cachedUser = localStorage.getItem("user");
     
-    // Pengecekan token yang valid dan bersih dari string aneh
     const hasValidToken = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
     
     setIsLoggedIn(hasValidToken);
 
-    // 🚀 PENGAMAN 1: Jika bener-bener ga ada token, baru hapus state dan stop request
     if (!hasValidToken) {
       setUserData(null);
       return;
     }
 
-    // 🚀 PENGAMAN 2: Gunakan data cache yang ada dulu secara mutlak, JANGAN di-set null di awal!
     if (cachedUser && cachedUser !== "undefined" && cachedUser !== "null") {
       try {
         const parsed = JSON.parse(cachedUser);
-        // Hanya set form jika data state saat ini masih kosong atau berbeda
         if (!userData || userData.id !== parsed.id) {
           setUserData(parsed);
         }
@@ -64,7 +55,6 @@ const Navbar: React.FC = () => {
       }
     }
 
-    // 🚀 PENGAMAN 3: Jalankan sync background ke Laravel dengan aman menggunakan custom Axios instance
     api.get("/auth/me")
       .then((res: any) => {
         console.log("Sync User Data:", res.data);
@@ -75,7 +65,6 @@ const Navbar: React.FC = () => {
       .catch((err: any) => {
         console.warn("Background profile fetch skipped/failed:", err.message);
         
-        // 🚀 PENGAMAN 4: Hanya hapus session jika backend terbukti merespon dengan status 401 (Token Expired)
         if (err.response?.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -84,9 +73,8 @@ const Navbar: React.FC = () => {
           window.location.replace("/beranda");
         }
       });
-  }, [location.pathname]); // <-- Tetap berjalan aman tiap rute berganti
+  }, [location.pathname]); 
 
-  // Otomatis tutup menu mobile jika rute berganti
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
@@ -118,7 +106,6 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* ================= 1. FIXED TOP NAVBAR SECTION ================= */}
       <nav className="fixed top-0 w-full z-50 bg-white backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
         <div className="w-full px-4 sm:px-8 md:px-12">
           <div className="flex justify-between h-20 items-center">
@@ -194,7 +181,6 @@ const Navbar: React.FC = () => {
                   </button>
 
                   <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                    {/* 🚀 FIXED: URL DIALIRKAN KE COLOMN avatar_path TERBARU & TERINTEGRASI STORAGE LARAVEL */}
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider overflow-hidden shrink-0 border border-blue-100">
                       {userData?.avatar_path && !imageError ? (
                         <img 
@@ -313,9 +299,7 @@ const Navbar: React.FC = () => {
                     </>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      {/* Info User di Mobile Drawer */}
                       <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50">
-                        {/* 🚀 FIXED: PHOTO PROFILE (MOBILE DRAWER VIEW) */}
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0 overflow-hidden border border-blue-100">
                           {userData?.avatar_path && !imageError ? (
                             <img 
@@ -357,7 +341,6 @@ const Navbar: React.FC = () => {
         </AnimatePresence>
       </nav>
 
-      {/* ================= 2. GLOBAL OVERLAY PORTAL LOUGOUT MODAL ================= */}
       {showLogoutModal && (
         <div className="fixed inset-0 w-screen h-screen top-0 left-0 z-[99999] flex items-center justify-center p-4">
           <style dangerouslySetInnerHTML={{__html: `

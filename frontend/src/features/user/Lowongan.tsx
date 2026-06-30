@@ -26,7 +26,6 @@ interface OptimizedJob extends Job {
   kuota?: number | string | null;
 }
 
-// 噫 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: { 
@@ -87,19 +86,15 @@ const Lowongan: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Advanced Filtering States
+
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
   
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
   const [availableYears, setAvailableYears] = useState<string[]>([new Date().getFullYear().toString()]);
-  
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
-  // DEFAULT VIEW DIKUNCI DI TABLE VIEW SEJAK PERTAMA LOAD
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
-
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -462,9 +457,6 @@ const Lowongan: React.FC = () => {
         ) : (
           <AnimatePresence mode="wait">
             {viewMode === "grid" ? (
-              /* ==========================================
-                 逃 MODE 1: GRID VIEW
-                 ========================================== */
               <motion.div 
                 key="grid-layout"
                 variants={containerVariants}
@@ -508,8 +500,7 @@ const Lowongan: React.FC = () => {
                             </span>
                           </div>
 
-                          {/* 🚀 BADGE KUOTA DI GRID VIEW */}
-                          {job.kuota && job.kuota > 0 ? (
+                          {job.kuota && Number(job.kuota) > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-[#0D278D] border border-blue-100">
                               <Users size={12} />
                               Kuota: {job.kuota} Orang
@@ -552,9 +543,6 @@ const Lowongan: React.FC = () => {
                 })}
               </motion.div>
             ) : (
-              /* ===================================================================
-                 荘 MODE 2: TABLE VIEW (DENGAN KOLOM KUOTA TERINTEGRASI)
-                 =================================================================== */
               <motion.div 
                 key="table-layout"
                 variants={containerVariants}
@@ -569,7 +557,7 @@ const Lowongan: React.FC = () => {
                       <tr className="bg-white text-[#0D278D] text-[11px] font-semibold uppercase tracking-[0.05em] select-none">
                         <th className="py-5 px-6 w-[30%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
                         <th className="py-5 px-4 w-[14%] font-extrabold text-center">Jenis Kategori</th>
-                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Kuota</th> {/* 🚀 Kolom Kuota Baru */}
+                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Kuota</th> 
                         <th className="py-5 px-4 w-[18%] font-extrabold text-center">Periode Pendaftaran</th>
                         <th className="py-5 px-4 w-[14%] font-extrabold text-center">Kualifikasi</th>
                         <th className="py-5 px-4 w-[12%] font-extrabold text-center">Status</th>
@@ -615,7 +603,7 @@ const Lowongan: React.FC = () => {
 
                             {/* 3. 🚀 DATA KUOTA TABEL */}
                             <td className="py-5 px-4 align-middle text-center">
-                              {job.kuota && job.kuota > 0 ? (
+                              {job.kuota && Number(job.kuota) > 0 ? (
                                 <span className="text-gray-900 text-xs font-bold bg-blue-50/80 px-2.5 py-1 rounded-md border border-blue-100 inline-flex items-center gap-1">
                                   {job.kuota} Orang
                                 </span>

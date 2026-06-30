@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Fingerprint, LogIn, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { api } from "../../services/api";
 
-// Impor Aset Logo
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
 
@@ -57,10 +56,8 @@ export default function Register() {
   };
 
   return (
-    /* 🚀 RESPONSIVE FIX: Mengubah h-screen kaku menjadi min-h-screen flex-col agar di HP konten numpuk vertikal dan bisa di-scroll aman */
+
     <div className="min-h-screen md:h-screen w-screen bg-white flex flex-col md:flex-row font-['Poppins'] overflow-x-hidden md:overflow-hidden">
-      
-      {/* 🚀 TRICK SECURE: Keyframes rotasi linear tanpa filter blur agar garis tetap solid dan tajam */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes borderSpin {
           0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -71,23 +68,16 @@ export default function Register() {
         }
       `}} />
       
-      {/* ================= 1. LEFT PANEL: FLOATING ROUNDED CARD BANNER WITH SINGLE SHARP BEAM ================= */}
-      {/* 🚀 RESPONSIVE FIX: Tinggi panel kiri di mobile disesuaikan (h-fit) agar dinamis mengikuti teks headline */}
       <div className="w-full md:w-[48%] h-fit md:h-full p-3 md:p-4 shrink-0 flex flex-col relative z-20">
-        
-        {/* 🚀 SINGLE LAYER BEAM */}
         <div className="absolute inset-3 md:inset-4 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden pointer-events-none z-0">
           <div className="absolute top-1/2 left-1/2 w-[500%] h-[150%] bg-[conic-gradient(from_0deg,transparent_40%,#FEB700_48%,#FFFFFF_50%,#FEB700_52%,transparent_60%)] animate-single-beam" />
         </div>
 
-        {/* 🚀 INNER CONTAINER */}
+
         <div className="w-full h-full bg-[#0D278D] p-6 sm:p-8 md:p-12 relative flex flex-col justify-between overflow-hidden text-white rounded-[2rem] md:rounded-[2.5rem] z-10 m-[2px] shadow-[0_20px_50px_-15px_rgba(13,39,141,0.25)]">
           
-          {/* Decorative Mesh Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#08185A] via-[#0D278D] to-blue-600 z-0" />
           <div className="absolute inset-0 opacity-13 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
-
-          {/* Top Section: Navigation Only */}
           <div className="relative z-10">
             <button
               type="button"
@@ -99,7 +89,6 @@ export default function Register() {
             </button>
           </div>
 
-          {/* Bottom Headline Section */}
           <div className="relative z-10 mt-6 md:mt-0">
             <h1 className="text-xl sm:text-2xl lg:text-[2.3rem] font-black leading-tight tracking-tight">
               Selamat Datang <br />
@@ -114,11 +103,7 @@ export default function Register() {
         </div>
       </div>
 
-      {/* ================= 2. RIGHT PANEL: FULL SCREEN FORMS (STRICT NO-SCROLL ON DESKTOP) ================= */}
-      {/* 🚀 RESPONSIVE FIX: h-auto di mobile dengan padding responsif agar pas form input memanjang kebawah bebas diketik */}
       <div className="w-full md:w-[52%] h-auto md:h-screen p-6 sm:p-10 md:p-12 lg:p-16 flex flex-col justify-center bg-white relative overflow-hidden">
-        
-        {/* Soft Decorative Blur behind form */}
         <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-gray-50 rounded-full blur-3xl pointer-events-none z-0" />
 
         <motion.div
@@ -127,7 +112,7 @@ export default function Register() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="w-full max-w-md mx-auto relative z-10 my-auto md:my-0"
         >
-          {/* Logo Header Rata Tengah */}
+
           <div className="flex flex-col items-center text-center mb-4">
             <div className="flex items-center gap-3 mb-4">
               <img src={logoBbwsms} alt="Logo BBWS Utama" className="h-8 sm:h-9 w-auto object-contain" />
@@ -143,7 +128,7 @@ export default function Register() {
             </p>
           </div>
 
-          {/* Multi-Error Message Validation Box */}
+
           {errorMsg.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -5 }}
@@ -163,10 +148,10 @@ export default function Register() {
             </motion.div>
           )}
 
-          {/* Form Content */}
+
           <form onSubmit={handleRegister} className="space-y-3.5">
             
-            {/* Field Nama Lengkap */}
+
             <div className="group/input">
               <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
                 Nama Lengkap
@@ -186,7 +171,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Field NIK */}
+
             <div className="group/input">
               <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
                 Nomor Induk Kependudukan (NIK)
@@ -208,7 +193,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Field Email */}
+
             <div className="group/input">
               <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
                 Alamat Email
@@ -228,7 +213,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Field Password */}
+
             <div className="group/input">
               <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
                 Kata Sandi
@@ -255,7 +240,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Submit Button */}
+
             <div className="pt-2">
               <button
                 type="submit"
@@ -269,7 +254,7 @@ export default function Register() {
               </button>
             </div>
 
-            {/* Form Footer */}
+
             <p className="text-[11px] sm:text-xs text-center text-gray-400 font-medium ">
               Sudah punya akun?{" "}
               <span

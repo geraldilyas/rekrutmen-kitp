@@ -23,29 +23,26 @@ const Footer: React.FC = () => {
   };
 
   return (
-    // Pembatas garis atas (border-t border-gray-100) SUDAH DIHAPUS
     <footer className="bg-white pt-16 pb-10 overflow-hidden relative">
-      {/* --- ANIMASI SATU GARIS ARUS SUNGAI KECIL DI ATAS --- */}
       <div className="absolute top-0 left-0 w-full overflow-hidden leading-none z-20">
-        {/* SVG untuk Garis Bergelombang */}
+
         <motion.svg
-          className="relative block w-[200%] h-4" // Lebar dibuat 200% untuk animasi geser tak terputus
-          viewBox="0 0 100 20" // Coordinate space SVG
+          className="relative block w-[200%] h-4" 
+          viewBox="0 0 100 20"
           preserveAspectRatio="none"
-          // Animasi Geser Horizontal agar terlihat mengalir
+
           animate={{ x: ["0%", "-50%"] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         >
-          {/* Path Garis Gelombang Sinus (Arus) */}
+
           <motion.path
-            // Bentuk Gelombang Sinus yang berulang
             d="M0 10 C 12.5 0, 12.5 20, 25 10 S 37.5 0, 50 10 S 62.5 20, 75 10 S 87.5 0, 100 10 M100 10 C 112.5 0, 112.5 20, 125 10 S 137.5 0, 150 10 S 162.5 20, 175 10 S 187.5 0, 200 10"
             fill="none"
-            strokeWidth="5.5" // DITEBALKAN
+            strokeWidth="6" 
             strokeLinecap="round"
-            // Animasi Warna: Berganti tak terputus antara Biru dan Kuning
+
             animate={{
-              stroke: ["#0D278D", "#FEB700", "#0D278D"], // Biru -> Kuning -> Biru
+              stroke: ["#0D278D", "#FEB700", "#0D278D"], 
             }}
             transition={{
               duration: 8,
@@ -56,7 +53,6 @@ const Footer: React.FC = () => {
         </motion.svg>
       </div>
 
-      {/* -------------------------------------------------- */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mt-0">
         <motion.div
@@ -66,7 +62,6 @@ const Footer: React.FC = () => {
           viewport={{ once: true, amount: 0.2 }}
              className="grid grid-cols-1 md:grid-cols-12 gap-y-10 gap-x-12 mb-16"
         >
-          {/* Brand Info */}
           <motion.div
             variants={itemVariants as any}
             className="md:col-span-12 lg:col-span-5 space-y-8"
@@ -75,7 +70,6 @@ const Footer: React.FC = () => {
             <div className="flex items-center gap-4 h-fit">
               {" "}
               
-              {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap agar logo menekuk aman ke bawah di layar HP kecil (320px - 400px) */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-5 md:gap-6">
   
                   <div className="w-24 sm:w-28 md:w-32 lg:w-28 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
@@ -85,7 +79,6 @@ const Footer: React.FC = () => {
                       className="w-full object-contain block"
                     />
                   </div>
-                  {/* 🚀 RESPONSIVE FIX: Garis pembatas vertikal disembunyikan di mobile layar sangat sempit (hidden sm:block) jika posisi logo patah kebawah */}
                   <div className="hidden sm:block h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
                   <div className="w-24 sm:w-28 md:w-32 lg:w-45 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
                     <img
@@ -97,14 +90,12 @@ const Footer: React.FC = () => {
               </div>
 
             </div>
-            {/* 🚀 RESPONSIVE FIX: Ditambahkan leading-relaxed agar susunan teks instansi bernafas lega saat pecah baris */}
             <p className="text-gray-500 text-sm leading-relaxed max-w-sm pt-1">
               Direktorat Jenderal Sumber Daya Air. <br />
               Balai Besar Wilayah Sungai Mesuji Sekampung. <br />
               Mengelola sumber daya air secara terpadu untuk kemakmuran rakyat.
             </p>
             <div className="space-y-3 pt-2">
-              {/* 🚀 RESPONSIVE FIX: Diubah ke items-start & leading-relaxed agar jika alamat memanjang ke baris kedua, ikon MapPin tidak ketarik rusak ke tengah */}
               <div className="flex items-start gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors leading-relaxed">
                 <MapPin size={16} className="text-[#FEB700] mt-0.5 shrink-0" />
                 <span>Jl. Gatot Subroto No.57, Garuntang, Kec. Bumi Waras, Kota Bandar Lampung, Lampung 35401</span>
@@ -115,13 +106,11 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
                 <Mail size={16} className="text-[#FEB700] shrink-0" />
-                {/* 🚀 RESPONSIVE FIX: Teks email diberi break-all untuk mencegah tumpah keluar layout saat dibuka di device resolusi ultra-kecil */}
                 <span className="break-all">rekrutmen.bbwsms@pu.go.id</span>
               </div>
             </div>
           </motion.div>
 
-          {/* Tautan Penting */}
          <motion.div
   variants={itemVariants as any}
   className="md:col-span-6 lg:col-span-3 lg:col-start-7 pt-2 md:pt-4"
@@ -156,7 +145,6 @@ const Footer: React.FC = () => {
   </ul>
 </motion.div>
 
-          {/* Bantuan & Sosial */}
           <motion.div
             variants={itemVariants as any}
 
@@ -181,9 +169,7 @@ const Footer: React.FC = () => {
               )}
             </ul>
 
-            {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap agar barisan bundaran sosial media tidak terpotong di HP */}
             <div className="flex flex-wrap items-center gap-4">
-              {/* Instagram */}
               <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-[#0D278D] hover:text-white hover:border-[#0D278D] hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-inner">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -233,7 +219,6 @@ const Footer: React.FC = () => {
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                 </svg>
               </div>
-              {/* Youtube */}
               <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-[#0D278D] hover:text-white hover:border-[#0D278D] hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-inner">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -254,7 +239,6 @@ const Footer: React.FC = () => {
           </motion.div>
         </motion.div>
 
-        {/* Bottom Bar */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -266,7 +250,6 @@ const Footer: React.FC = () => {
           <p className="text-xs text-gray-400 font-medium tracking-wide">
             © 2026 BBWS Kementerian PUPR. Direktorat Jenderal Sumber Daya Air.
           </p>
-          {/* 🚀 RESPONSIVE FIX: Ditambahkan flex-wrap & justify-center agar tautan privasi tidak terpotong ke samping di mobile screen */}
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium">
             <span className="hover:text-[#0D278D] cursor-pointer transition-colors">
               Kebijakan Privasi

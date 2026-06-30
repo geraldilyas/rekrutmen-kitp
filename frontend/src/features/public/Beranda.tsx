@@ -7,7 +7,6 @@ const Beranda: React.FC = () => {
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
   useEffect(() => {
-    // 🔥 Cek apakah token login sudah ada di browser
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
 
@@ -19,7 +18,6 @@ const Beranda: React.FC = () => {
     setCheckingAuth(false);
   }, []);
 
-  // Spinner halus pas aplikasi lagi ngecek status login biar gak berkedip kasar
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center">
@@ -28,7 +26,6 @@ const Beranda: React.FC = () => {
     );
   }
 
-  // 🚀 DIRECT OTOMATIS: Gak punya token? Ke sebelum login. Punya token? Ke sesudah login.
   return isLoggedIn ? <BerandaLogin /> : <BerandaUmum />;
 };
 

@@ -71,11 +71,7 @@ const DetailLowongan: React.FC = () => {
   const [applyLoading, setApplyLoading] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState("");
-  
-  // DRIVER EXPAND: Mengontrol perluasan form di bawah halaman
   const [showApplyForm, setShowApplyForm] = useState(false); 
-  
-  // State untuk menampung object answers terstruktur dinamis berbasis ID field
   const [uploadedFiles, setUploadedFiles] = useState<{ 
     [key: number]: { field_id: number; label: string; value: string; is_required: boolean } 
   }>({});
@@ -84,15 +80,11 @@ const DetailLowongan: React.FC = () => {
     try {
       setLoading(true);
   
-      // 1. Ambil data utama detail lowongan terlebih dahulu (Harus Sukses)
       const jobResponse = await api.get(`/jobs/${jobId}`);
-      
-      // Amankan pembungkus data dari Axios/Laravel response
       const responseData = jobResponse.data;
       const jobData = responseData.data || responseData; 
       setJob(jobData);
-  
-      // 2. Ambil array field asli dari backend
+
       let dynamicFields = 
         jobData.form_fields || 
         jobData.formFields || 
@@ -100,7 +92,7 @@ const DetailLowongan: React.FC = () => {
         jobData.jobFormFields || 
         [];
         
-      // 🚀 FALLBACK OTOMATIS SESUAI MASTER DATA DATABASE (Jika pivot lowongan kosong)
+
       if (!dynamicFields || dynamicFields.length === 0) {
         console.warn(`Lowongan ID ${jobId} kosong di pivot. Mengaktifkan fallback sesuai master form_fields.`);
         dynamicFields = [
@@ -112,7 +104,7 @@ const DetailLowongan: React.FC = () => {
         ];
       }
   
-      // 3. Bangun initial state untuk form input
+
       const initialAnswersState: any = {};
   
       dynamicFields.forEach((field: any, index: number) => {
@@ -122,14 +114,12 @@ const DetailLowongan: React.FC = () => {
           field_id: Number(actualFieldId),
           label: field.label || field.name || "Input Persyaratan",
           value: "",
-          // Menangani is_required baik berupa angka (1/0) dari DB maupun boolean dari fallback
           is_required: field.is_required === 1 || field.is_required === true || field.is_required === "1"
         };
       });
   
       setUploadedFiles(initialAnswersState);
   
-      // 4. Cek status lamaran user secara terpisah (Diisolasi dengan try-catch sendiri)
       if (token) {
         try {
           const appsResponse = await api.get("/applications/my");
@@ -139,16 +129,14 @@ const DetailLowongan: React.FC = () => {
             
           setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
         } catch (appErr) {
-          // Jika API ini Error 500 / 403, tangkap di sini agar tidak merusak tampilan utama lowongan
           console.error("Gagal memuat status lamaran user, tetapi detail lowongan tetap ditampilkan:", appErr);
           setAlreadyApplied(false); // Default jika backend error
         }
       }
   
     } catch (err) {
-      // Catch utama ini hanya akan terpicu jika API lowongan utamanya memang benar-benar bermasalah/tidak ada
       console.error("Error fetching job detail (Main Job API Error):", err);
-      setJob(null); // Memastikan component memunculkan pesan "tidak ditemukan" hanya saat job memang gagal di-load
+      setJob(null); 
     } finally {
       setLoading(false);
     }
@@ -193,7 +181,6 @@ const DetailLowongan: React.FC = () => {
     e.preventDefault();
     if (!id) return;
 
-    // Filter missing required fields
     const missingDocs = Object.values(uploadedFiles).filter(item => item.is_required && !item.value.trim());
     if (missingDocs.length > 0) {
       const missingLabels = missingDocs.map(d => d.label).join(", ");
@@ -205,7 +192,6 @@ const DetailLowongan: React.FC = () => {
       setApplyLoading(true);
       setApplyError("");
 
-      // SINKRONISASI: Backend expects 'answers' array for dynamic form fields
       const answersPayload = Object.values(uploadedFiles)
         .filter(item => item.value.trim() !== "")
         .map((item) => ({
@@ -357,10 +343,7 @@ const DetailLowongan: React.FC = () => {
         </div>
       </div>
 
-      {/* 🚀 MAIN CONTENT SECTION */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
-        
-        {/* 📢 ANNOUNCEMENT SECTION */}
         {job.announcements && job.announcements.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
@@ -605,8 +588,7 @@ const DetailLowongan: React.FC = () => {
                 <form onSubmit={handleSubmitApplication} className="space-y-8">
                   <div className="space-y-8">
                   {Object.values(uploadedFiles).map((fieldItem, index) => {
-                        // 🚀 Penentuan Tipe Input Dinamis
-                        let inputType = "text"; // Default untuk Nama Lengkap & Pendidikan Terakhir
+                        let inputType = "text"; 
                         let placeholderText = `Masukkan ${fieldItem.label} Anda`;
 
                         if (fieldItem.label.toLowerCase().includes("email")) {
@@ -617,7 +599,7 @@ const DetailLowongan: React.FC = () => {
                           fieldItem.label.toLowerCase().includes("cv") || 
                           fieldItem.label.toLowerCase().includes("portofolio")
                         ) {
-                          inputType = "url"; // 🔗 Hanya berkas/link yang divalidasi sebagai URL tautan
+                          inputType = "url"; 
                           placeholderText = `Salin tautan Google Drive / URL ${fieldItem.label} di sini`;
                         }
 
@@ -644,7 +626,7 @@ const DetailLowongan: React.FC = () => {
                                 <FileText size={16} strokeWidth={2} />
                               </span>
                               <input
-                                type={inputType} // 🚀 Menggunakan tipe dinamis (text / email / url)
+                                type={inputType} 
                                 placeholder={placeholderText}
                                 value={fieldItem.value}
                                 onChange={(e) => handleLinkChange(fieldItem.field_id, e)}

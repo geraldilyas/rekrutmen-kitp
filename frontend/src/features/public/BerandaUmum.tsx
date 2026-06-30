@@ -15,7 +15,6 @@ interface Job {
   requirements: string;
 }
 
-// 🚀 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: { 
@@ -42,7 +41,6 @@ const listMonths = [
   { value: "12", label: "Desember" },
 ];
 
-// 🚀 FIXED: OBJEK TRANSISI SCROLL REVEAL DENGAN AS CONST (ANTI ERROR TS2322)
 const scrollRevealVariants = {
   hidden: { opacity: 0, y: 40 },
   visible: {
@@ -77,7 +75,7 @@ export const BerandaUmum: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Advanced Filtering States
+
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
@@ -87,7 +85,7 @@ export const BerandaUmum: React.FC = () => {
   
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
-  // DEFAULT VIEW DIKUNCI DI TABLE VIEW SEJAK PERTAMA LOAD
+
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const fetchJobs = async () => {
@@ -234,7 +232,6 @@ export const BerandaUmum: React.FC = () => {
   return (
     <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setOpenDropdown(null)}>
 
-      {/* --- HERO TOP PANEL --- */}
       <div className="bg-[#0D278D] pt-32 pb-18 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FEB700]/10 rounded-full blur-[100px]" />
@@ -266,9 +263,7 @@ export const BerandaUmum: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* ===================================================================
-          👑 MAIN COMPONENT: SUNTIK SCROLL REVEAL PADA PANEL FILTER & DATA TABEL
-          =================================================================== */}
+
       <motion.main
         className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-12"
         variants={scrollRevealVariants}
@@ -356,9 +351,6 @@ export const BerandaUmum: React.FC = () => {
             </div>
           </div>
 
-          {/* ===================================================================
-              🔄 FIXED: KINETIC RADAR TOGGLE SWITCH WITH SPINNING ARROW
-              =================================================================== */}
           <div className="flex items-center justify-center shrink-0" onClick={(e) => e.stopPropagation()}>
             <button 
               type="button"
@@ -419,9 +411,7 @@ export const BerandaUmum: React.FC = () => {
           </div>
         </motion.div>
 
-{/* ===================================================================
-            👑 JOB VIEW DECK LAYER (🚀 FIXED: WITH ENTRY STAGGER ANIMATION ON LOAD)
-            =================================================================== */}
+
        {loading ? (
                  <div className="text-center py-24 flex flex-col items-center justify-center select-none">
                    
@@ -447,7 +437,6 @@ export const BerandaUmum: React.FC = () => {
                          </linearGradient>
                        </defs>
        
-                       {/* Jalur gelombang rapat yang berulang sempurna */}
                        <motion.path
                          d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
                          fill="none"
@@ -459,7 +448,7 @@ export const BerandaUmum: React.FC = () => {
                          initial={{ x: 0 }}
                          animate={{ x: -100 }} 
                          transition={{
-                           duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                           duration: 4.5, 
                            ease: "linear",
                            repeat: Infinity,
                          }}
@@ -476,9 +465,7 @@ export const BerandaUmum: React.FC = () => {
                ) : (
           <AnimatePresence mode="wait">
             {viewMode === "grid" ? (
-              /* ==========================================
-                 📦 MODE 1: GRID VIEW (LAUNCHES WITH SMOOTH SWEEP ON LOAD)
-                 ========================================== */
+
               <motion.div 
                 key="grid-layout"
                 variants={containerVariants}
@@ -557,9 +544,7 @@ export const BerandaUmum: React.FC = () => {
                 })}
               </motion.div>
             ) : (
-              /* ===================================================================
-                 👑 MODE 2: TABLE VIEW (🚀 LAUNCHES DATA LIST WITH SMOOTH STAGGER ON LOAD)
-                 =================================================================== */
+
               <motion.div 
                 key="table-layout"
                 variants={containerVariants}
@@ -580,7 +565,7 @@ export const BerandaUmum: React.FC = () => {
                         <th className="py-5 pr-8 pl-2 w-[160px]" />
                       </tr>
                     </thead>
-                    {/* 🚀 SUNTIK CONTAINER VARIANTS: Membuka efek cascade stagger ke baris anak di bawahnya */}
+
                     <motion.tbody 
                       variants={containerVariants}
                       className="text-gray-700 text-sm font-medium"
@@ -591,7 +576,6 @@ export const BerandaUmum: React.FC = () => {
                         const isClosed = status === "sudah_tutup";
 
                         return (
-                          /* 🚀 SUNTIK ITEM VARIANTS: Membuat baris meluncur halus satu per satu saat load */
                           <motion.tr 
                             key={job.id}
                             variants={itemVariants}

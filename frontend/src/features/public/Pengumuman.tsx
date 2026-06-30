@@ -198,7 +198,6 @@ const Pengumuman: React.FC = () => {
              {loading ? (
                       <div className="text-center py-24 flex flex-col items-center justify-center select-none">
                         
-                        {/* 🚀 FIXED 1: Suntik inline style webkit-mask-image untuk membuat efek blur memudar di pinggir kanan-kiri */}
                         <div 
                           className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
                           style={{
@@ -212,15 +211,12 @@ const Pengumuman: React.FC = () => {
                             preserveAspectRatio="none"
                           >
                             <defs>
-                              {/* Gradasi Warna Sungai Senada (Aqua Blue ke Deep Blue) */}
                               <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" stopColor="#3B82F6" />
                                 <stop offset="50%" stopColor="#0D278D" />
                                 <stop offset="100%" stopColor="#3B82F6" />
                               </linearGradient>
                             </defs>
-            
-                            {/* Jalur gelombang rapat yang berulang sempurna */}
                             <motion.path
                               d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
                               fill="none"
@@ -232,7 +228,7 @@ const Pengumuman: React.FC = () => {
                               initial={{ x: 0 }}
                               animate={{ x: -100 }} 
                               transition={{
-                                duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                                duration: 4.5, 
                                 ease: "linear",
                                 repeat: Infinity,
                               }}
@@ -303,7 +299,6 @@ const Pengumuman: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 📄 DOKUMEN PENGUMUMAN RESMI (ARRAY FILE PDF REKRUTMEN) */}
                     {item.announcements && item.announcements.length > 0 && (
                       <div className="mt-8 pt-6 border-t border-dashed border-gray-100 space-y-3">
                         <p className="text-[10px] font-black text-[#0D278D] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">

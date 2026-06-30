@@ -33,7 +33,7 @@ interface TimelineStep {
 
 interface Application {
   id: number;
-  status: string; // 'pending', 'seleksi', 'Lulus', 'Tidak Lulus'
+  status: string; 
   applied_at: string;
   created_at?: string;
   job?: {
@@ -79,7 +79,6 @@ export const StatusLamaran: React.FC = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Menyimpan ID string/number tahapan yang sedang dibuka rincian detailnya
   const [activeInlineStage, setActiveInlineStage] = useState<{ [key: number]: string | number | null }>({});
 
   const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
@@ -88,8 +87,6 @@ export const StatusLamaran: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get(`/applications/my?t=${new Date().getTime()}`);
-      
-      // Amankan pembungkus data response (mendukung data langsung atau data.data)
       const responseData = res.data;
       const rawList = responseData.data || (Array.isArray(responseData) ? responseData : []);
       
@@ -123,9 +120,6 @@ export const StatusLamaran: React.FC = () => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  /**
-   * Mengalkulasi progress bar line injector berdasarkan timeline step aktif
-   */
   const getTimelineProgress = (timeline: TimelineStep[]) => {
     if (!timeline || timeline.length === 0) return 0;
     const activeOrDoneIndex = timeline.findLastIndex(
@@ -142,7 +136,6 @@ export const StatusLamaran: React.FC = () => {
     }));
   };
 
-  // Ekstraksi objek job secara aman (mengantisipasi null atau variasi nama key dari backend)
   const getSafeJobData = (app: Application) => {
     return app.job || app.job_vacancy || {
       id: 0,
@@ -246,13 +239,10 @@ export const StatusLamaran: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
               </div>
             ) : filteredJobs.map((app) => {
-              // Menghindari kegagalan render total dengan fungsi getSafeJobData
-              const targetJob = getSafeJobData(app);
 
+              const targetJob = getSafeJobData(app);
               const timeline = app.timeline || [];
               const currentInlineStageId = activeInlineStage[app.id] ?? null;
-              
-              // Cari detail step yang sedang dibuka pelamar
               const activeStageDetail = timeline.find(step => step.id === currentInlineStageId);
 
               return (
@@ -302,7 +292,6 @@ export const StatusLamaran: React.FC = () => {
                           </h4>
 
                           <div className="relative mb-6">
-                            {/* Garis Horizontal Penghubung Antar Node Timeline Dinamis */}
                             <div className="hidden md:block absolute top-[22px] left-[4%] right-[4%] z-0">
                               <div className="h-[2px] w-full bg-gray-100" />
                               {timeline.length > 1 && (
@@ -320,7 +309,6 @@ export const StatusLamaran: React.FC = () => {
                                 let titleClass = "text-gray-400 font-medium";
                                 let IconComponent = CircleDot;
 
-                                // Penentuan warna step alur timeline berdasarkan response dinamis Laravel
                                 if (step.status === 'selesai') {
                                   circleClass = "bg-[#0D278D] border-[#0D278D] text-white shadow-[0_4px_15px_rgba(13,39,141,0.2)] cursor-pointer hover:scale-110";
                                   titleClass = "text-[#0D278D] font-bold";

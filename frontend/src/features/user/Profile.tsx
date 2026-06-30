@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion,  } from "framer-motion";
-// import { useNavigate } from "react-router-dom";
 import { 
   User, 
   Phone, 
@@ -36,7 +35,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
-// 🚀 FIXED: OBJEK TRANSISI SCROLL REVEAL SECTION UNTUK SENSASI SMOOTH
+
 const scrollSectionVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -222,10 +221,7 @@ const UserProfile: React.FC = () => {
 
  if (profileLoading && !user) {
     return (
-      /* 🚀 CUSTOM: SEAMLESS GRADIENT RIVER FLOW LOADER (FULL SCREEN HIGH-END CONTEXT) */
       <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
-        
-        {/* Kontainer Garis Sungai Rapat & Pendek */}
         <div 
           className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
           style={{
@@ -268,10 +264,7 @@ const UserProfile: React.FC = () => {
     );
   }if (profileLoading && !user) {
     return (
-      /* 🚀 CUSTOM: SEAMLESS GRADIENT RIVER FLOW LOADER (FULL SCREEN HIGH-END CONTEXT) */
       <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
-        
-        {/* Kontainer Garis Sungai Rapat & Pendek */}
         <div 
           className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
           style={{
@@ -302,7 +295,7 @@ const UserProfile: React.FC = () => {
               initial={{ x: 0 }}
               animate={{ x: -100 }} 
               transition={{
-                duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                duration: 4.5, 
                 ease: "linear",
                 repeat: Infinity,
               }}
@@ -331,7 +324,6 @@ const UserProfile: React.FC = () => {
         animate="visible"
         className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start" 
       >
-        {/* ⭐ COL LEFT (4-SPAN): CENTERED CONTENT CARD & TOP-ALIGNED STRUCTURE */}
         <motion.div 
           variants={itemVariants} 
           className="lg:col-span-4 lg:sticky lg:top-1 flex flex-col justify-start" 
@@ -405,12 +397,7 @@ const UserProfile: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* ⭐ COL RIGHT (8-SPAN): CLEAN EDITORIAL PORTAL LAYOUT */}
         <div className="lg:col-span-8 space-y-14 pl-0 lg:pl-4">
-          
-          {/* ===================================================================
-              📝 SECTION 1: BIODATA FORM (🚀 FIXED: SUNTIK ANIMASI SCROLL REVEAL)
-              =================================================================== */}
           <motion.section 
             variants={scrollSectionVariants} 
             initial="hidden"
@@ -520,9 +507,6 @@ const UserProfile: React.FC = () => {
             </form>
           </motion.section>
 
-          {/* ===================================================================
-              🔐 SECTION 2: PASSWORD CHANGE (🚀 FIXED: SUNTIK ANIMASI SCROLL REVEAL)
-              =================================================================== */}
           <motion.section 
             variants={scrollSectionVariants} 
             initial="hidden"
@@ -621,7 +605,6 @@ const UserProfile: React.FC = () => {
                     key={type.key} 
                     className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 rounded-xl transition-colors duration-200 hover:bg-slate-50/40"
                   >
-                    {/* 🚀 FIXED 1: Kunci Lebar Sisi Kiri (w-[38%] & min-w-[280px]) Biar Sisi Kanan Auto Sejajar Lurus */}
                     <div className="w-full sm:w-[38%] min-w-[280px] flex items-center gap-4 shrink-0">
                       <span className="font-mono text-xs text-[#0D278D] font-black opacity-60">0{idx + 1}</span>
                       <div className="min-w-0">
@@ -637,7 +620,6 @@ const UserProfile: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 🚀 FIXED 2: Gunakan flex-1 Agar Kolom Input Melebar Seimbang & Lurus Vertikal Dari Atas ke Bawah */}
                     <div className="flex-1 flex items-center gap-3 w-full">
                       <div className="relative flex-1 group/input">
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/input:text-[#0D278D] transition-colors">

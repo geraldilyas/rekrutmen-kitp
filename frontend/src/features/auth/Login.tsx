@@ -16,7 +16,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🚀 AMAN: Pembersihan sesi lama dipindah ke useEffect saat halaman login pertama kali dimuat murni
+
   useEffect(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -30,7 +30,6 @@ export default function Login() {
     try {
       const res = await api.post("/auth/login", { email, password });
       
-      // 🚀 AMAN: Simpan token dan data user baru dari respons API
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user)); 
       
@@ -40,7 +39,6 @@ export default function Login() {
       } else if (user.role === "penyeleksi") {
         navigate("/penyeleksi");
       } else {
-        // 🚀 AMAN: Berikan delay mikro agar localStorage berhasil dikunci oleh sistem internal browser sebelum dialihkan
         setTimeout(() => {
           window.location.replace("/beranda");
         }, 100);
@@ -54,10 +52,7 @@ export default function Login() {
   };
 
   return (
-    /* 🚀 RESPONSIVE FIX: Mengubah h-screen kaku menjadi min-h-screen flex-col agar di HP konten numpuk vertikal dan bisa di-scroll aman */
     <div className="min-h-screen md:h-screen w-screen bg-white flex flex-col md:flex-row font-['Poppins'] overflow-x-hidden md:overflow-hidden">
-      
-      {/* 🚀 TRICK SECURE: Keyframes rotasi linear tanpa filter blur agar garis tetap solid dan tajam */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes borderSpin {
           0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -68,16 +63,12 @@ export default function Login() {
         }
       `}} />
       
-      {/* ================= 1. LEFT PANEL: FLOATING ROUNDED CARD BANNER WITH SINGLE SHARP BEAM ================= */}
-      {/* 🚀 RESPONSIVE FIX: Tinggi panel kiri di mobile disesuaikan (h-fit) dengan padding ideal agar teks info tidak sesak */}
+
       <div className="w-full md:w-[48%] h-fit md:h-full p-3 md:p-4 shrink-0 flex flex-col z-10 relative">
-        
-        {/* 🚀 SINGLE LAYER BEAM */}
         <div className="absolute inset-3 md:inset-4 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden pointer-events-none z-0">
           <div className="absolute top-1/2 left-1/2 w-[500%] h-[150%] bg-[conic-gradient(from_0deg,transparent_40%,#FEB700_48%,#FFFFFF_50%,#FEB700_52%,transparent_60%)] animate-single-beam" />
         </div>
 
-        {/* 🚀 INNER CONTAINER */}
         <div className="w-full h-full bg-[#0D278D] p-6 sm:p-8 md:p-12 relative flex flex-col justify-between overflow-hidden text-white rounded-[2rem] md:rounded-[2.5rem] z-10 m-[3px]">
           
           {/* Decorative Mesh Background */}
@@ -111,11 +102,8 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ================= 2. RIGHT PANEL: FULL SCREEN FORMS (STRICT NO-SCROLL ON DESKTOP) ================= */}
-      {/* 🚀 RESPONSIVE FIX: h-auto di mobile dengan padding responsif agar pas form memanjang ke bawah tidak terpotong screen */}
+
       <div className="w-full md:w-[52%] h-auto md:h-screen p-6 sm:p-10 md:p-12 lg:p-16 flex flex-col justify-center bg-white relative overflow-hidden">
-        
-        {/* Soft Decorative Blur behind form */}
         <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-gray-50 rounded-full blur-3xl pointer-events-none z-0" />
 
         <motion.div
@@ -164,7 +152,7 @@ export default function Login() {
                   <Mail size={16} strokeWidth={2.2} />
                 </span>
                 <input
-                  type="email" // 🚀 FIXED: Dikembalikan murni ke email tipe bawaan asli lo bro!
+                  type="email" 
                   placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
