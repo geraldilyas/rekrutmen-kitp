@@ -67,6 +67,7 @@ class JobService
                 'start_date'     => $data['start_date'],
                 'end_date'       => $data['end_date'],
                 'deadline'       => $data['deadline'] ?? $data['end_date'],
+                'kuota'          => $data['kuota'] ?? null,
                 'created_by'     => auth()->id(),
             ]);
 
@@ -93,6 +94,9 @@ class JobService
     /**
      * Update an existing job.
      */
+    /**
+     * Update an existing job.
+     */
     public function updateJob(Job $job, array $data)
     {
         return DB::transaction(function () use ($job, $data) {
@@ -109,6 +113,7 @@ class JobService
                 'start_date'     => $data['start_date'],
                 'end_date'       => $data['end_date'],
                 'deadline'       => $data['deadline'] ?? $data['end_date'],
+                'kuota'          => $data['kuota'] ?? null, // 🚀 FIX BACKEND: Tambahkan baris ini agar pas di-update tidak ke-reset jadi null!
             ]);
 
             if (isset($data['form_fields'])) {

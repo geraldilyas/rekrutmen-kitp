@@ -39,6 +39,7 @@ const emptyForm: JobFormData = {
   penyeleksi_ids: [],
   start_date: "",
   end_date: "",
+  kuota: "",
   form_fields: ["CV", "Ijazah"],
   selection_stages: [],
 };
@@ -59,41 +60,44 @@ const JobFormModal: React.FC<Props> = ({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 🚀 FIXED LOGIC: Kunci dependency array murni hanya pada [isOpen]. 
-  // Ini mencegah form ke-reset/tertimpa balik saat lo lagi ngetik tanggal tahapan!
+  // 🚀 FIXED LOGIC: Mengunci sinkronisasi data dari backend/initialData maupun reset ke emptyForm
   useEffect(() => {
-  if (!isOpen) return;
+    if (!isOpen) return;
 
-  if (mode === "edit" && initialData) {
-    setForm((prev) => {
-      // kalau form udah pernah diisi jangan overwrite lagi
-      if (prev.title) return prev;
+    if (mode === "edit" && initialData) {
+      setForm((prev) => {
+        // Jika sudah terisi, jangan overwrite demi kenyamanan ketik
+        if (prev.title) return prev;
 
-      return {
-        title: initialData.title || "",
-        category: initialData.category || "tenaga_pendukung",
-        description: initialData.description || "",
-        qualification: initialData.qualification || "",
-        requirements: initialData.requirements || "",
-        duration: initialData.duration || "",
-        location: initialData.location || "",
-        unit_kerja: initialData.unit_kerja || "",
-        recruiter_name: initialData.recruiter_name || "",
-        penyeleksi_ids: initialData.penyeleksi_ids || [],
-        start_date: formatForInputDate(initialData.start_date),
-        end_date: formatForInputDate(initialData.end_date),
-        form_fields: initialData.form_fields || ["CV", "Ijazah"],
-        selection_stages: (initialData.selection_stages || []).map((stage, idx) => ({
-          ...stage,
-          id: stage.id || `s-${Date.now()}-${idx}`,
-          start_date: formatForInputDate(stage.start_date),
-          end_date: formatForInputDate(stage.end_date),
-          weight: Number(stage.weight) || 0,
-        })),
-      };
-    });
-  }
-}, [isOpen, initialData]);
+        return {
+          title: initialData.title || "",
+          category: initialData.category || "tenaga_pendukung",
+          description: initialData.description || "",
+          qualification: initialData.qualification || "",
+          requirements: initialData.requirements || "",
+          duration: initialData.duration || "",
+          location: initialData.location || "",
+          unit_kerja: initialData.unit_kerja || "",
+          recruiter_name: initialData.recruiter_name || "",
+          penyeleksi_ids: (initialData as any).penyeleksi_ids || [],
+          start_date: formatForInputDate(initialData.start_date),
+          end_date: formatForInputDate(initialData.end_date),
+          kuota: (initialData as any).kuota ?? "", // 🚀 FIX FRONTEND: Ambil data kuota lama dari database agar muncul di input form edit
+          form_fields: (initialData as any).form_fields || ["CV", "Ijazah"],
+          selection_stages: ((initialData as any).stages || []).map((stage: any) => ({
+            name: stage.name,
+            stage_order: stage.stage_order,
+            start_date: formatForInputDate(stage.start_date),
+            end_date: formatForInputDate(stage.end_date),
+            weight: stage.weight,
+            test_link: stage.test_link || "",
+          })),
+        };
+      });
+    } else {
+      setForm(emptyForm);
+    }
+  }, [isOpen, initialData, mode]);
 
   const totalWeight = form.selection_stages.reduce((s, st) => s + (Number(st.weight) || 0), 0);
   
@@ -183,8 +187,18 @@ const JobFormModal: React.FC<Props> = ({
     if (!validate()) return;
     setSubmitting(true);
     setErrorMsg("");
+    
     try {
-      await onSubmit(form);
+      // 🚀 BUNGKUS PAYLOAD BARU DAN CASTING KUOTA MENJADI INTEGER MURNI
+      const payload = {
+        ...form,
+        kuota: form.kuota !== "" && form.kuota !== undefined && form.kuota !== null
+          ? parseInt(form.kuota as string, 10)
+          : null
+      };
+
+      // 🚀 PENTING: Kirim 'payload' ke onSubmit, BUKAN 'form' mentah!
+      await onSubmit(payload as any); 
       onClose();
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message || "Terjadi kesalahan");
@@ -324,6 +338,20 @@ const JobFormModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* 🚀 FORM INPUT KUOTA LOWONGAN (SINKRON KE DATABASE) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Kuota Lowongan (Orang)</label>
+            <input
+              type="number"
+              name="kuota"
+              min="0"
+              value={form.kuota ?? ""}
+              onChange={(e) => setForm({ ...form, kuota: e.target.value })}
+              placeholder="Contoh: 5 (Kosongkan atau isi 0 jika kuota tidak dibatasi)"
+              className={inputClass("kuota")}
+            />
+          </div>
+
           {/* Deskripsi */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Deskripsi</label>
@@ -443,7 +471,6 @@ const JobFormModal: React.FC<Props> = ({
             </button>
             {showStages && (
               <div className="p-3 border-t border-gray-100 space-y-2">
-                {/* 🚀 FIXED SORT MUTATION: Pakai spread operator [...] sebelum di-sort biar datanya stabil gak mental-mental */}
                 {[...form.selection_stages]
                   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                   .map((stage, index) => (
@@ -512,7 +539,6 @@ const JobFormModal: React.FC<Props> = ({
                             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Mulai</label>
                             <input
                               type="date"
-                              // 🚀 FIXED: Gak perlu dibungkus helper format lagi di sini karena state aslinya sudah murni YYYY-MM-DD hasil split di useEffect!
                               value={stage.start_date || ""}
                               onChange={(e) => updateStage(stage.id, "start_date", e.target.value)}
                               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
@@ -522,7 +548,6 @@ const JobFormModal: React.FC<Props> = ({
                             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Berakhir</label>
                             <input
                               type="date"
-                              // 🚀 FIXED: Panggil string state langsung biar lancar interaksinya pas diketik
                               value={stage.end_date || ""}
                               onChange={(e) => updateStage(stage.id, "end_date", e.target.value)}
                               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"

@@ -23,6 +23,7 @@ class Job extends Model
             'end_date',
             'requirements',
             'deadline',
+            'kuota',
             'category',
             'created_by',
         ];

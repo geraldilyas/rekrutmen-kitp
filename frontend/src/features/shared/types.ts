@@ -70,6 +70,7 @@ export interface JobFormData {
   penyeleksi_ids: number[];
   start_date: string;
   end_date: string;
+  kuota?: number | string;
   form_fields: string[];
   selection_stages: SelectionStage[];
 }

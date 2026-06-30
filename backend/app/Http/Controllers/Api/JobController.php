@@ -22,7 +22,6 @@ class JobController extends Controller
     public function index(Request $request)
     {
         // 1. Ambil data dengan Eager Loading agar query super cepat dan tidak merusak data relasi
-        // Kita bypass default filter jika ingin menampilkan seluruh riwayat lowongan di beranda umum
         $rawJobs = Job::with(['stages'])
             ->withCount('applications')
             ->latest()
@@ -49,13 +48,14 @@ class JobController extends Controller
                 'recruiter_name'   => $job->recruiter_name,
                 'start_date'       => $job->start_date,
                 'end_date'         => $job->end_date,
-                'deadline'         => $job->deadline, // 🚀 FIX 1: Wajib di-return agar filter "Sudah Tutup" di React jalan!
+                'deadline'         => $job->deadline, 
+                'kuota'            => $job->kuota, // 🚀 FIX: Wajib di-return agar terdeteksi oleh React!
                 'status'           => $job->status ?? 'active',
                 
-                // 🚀 FIX 2: Menggunakan properti hasil withCount (Jauh lebih cepat daripada query manual)
+                // 🚀 Menggunakan properti hasil withCount
                 'totalPendaftar'   => $job->applications_count,
                 
-                // 🚀 BY SYSTEM 2: Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
+                // Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
                 'jumlah_lolos'     => $activeStage ? $activeStage->results()->where('status', 'lulus')->count() : 0,
                 'jumlah_gagal'     => $activeStage ? $activeStage->results()->where('status', 'tidak_lulus')->count() : 0,
                 
@@ -66,6 +66,7 @@ class JobController extends Controller
         // 3. Kirim ke React frontend lo
         return response()->json($jobs);
     }
+
     /**
      * STORE JOB + FORM DINAMIS.
      */
@@ -83,11 +84,12 @@ class JobController extends Controller
             'start_date'     => 'required|date',
             'end_date'       => 'required|date|after_or_equal:start_date',
             'deadline'       => 'nullable|date',
+            'kuota'          => 'nullable|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',
             'stages'         => 'required|array|min:1',
-            'stages.*.name'       => 'required|string|max:255',
+            'stages.*.name'        => 'required|string|max:255',
             'stages.*.stage_order' => 'required|integer|min:1',
             'stages.*.start_date' => 'nullable|date',
             'stages.*.end_date'   => 'nullable|date',
@@ -115,22 +117,21 @@ class JobController extends Controller
      * GET SINGLE JOB DETAIL.
      */
     public function show($id)
-{
-    // 🚀 PASTIKAN menggunakan ->with(['announcements', 'formFields']) sebelum ->find() atau ->findOrFail()
-    $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields'])->find($id);
+    {
+        $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields'])->find($id);
 
-    if (!$job) {
+        if (!$job) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Lowongan tidak ditemukan.'
+            ], 404);
+        }
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Lowongan tidak ditemukan.'
-        ], 404);
+            'status' => 'success',
+            'data' => $job
+        ], 200);
     }
-
-    return response()->json([
-        'status' => 'success',
-        'data' => $job
-    ], 200);
-}
 
     /**
      * UPDATE JOB.
@@ -151,6 +152,7 @@ class JobController extends Controller
             'start_date'     => 'required|date',
             'end_date'       => 'required|date|after_or_equal:start_date',
             'deadline'       => 'nullable|date',
+            'kuota'          => 'nullable|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini saat update
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',
@@ -178,9 +180,6 @@ class JobController extends Controller
     }
 
     /**
-     * GET FORM FOR APPLICANTS.
-     */
-    /**
      * GET PUBLIC ANNOUNCEMENTS (Jobs with published results)
      */
     public function announcements()
@@ -203,6 +202,7 @@ class JobController extends Controller
                 'description'        => $job->description,
                 'qualification'      => $job->qualification,
                 'deadline'           => $job->deadline,
+                'kuota'              => $job->kuota, // 🚀 FIX: Daftarkan kuota disini juga jika dibutuhkan halaman pengumuman
                 'applications_count' => $job->applications_count,
                 'accepted_count'     => $job->accepted_count,
                 'announcements'      => $job->announcements,

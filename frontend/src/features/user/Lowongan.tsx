@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { RotateCw, Sparkles, LayoutGrid, TableProperties, Layers, Activity, Calendar, GraduationCap, Briefcase, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { RotateCw, Sparkles, LayoutGrid, TableProperties, Layers, Activity, Calendar, GraduationCap, Briefcase, Clock, ChevronDown, ChevronRight, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
@@ -13,6 +13,7 @@ interface Job {
   start_date: string;
   deadline: string;
   requirements: string;
+  kuota?: number | string | null;
 }
 
 interface OptimizedJob extends Job {
@@ -22,9 +23,10 @@ interface OptimizedJob extends Job {
   startMonthInt: number;
   endMonthInt: number;
   startTime: number;
+  kuota?: number | string | null;
 }
 
-// 🚀 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
+// 噫 ANIMATION VARIANTS FOR LUXURY CUSTOM DROPDOWN FILTER
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: { 
@@ -51,7 +53,6 @@ const listMonths = [
   { value: "12", label: "Desember" },
 ];
 
-// 🚀 FIXED: OBJEK TRANSISI SCROLL REVEAL DENGAN AS CONST (ANTI ERROR TS2322 CODES)
 const scrollRevealVariants = {
   hidden: { opacity: 0, y: 40 },
   visible: {
@@ -268,9 +269,6 @@ const Lowongan: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* ===================================================================
-          👑 MAIN COMPONENT: SUNTIK SCROLL REVEAL PADA PANEL FILTER & DATA TABEL
-          =================================================================== */}
       <motion.main
         className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-16"
         variants={scrollRevealVariants}
@@ -278,7 +276,7 @@ const Lowongan: React.FC = () => {
         whileInView="visible"
         viewport={{ once: true, margin: "-120px" }}
       >
-        {/* Dropdowns Filter Input - FIXED: ADVANCED STAGGERED ENTRANCE ANIMATION */}
+        {/* Dropdowns Filter Input */}
         <motion.div
           variants={containerVariants}
           className="flex flex-row flex-wrap items-center justify-center gap-4 mb-12 pb-6 border-b border-gray-100 relative z-30 w-full"
@@ -358,7 +356,7 @@ const Lowongan: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* 5. Switch View Mode (Kinetic Spinning Radar Switch) */}
+          {/* 5. Switch View Mode */}
           <motion.div variants={itemVariants} className="flex items-center justify-center shrink-0" onClick={(e) => e.stopPropagation()}>
             <button 
               type="button"
@@ -366,7 +364,6 @@ const Lowongan: React.FC = () => {
               className="w-12 h-12 rounded-full bg-transparent hover:bg-blue-50/40 text-[#0D278D] flex items-center justify-center transition-all duration-300 border-0 outline-none cursor-pointer focus:outline-none relative group select-none"
               title={viewMode === "grid" ? "Ubah ke Tampilan Tabel" : "Ubah ke Tampilan Grid"}
             >
-              {/* LAYER 1 (LUAR): Ghost Arrow Ring */}
               <motion.div
                 key={`ring-${viewMode}`}
                 initial={{ rotate: 0, opacity: 0, scale: 0.8 }}
@@ -385,7 +382,6 @@ const Lowongan: React.FC = () => {
                 <RotateCw size={40} className="stroke-[1.0]" />
               </motion.div>
 
-              {/* LAYER 2 (DALAM): Icon Utama */}
               <motion.div 
                 animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
                 transition={{ type: "spring", stiffness: 130, damping: 13 }}
@@ -419,11 +415,8 @@ const Lowongan: React.FC = () => {
           </motion.div>
         </motion.div>
 
-     {/* --- JOB VIEW DECK LAYER (🌊 FADE-EDGE SEAMLESS RIVER LOADER) --- */}
         {loading ? (
           <div className="text-center py-24 flex flex-col items-center justify-center select-none">
-            
-            {/* 🚀 FIXED 1: Suntik inline style webkit-mask-image untuk membuat efek blur memudar di pinggir kanan-kiri */}
             <div 
               className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
               style={{
@@ -437,15 +430,12 @@ const Lowongan: React.FC = () => {
                 preserveAspectRatio="none"
               >
                 <defs>
-                  {/* Gradasi Warna Sungai Senada (Aqua Blue ke Deep Blue) */}
                   <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#3B82F6" />
                     <stop offset="50%" stopColor="#0D278D" />
                     <stop offset="100%" stopColor="#3B82F6" />
                   </linearGradient>
                 </defs>
-
-                {/* Jalur gelombang rapat yang berulang sempurna */}
                 <motion.path
                   d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
                   fill="none"
@@ -453,18 +443,16 @@ const Lowongan: React.FC = () => {
                   strokeWidth="7" 
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  
                   initial={{ x: 0 }}
                   animate={{ x: -100 }} 
                   transition={{
-                    duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
+                    duration: 4.5, 
                     ease: "linear",
                     repeat: Infinity,
                   }}
                 />
               </svg>
             </div>
-        
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="text-center py-20 bg-gray-50/40 rounded-3xl border border-gray-100 p-8">
@@ -475,7 +463,7 @@ const Lowongan: React.FC = () => {
           <AnimatePresence mode="wait">
             {viewMode === "grid" ? (
               /* ==========================================
-                 📦 MODE 1: GRID VIEW (CLONED FROM BERANDA UMUM)
+                 逃 MODE 1: GRID VIEW
                  ========================================== */
               <motion.div 
                 key="grid-layout"
@@ -512,18 +500,27 @@ const Lowongan: React.FC = () => {
                           </div>
                         </div>
 
-                         <div className="flex items-center gap-2 mb-3">
-                                                  <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-amber-500" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
-                                                  <span className={`text-xs font-semibold uppercase tracking-[0.05] ${
-                                                    isClosed 
-                                                      ? "text-gray-400" 
-                                                      : job.category === "konsultan_individu" 
-                                                      ? "text-[#FEB700]" 
-                                                      : "text-[#0D278D]"
-                                                  }`}>
-                                                    {getCategoryDisplay(job.category)}
-                                                  </span>
-                                                </div>
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          <div className="flex items-center gap-1.5">
+                            <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-amber-500" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
+                            <span className={`text-xs font-semibold uppercase tracking-[0.05] ${isClosed ? "text-gray-400" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"}`}>
+                              {getCategoryDisplay(job.category)}
+                            </span>
+                          </div>
+
+                          {/* 🚀 BADGE KUOTA DI GRID VIEW */}
+                          {job.kuota && job.kuota > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-[#0D278D] border border-blue-100">
+                              <Users size={12} />
+                              Kuota: {job.kuota} Orang
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                              <Users size={12} />
+                              Kuota: Terbuka
+                            </span>
+                          )}
+                        </div>
 
                         <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>{job.title}</h3>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">{job.description}</p>
@@ -556,7 +553,7 @@ const Lowongan: React.FC = () => {
               </motion.div>
             ) : (
               /* ===================================================================
-                 👑 MODE 2: HIGH-END SLATE EDITORIAL SEAMLESS TABLE (BORDER-FREE SYSTEM)
+                 荘 MODE 2: TABLE VIEW (DENGAN KOLOM KUOTA TERINTEGRASI)
                  =================================================================== */
               <motion.div 
                 key="table-layout"
@@ -567,15 +564,16 @@ const Lowongan: React.FC = () => {
                 className="w-full relative z-10 overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(13,39,141,0.02)]"
               >
                 <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-separate table-fixed min-w-[1150px]">
+                  <table className="w-full text-left border-separate table-fixed min-w-[1250px]">
                     <thead>
                       <tr className="bg-white text-[#0D278D] text-[11px] font-semibold uppercase tracking-[0.05em] select-none">
-                        <th className="py-5 px-8 w-[36%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
-                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Jenis Kategori</th>
-                        <th className="py-5 px-4 w-[20%] font-extrabold text-center">Periode Pendaftaran</th>
-                        <th className="py-5 px-4 w-[15%] font-extrabold text-center">Kualifikasi</th>
-                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Status</th>
-                        <th className="py-5 pr-8 pl-2 w-[160px]" />
+                        <th className="py-5 px-6 w-[30%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
+                        <th className="py-5 px-4 w-[14%] font-extrabold text-center">Jenis Kategori</th>
+                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Kuota</th> {/* 🚀 Kolom Kuota Baru */}
+                        <th className="py-5 px-4 w-[18%] font-extrabold text-center">Periode Pendaftaran</th>
+                        <th className="py-5 px-4 w-[14%] font-extrabold text-center">Kualifikasi</th>
+                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Status</th>
+                        <th className="py-5 pr-6 pl-2 w-[150px]" />
                       </tr>
                     </thead>
                     <motion.tbody 
@@ -595,13 +593,9 @@ const Lowongan: React.FC = () => {
                               isClosed ? "opacity-60 bg-gray-50/10" : "hover:bg-[#0D278D]/[0.015]"
                             }`}
                           >
-                            {/* 1. Formasi Lowongan (Pilar Status Tepi Kiri Berwarna Dinamis + Rata Tengah) */}
-                            <td className={`py-5 px-8 align-middle border-l-[5px] transition-all duration-300 text-center ${
-                              isClosed 
-                                ? "border-l-gray-300" 
-                                : isComingSoon 
-                                ? "border-l-amber-500" 
-                                : "border-l-[#0D278D]"
+                            {/* 1. Formasi Lowongan */}
+                            <td className={`py-5 px-6 align-middle border-l-[5px] transition-all duration-300 text-center ${
+                              isClosed ? "border-l-gray-300" : isComingSoon ? "border-l-amber-500" : "border-l-[#0D278D]"
                             }`}>
                               <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
                                 <h4 className={`text-[14px] font-bold tracking-tight transition-colors duration-200 leading-relaxed text-center ${
@@ -619,7 +613,20 @@ const Lowongan: React.FC = () => {
                               </span>
                             </td>
 
-                            {/* 3. Periode Tanggal Range */}
+                            {/* 3. 🚀 DATA KUOTA TABEL */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              {job.kuota && job.kuota > 0 ? (
+                                <span className="text-gray-900 text-xs font-bold bg-blue-50/80 px-2.5 py-1 rounded-md border border-blue-100 inline-flex items-center gap-1">
+                                  {job.kuota} Orang
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs font-normal">
+                                  Tidak dibatasi
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 4. Periode Tanggal Range */}
                             <td className="py-5 px-4 align-middle text-center">
                               <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold whitespace-nowrap text-center w-full">
                                 <Calendar size={13} className="text-gray-500 shrink-0" />
@@ -627,7 +634,7 @@ const Lowongan: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* 4. Kualifikasi Pendidikan */}
+                            {/* 5. Kualifikasi Pendidikan */}
                             <td className="py-5 px-4 align-middle text-center">
                               <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
                                 <span className="inline-block text-[11px] font-bold text-[#0D278D] bg-blue-50/60 border border-blue-100/40 px-2.5 py-1 rounded-lg leading-normal text-center">
@@ -636,13 +643,13 @@ const Lowongan: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* 5. Status Badge */}
+                            {/* 6. Status Badge */}
                             <td className="py-5 px-4 align-middle text-center">
                               {renderStatusBadge(status)}
                             </td>
 
-                            {/* 6. Action Button (Lamar / Lihat Detail) */}
-                            <td className="py-5 pr-8 pl-2 align-middle text-right w-[160px]">
+                            {/* 7. Action Button */}
+                            <td className="py-5 pr-6 pl-2 align-middle text-right w-[150px]">
                               <div className="flex justify-end items-center w-full">
                                 <button 
                                   onClick={() => navigate(`/detail-lowongan/${job.id}`)}

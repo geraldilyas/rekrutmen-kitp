@@ -155,6 +155,7 @@ export function useJobsManagement() {
     start_date: data.start_date,
     end_date: data.end_date,
     deadline: data.end_date,
+    kuota: data.kuota !== undefined && data.kuota !== "" ? data.kuota : null, // 🚀 FIX MUTLAK: Tambahkan baris ini agar lolos ke Axios!
     stages: (data.selection_stages || []).map((s: any) => ({
       name: s.name,
       stage_order: s.order,
