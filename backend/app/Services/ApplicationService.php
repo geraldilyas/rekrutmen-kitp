@@ -7,6 +7,7 @@ use App\Models\ApplicationStageResult;
 use App\Models\ApplicationStatusHistory;
 use App\Models\JobStage;
 use App\Notifications\ApplicationStatusUpdated;
+use App\Notifications\ApplicationSubmitted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -48,9 +49,6 @@ class ApplicationService
     /**
      * Submit a new application.
      */
-   /**
-     * Submit a new application.
-     */
     public function apply(array $data, int $userId)
     {
         // 🚀 FIX 1: Paksa pemanggilan Job secara Absolute path agar tidak tersesat ke Services
@@ -80,7 +78,7 @@ class ApplicationService
             throw new \Exception('Beberapa field wajib belum diisi.', 422);
         }
 
-        return DB::transaction(function () use ($data, $job, $userId) {
+        $application = DB::transaction(function () use ($data, $job, $userId) {
             $application = Application::create([
                 'user_id' => $userId,
                 'job_id' => $job->id,
@@ -115,6 +113,44 @@ class ApplicationService
 
             return $application->load(['answers']);
         });
+
+        // Kirim email notifikasi "Lamaran Berhasil Dikirim" setelah data tersimpan.
+        $this->sendSubmittedNotification($application);
+
+        return $application;
+    }
+
+    /**
+     * Kirim email notifikasi ketika pelamar berhasil mengirim lamaran.
+     */
+    protected function sendSubmittedNotification(Application $application)
+    {
+        try {
+            $application->loadMissing(['user', 'job']);
+
+            if ($application->user) {
+                $application->user->notify(new ApplicationSubmitted($application));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal mengirim email lamaran diterima: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim email notifikasi perubahan status lamaran (lolos/gugur tahap,
+     * lulus akhir, atau perubahan status manual oleh admin).
+     */
+    protected function sendStatusNotification(Application $application, ?string $message = null)
+    {
+        try {
+            $application->loadMissing(['user', 'job']);
+
+            if ($application->user) {
+                $application->user->notify(new ApplicationStatusUpdated($application, $message));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal mengirim email update status lamaran: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -147,13 +183,7 @@ class ApplicationService
                 'created_at' => now()
             ]);
 
-            try {
-                if ($application->user) {
-                    $application->user->notify(new ApplicationStatusUpdated($application));
-                }
-            } catch (\Exception $e) {
-                Log::error("Failed to send notification: " . $e->getMessage());
-            }
+            $this->sendStatusNotification($application, $data['notes'] ?? null);
 
             return $application;
         });
@@ -212,9 +242,6 @@ class ApplicationService
     /**
      * Update the result of a specific selection stage.
      */
-   /**
-     * Update the result of a specific selection stage.
-     */
     public function updateStageResult(ApplicationStageResult $stageResult, array $data)
     {
         return DB::transaction(function () use ($stageResult, $data) {
@@ -269,6 +296,11 @@ class ApplicationService
             'notes' => 'Gagal pada tahap: ' . $currentStage->name . '. ' . $notes,
             'created_at' => now(),
         ]);
+
+        $message = 'Anda dinyatakan tidak lulus pada tahap seleksi **' . $currentStage->name . '**.'
+            . ($notes ? ' Catatan dari panitia: ' . $notes : '');
+
+        $this->sendStatusNotification($application, $message);
     }
 
     protected function handleStageSuccess(Application $application, JobStage $currentStage)
@@ -308,6 +340,11 @@ class ApplicationService
             'notes' => 'Lolos tahap ' . $currentStageName . '. Lanjut ke tahap berikutnya.',
             'created_at' => now(),
         ]);
+
+        $message = 'Anda dinyatakan **lolos** pada tahap **' . $currentStageName . '** dan akan melanjutkan ke tahap **'
+            . $nextStage->name . '**. Pantau jadwal dan pengumuman tahap berikutnya secara berkala.';
+
+        $this->sendStatusNotification($application, $message);
     }
 
     protected function finalizeApplication(Application $application)
@@ -326,6 +363,10 @@ class ApplicationService
             'notes' => 'Pelamar diterima dengan skor akhir: ' . $finalScore,
             'created_at' => now(),
         ]);
+
+        $message = 'Anda telah menyelesaikan seluruh rangkaian tahapan seleksi dengan skor akhir **' . $finalScore . '**. Selamat bergabung!';
+
+        $this->sendStatusNotification($application, $message);
     }
 
     /**

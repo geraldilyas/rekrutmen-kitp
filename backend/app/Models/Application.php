@@ -20,6 +20,10 @@ class Application extends Model
 
     protected $appends = ['calculated_final_score'];
 
+    protected $casts = [
+        'applied_at' => 'datetime',
+    ];
+
     public function getCalculatedFinalScoreAttribute()
     {
         // 1. Pastikan relasi dasar ter-load
