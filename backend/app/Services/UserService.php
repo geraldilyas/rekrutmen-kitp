@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\BlacklistedNik;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -40,6 +41,10 @@ class UserService
 
         if (!$user || !Hash::check($password, $user->password)) {
             throw new \Exception('Email atau password salah', 401);
+        }
+
+        if ($user->nik && BlacklistedNik::where('nik', $user->nik)->exists()) {
+            throw new \Exception('Akun ini telah diblokir oleh admin.', 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

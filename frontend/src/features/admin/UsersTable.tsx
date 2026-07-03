@@ -1,21 +1,21 @@
 import React from "react";
 import {
   Pencil,
-  Trash2,
   Mail,
   Phone,
   MapPin,
   BadgeCheck,
   Clock,
   User as UserIcon,
+  ShieldOff,
 } from "lucide-react";
 import type { User } from "../shared/types";
 
 interface Props {
   users: User[];
   onEdit: (user: User) => void;
-  onDelete: (id: number) => void;
   onToggleVerification: (id: number) => void;
+  onBlacklist?: (user: User) => void;
 }
 
 const roleConfig: Record<
@@ -32,13 +32,18 @@ const roleConfig: Record<
     color: "bg-blue-50 text-[#0D278D] border-blue-100",
     dot: "bg-[#0D278D]",
   },
+  user: {
+    label: "Pelamar",
+    color: "bg-gray-50 text-gray-600 border-gray-200",
+    dot: "bg-gray-400",
+  },
 };
 
 const UsersTable: React.FC<Props> = ({
   users,
   onEdit,
-  onDelete,
   onToggleVerification,
+  onBlacklist,
 }) => {
   if (users.length === 0)
     return (
@@ -76,7 +81,7 @@ const UsersTable: React.FC<Props> = ({
           </thead>
           <tbody className="divide-y divide-gray-50">
             {users.map((user, index) => {
-              const role = roleConfig[user.role] || roleConfig.penyeleksi;
+              const role = roleConfig[user.role] || roleConfig.user;
               return (
                 <tr key={user.id} className="hover:bg-gray-50/30">
                   <td className="px-4 py-3 text-center text-xs font-medium text-gray-400">
@@ -153,15 +158,15 @@ const UsersTable: React.FC<Props> = ({
                       >
                         <Pencil size={15} />
                       </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Hapus "${user.name}"?`))
-                            onDelete(user.id);
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {onBlacklist && user.role === "user" && user.nik && (
+                        <button
+                          onClick={() => onBlacklist(user)}
+                          title="Blokir NIK user ini"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-all"
+                        >
+                          <ShieldOff size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

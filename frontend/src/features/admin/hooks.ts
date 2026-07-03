@@ -109,7 +109,13 @@ export function useJobsManagement() {
           weight: s.weight,
           start_date: s.start_date,
           end_date: s.end_date,
-          test_link: s.test_link
+          grading_end_date: s.grading_end_date,
+          test_link: s.test_link,
+          documents: (s.documents || []).map((d: any) => ({
+            form_field_id: d.id,
+            label: d.label,
+            weight: d.pivot?.weight ?? 0,
+          })),
         })) || []
       }));
       setJobs(mappedJobs);
@@ -162,7 +168,12 @@ export function useJobsManagement() {
       weight: s.weight,
       start_date: s.start_date || null,
       end_date: s.end_date || null,
+      grading_end_date: s.grading_end_date || null,
       test_link: s.test_link || null,
+      documents: (s.documents || []).map((d: any) => ({
+        form_field_id: d.form_field_id,
+        weight: d.weight || 0,
+      })),
     })),
   });
 
@@ -323,12 +334,13 @@ export function useUsersManagement() {
     }
   }, [fetchUsers]);
 
-  const deleteUser = useCallback(async (id: number) => {
+  const blacklistUser = useCallback(async (id: number, reason?: string) => {
       try {
-          await api.delete(`/admin/users/${id}`);
+          await api.post(`/admin/blacklist/user/${id}`, { reason });
           fetchUsers();
       } catch (err) {
-          console.error("Error deleting user:", err);
+          console.error("Error blacklisting user:", err);
+          throw err;
       }
   }, [fetchUsers]);
 
@@ -347,8 +359,8 @@ export function useUsersManagement() {
     setCurrentPage,
     addUser,
     editUser,
-    deleteUser,
     toggleVerification,
+    blacklistUser,
   };
 }
 
@@ -416,6 +428,12 @@ export function useApplications() {
                 })),
                 document_link: null,
                 applied_at: app.applied_at,
+                other_applications: (app.other_applications || []).map((o: any) => ({
+                    id: o.id,
+                    job_id: o.job_id,
+                    job_title: o.job_title,
+                    status: o.status,
+                })),
             };
         });
 

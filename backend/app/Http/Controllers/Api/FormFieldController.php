@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\FormFieldService;
+use App\Models\FormField;
 
 class FormFieldController extends Controller
 {
@@ -42,5 +43,16 @@ class FormFieldController extends Controller
             'message' => 'Field berhasil dibuat',
             'data' => $field
         ]);
+    }
+
+    /**
+     * Delete field.
+     */
+    public function destroy($id)
+    {
+        $field = FormField::findOrFail($id);
+        $this->formFieldService->deleteField($field);
+
+        return response()->json(['message' => 'Field berhasil dihapus']);
     }
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Clock, Calendar, ChevronRight, User } from "lucide-react";
+import { Mail, Clock, Calendar, ChevronRight, User, Layers } from "lucide-react";
 import type { Application } from "../shared/types";
 
 interface Props {
@@ -110,9 +110,20 @@ const ApplicantTable: React.FC<Props> = ({ applicants, onView }) => {
                           .toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
-                          {app.user_name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-gray-900 text-sm truncate">
+                            {app.user_name}
+                          </p>
+                          {!!app.other_applications?.length && (
+                            <span
+                              title={`Juga melamar ke: ${app.other_applications.map((o) => o.job_title).join(", ")}`}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100 text-[10px] font-bold whitespace-nowrap shrink-0"
+                            >
+                              <Layers size={9} />
+                              {app.other_applications.length} lowongan lain
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
                           <Mail size={10} className="shrink-0" />
                           <span className="truncate">{app.user_email}</span>

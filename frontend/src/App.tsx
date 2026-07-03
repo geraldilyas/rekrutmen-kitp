@@ -18,6 +18,7 @@ import ApplicationsList from "./features/admin/ApplicationsList";
 import AdminApplicantDetail from "./features/admin/ApplicantDetail";
 import AdminProfile from "./features/admin/Profile";
 import Reports from "./features/admin/Reports";
+import Blacklist from "./features/admin/Blacklist";
 import PenyeleksiLayout from "./features/penyeleksi/PenyeleksiLayout";
 import PenyeleksiDashboard from "./features/penyeleksi/Dashboard";
 import AssignedJobs from "./features/penyeleksi/AssignedJobs";
@@ -129,6 +130,7 @@ function App() {
             element={<AdminApplicantDetail />}
           />
           <Route path="reports" element={<Reports />} />
+          <Route path="blacklist" element={<Blacklist />} />
           <Route path="profil" element={<AdminProfile />} />
         </Route>
 

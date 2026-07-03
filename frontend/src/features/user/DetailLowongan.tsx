@@ -18,6 +18,7 @@ import {
   Zap,
   Megaphone,
   Loader2,
+  User,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useUserDocuments } from "../shared/profileHooks";
@@ -32,6 +33,7 @@ interface JobDetail {
   duration: string;
   location: string;
   unit_kerja: string;
+  recruiter_name: string | null;
   requirements: string;
   deadline: string | null;
   start_date?: string;
@@ -72,9 +74,10 @@ const DetailLowongan: React.FC = () => {
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState("");
   const [showApplyForm, setShowApplyForm] = useState(false); 
-  const [uploadedFiles, setUploadedFiles] = useState<{ 
-    [key: number]: { field_id: number; label: string; value: string; is_required: boolean } 
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    [key: number]: { field_id: number; label: string; value: string; is_required: boolean; category: "data_diri" | "berkas" }
   }>({});
+  const [adminStage, setAdminStage] = useState<any>(null);
 
   const fetchJobDetail = async (jobId: string, token: string | null) => {
     try {
@@ -85,25 +88,36 @@ const DetailLowongan: React.FC = () => {
       const jobData = responseData.data || responseData; 
       setJob(jobData);
 
-      let dynamicFields = 
-        jobData.form_fields || 
-        jobData.formFields || 
-        jobData.job_form_fields || 
-        jobData.jobFormFields || 
+      const stages = jobData.stages || jobData.selection_stages || [];
+      const foundAdminStage = stages.find(
+        (s: any) => (s.name || "").trim().toLowerCase() === "seleksi administrasi"
+      );
+      setAdminStage(foundAdminStage || null);
+
+      const stageDocs = (foundAdminStage?.documents || []).map((d: any) => ({
+        id: d.id,
+        label: d.label,
+        type: d.type,
+        is_required: d.is_required,
+        category: "berkas",
+      }));
+
+      let dynamicFields =
+        jobData.form_fields ||
+        jobData.formFields ||
+        jobData.job_form_fields ||
+        jobData.jobFormFields ||
         [];
-        
 
       if (!dynamicFields || dynamicFields.length === 0) {
-        console.warn(`Lowongan ID ${jobId} kosong di pivot. Mengaktifkan fallback sesuai master form_fields.`);
-        dynamicFields = [
+        const dataDiriDefaults = [
           { id: 1, label: "Nama Lengkap", type: "text", is_required: 1, category: "data_diri" },
           { id: 2, label: "Email Aktif", type: "email", is_required: 1, category: "data_diri" },
-          { id: 3, label: "Link CV (Google Drive)", type: "link", is_required: 1, category: "berkas" },
-          { id: 4, label: "Link Portofolio", type: "link", is_required: 0, category: "berkas" },
-          { id: 5, label: "Pendidikan Terakhir", type: "text", is_required: 1, category: "data_diri" }
+          { id: 5, label: "Pendidikan Terakhir", type: "text", is_required: 1, category: "data_diri" },
         ];
+        dynamicFields = [...dataDiriDefaults, ...stageDocs];
       }
-  
+
 
       const initialAnswersState: any = {};
   
@@ -114,7 +128,8 @@ const DetailLowongan: React.FC = () => {
           field_id: Number(actualFieldId),
           label: field.label || field.name || "Input Persyaratan",
           value: "",
-          is_required: field.is_required === 1 || field.is_required === true || field.is_required === "1"
+          is_required: field.is_required === 1 || field.is_required === true || field.is_required === "1",
+          category: field.category === "berkas" ? "berkas" : "data_diri"
         };
       });
   
@@ -397,10 +412,9 @@ const DetailLowongan: React.FC = () => {
                 <Briefcase size={28} className="text-[#FEB700]" />
                 Deskripsi Lowongan
               </h2>
-              <div
-                className="text-gray-600 leading-[1.8] text-[15px] md:text-[17px] text-justify font-normal"
-                dangerouslySetInnerHTML={{ __html: job.description }}
-              />
+              <div className="text-gray-600 leading-[1.8] text-[15px] md:text-[17px] text-justify font-normal whitespace-pre-line">
+                {job.description}
+              </div>
             </section>
 
             {job.qualification && (
@@ -409,7 +423,7 @@ const DetailLowongan: React.FC = () => {
                   <GraduationCap size={28} className="text-[#FEB700]" />
                   Kualifikasi
                 </h2>
-                <div className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px]">
+                <div className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px] whitespace-pre-line">
                   {job.qualification}
                 </div>
               </section>
@@ -421,10 +435,9 @@ const DetailLowongan: React.FC = () => {
                   <CheckCircle2 size={28} className="text-[#FEB700]" />
                   Persyaratan Jabatan
                 </h2>
-                <div
-                  className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px]"
-                  dangerouslySetInnerHTML={{ __html: job.requirements }}
-                />
+                <div className="text-gray-600 leading-[1.7] text-[15px] md:text-[16px] whitespace-pre-line">
+                  {job.requirements}
+                </div>
               </section>
             )}
           </motion.div>
@@ -465,10 +478,22 @@ const DetailLowongan: React.FC = () => {
                     <Banknote size={20} strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Durasi</p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Masa Kontrak</p>
                     <p className="font-semibold text-gray-800 text-[15px]">{job.duration || "-"}</p>
                   </div>
                 </div>
+
+                {job.recruiter_name && (
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-[#0D278D] shrink-0">
+                      <User size={20} strokeWidth={1.5} />
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Perekrut</p>
+                      <p className="font-semibold text-gray-800 text-[15px]">{job.recruiter_name}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Status Feedback */}
@@ -559,23 +584,11 @@ const DetailLowongan: React.FC = () => {
                 
                 <div className="text-left mb-12 border-b border-gray-900 pb-6">
                   <h3 className="text-2xl font-extrabold text-[#0D278D] font-['Poppins']">
-                    Dokumen Kelengkapan Digital
+                    Formulir Lamaran
                   </h3>
                   <p className="text-xs text-gray-400 mt-1 font-medium tracking-wide">
-                    Silakan masukkan tautan Google Drive untuk masing-masing berkas yang diwajibkan di bawah ini.
+                    Lengkapi pertanyaan berikut, lalu lampirkan dokumen pendukung yang diwajibkan.
                   </p>
-                </div>
-
-                <div className="mb-12 p-6 bg-gray-50 border-l-2 border-[#0D278D] flex gap-4 items-start">
-                  <div className="w-5 h-5 rounded-full bg-[#0D278D] flex items-center justify-center text-white shrink-0 mt-0.5">
-                    <Info size={12} strokeWidth={2.5} />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-[#0D278D] uppercase tracking-wider block">Petunjuk Akses Berbagi</span>
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      Pastikan status berbagi berkas telah diatur ke <span className="text-amber-600 font-bold">"Siapa saja yang memiliki link"</span> sebagai <span className="font-bold">Pelihat (Viewer)</span>.
-                    </p>
-                  </div>
                 </div>
 
                 {applyError && (
@@ -585,59 +598,118 @@ const DetailLowongan: React.FC = () => {
                   </motion.div>
                 )}
 
-                <form onSubmit={handleSubmitApplication} className="space-y-8">
-                  <div className="space-y-8">
-                  {Object.values(uploadedFiles).map((fieldItem, index) => {
-                        let inputType = "text"; 
-                        let placeholderText = `Masukkan ${fieldItem.label} Anda`;
+                <form onSubmit={handleSubmitApplication} className="space-y-14">
+                  {(() => {
+                    const allFields = Object.values(uploadedFiles);
+                    const questionFields = allFields.filter((f) => f.category !== "berkas");
+                    const documentFields = allFields.filter((f) => f.category === "berkas");
 
-                        if (fieldItem.label.toLowerCase().includes("email")) {
-                          inputType = "email";
-                          placeholderText = "Contoh: nama@email.com";
-                        } else if (
-                          fieldItem.label.toLowerCase().includes("link") || 
-                          fieldItem.label.toLowerCase().includes("cv") || 
-                          fieldItem.label.toLowerCase().includes("portofolio")
-                        ) {
-                          inputType = "url"; 
-                          placeholderText = `Salin tautan Google Drive / URL ${fieldItem.label} di sini`;
-                        }
+                    const renderField = (fieldItem: typeof allFields[number], index: number) => {
+                      let inputType = "text";
+                      let placeholderText = `Masukkan ${fieldItem.label} Anda`;
 
-                        return (
-                          <div key={fieldItem.field_id} className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300">
-                            <div className="w-full md:w-1/3 pt-3">
-                              <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
-                                  {fieldItem.label} {fieldItem.is_required && <span className="text-red-500/80">*</span>}
-                                </div>
-                                <button 
-                                  type="button" 
+                      if (fieldItem.label.toLowerCase().includes("email")) {
+                        inputType = "email";
+                        placeholderText = "Contoh: nama@email.com";
+                      } else if (fieldItem.category === "berkas") {
+                        inputType = "url";
+                        placeholderText = `Salin tautan Google Drive / URL ${fieldItem.label} di sini`;
+                      }
+
+                      return (
+                        <div key={fieldItem.field_id} className="group/row flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-6 gap-2 md:gap-6 transition-colors duration-300 hover:border-gray-300">
+                          <div className="w-full md:w-1/3 pt-3">
+                            <label className="text-xs font-bold text-[#0D278D] uppercase flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[#0D278D] font-mono text-[11px] font-normal">0{index + 1}.</span>
+                                {fieldItem.label} {fieldItem.is_required && <span className="text-red-500/80">*</span>}
+                              </div>
+                              {fieldItem.category === "berkas" && (
+                                <button
+                                  type="button"
                                   onClick={() => applyMasterDoc(fieldItem.field_id, fieldItem.label)}
                                   className="text-[9px] bg-blue-50 text-[#0D278D] px-2 py-1 rounded hover:bg-[#0D278D] hover:text-white transition-all"
                                 >
                                   Gunakan Master
                                 </button>
-                              </label>
-                            </div>
+                              )}
+                            </label>
+                          </div>
 
-                            <div className="w-full md:w-2/3 relative">
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
-                                <FileText size={16} strokeWidth={2} />
-                              </span>
-                              <input
-                                type={inputType} 
-                                placeholder={placeholderText}
-                                value={fieldItem.value}
-                                onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
-                                className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800"
-                                required={fieldItem.is_required}
-                              />
+                          <div className="w-full md:w-2/3 relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-1 text-gray-300 group-focus-within/row:text-[#0D278D] transition-colors pointer-events-none">
+                              <FileText size={16} strokeWidth={2} />
+                            </span>
+                            <input
+                              type={inputType}
+                              placeholder={placeholderText}
+                              value={fieldItem.value}
+                              onChange={(e) => handleLinkChange(fieldItem.field_id, e)}
+                              className="w-full bg-transparent border-b-2 border-gray-200 text-xs md:text-sm font-medium pl-8 pr-2 py-3 outline-none transition-all duration-300 focus:border-[#0D278D] text-gray-800"
+                              required={fieldItem.is_required}
+                            />
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <>
+                        {questionFields.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-6">
+                              1. Pertanyaan
+                            </h4>
+                            <div className="space-y-8">
+                              {questionFields.map((f, i) => renderField(f, i))}
                             </div>
                           </div>
-                        );
-                      })}
-                  </div>
+                        )}
+
+                        {documentFields.length > 0 && (
+                          <div>
+                            <div className="mb-6">
+                              <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest">
+                                2. Dokumen Pendukung
+                              </h4>
+                              <p className="text-xs text-gray-400 mt-1 font-medium tracking-wide">
+                                Silakan masukkan tautan Google Drive untuk masing-masing berkas yang diwajibkan di bawah ini.
+                              </p>
+                              {adminStage && (
+                                <div className="mt-4 flex items-center gap-2 flex-wrap">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#0D278D] border border-blue-100">
+                                    <CheckCircle2 size={12} />
+                                    Tahapan: {adminStage.name}
+                                  </span>
+                                  {adminStage.weight != null && (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+                                      Bobot Penilaian: {adminStage.weight}%
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mb-8 p-6 bg-gray-50 border-l-2 border-[#0D278D] flex gap-4 items-start">
+                              <div className="w-5 h-5 rounded-full bg-[#0D278D] flex items-center justify-center text-white shrink-0 mt-0.5">
+                                <Info size={12} strokeWidth={2.5} />
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-xs font-bold text-[#0D278D] uppercase tracking-wider block">Petunjuk Akses Berbagi</span>
+                                <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                  Pastikan status berbagi berkas telah diatur ke <span className="text-amber-600 font-bold">"Siapa saja yang memiliki link"</span> sebagai <span className="font-bold">Pelihat (Viewer)</span>.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-8">
+                              {documentFields.map((f, i) => renderField(f, i))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   <div className="pt-8 flex flex-col sm:flex-row justify-end gap-3 mt-4">
                     <button type="button" disabled={applyLoading} onClick={() => setShowApplyForm(false)} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all disabled:opacity-50">

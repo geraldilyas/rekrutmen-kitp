@@ -21,6 +21,12 @@ export interface UserFormData {
   role: "admin" | "penyeleksi" | "user";
 }
 
+export interface StageDocument {
+  form_field_id: number;
+  label?: string;
+  weight: number;
+}
+
 export interface SelectionStage {
   id: string;
   name: string;
@@ -29,8 +35,10 @@ export interface SelectionStage {
   weight: number;
   start_date: string;
   end_date: string;
+  grading_end_date?: string | null;
   test_link: string | null;
   sk_path?: string | null;
+  documents?: StageDocument[];
 }
 
 export interface Job {
@@ -93,6 +101,13 @@ export interface StageHistory {
   updated_at: string;
 }
 
+export interface OtherApplication {
+  id: number;
+  job_id: number;
+  job_title: string | null;
+  status: string;
+}
+
 export interface Application {
   id: number;
   user_id: number;
@@ -114,6 +129,7 @@ export interface Application {
   stage_scores: StageScore[];
   document_link: string | null;
   applied_at: string;
+  other_applications?: OtherApplication[];
   created_at?: string;
   updated_at?: string;
 }

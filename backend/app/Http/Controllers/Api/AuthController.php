@@ -36,6 +36,12 @@ class AuthController extends Controller
             ]
         ]);
 
+        if (!empty($validated['nik']) && \App\Models\BlacklistedNik::where('nik', $validated['nik'])->exists()) {
+            return response()->json([
+                'message' => 'NIK ini telah diblokir dan tidak dapat digunakan untuk mendaftar.',
+            ], 403);
+        }
+
         $result = $this->userService->register($validated);
 
         return response()->json([

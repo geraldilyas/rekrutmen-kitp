@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\ApplicationAdminController;
 use App\Http\Controllers\Api\Admin\StatisticsController;
 use App\Http\Controllers\Api\Admin\ReportController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\BlacklistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,7 +118,6 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
                 Route::get('/export/{job_id}/excel', [ReportController::class, 'exportExcel']);
                 Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
-                Route::post('/publishPassedResults/{job_id}', [ReportController::class, 'publishPassedResults']);
                 Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
                 Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
             });
@@ -131,7 +131,15 @@ Route::middleware('throttle:api')->group(function () {
             Route::post('/users/registered/{id}/toggle-verification', [AdminUserController::class, 'toggleVerification']);
 
             // Form Fields
-            Route::apiResource('form-fields', FormFieldController::class)->only(['index', 'store']);
+            Route::apiResource('form-fields', FormFieldController::class)->only(['index', 'store', 'destroy']);
+
+            // NIK Blacklist
+            Route::prefix('blacklist')->group(function () {
+                Route::get('/', [BlacklistController::class, 'index']);
+                Route::post('/', [BlacklistController::class, 'store']);
+                Route::post('/user/{userId}', [BlacklistController::class, 'blacklistUser']);
+                Route::delete('/{id}', [BlacklistController::class, 'destroy']);
+            });
         });
     });
 });

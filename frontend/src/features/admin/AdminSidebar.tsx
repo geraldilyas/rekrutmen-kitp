@@ -6,6 +6,7 @@ import {
   Users,
   FileText,
   Megaphone,
+  ShieldOff,
   X,
   LogOut,
   AlertTriangle,
@@ -24,6 +25,7 @@ const menu = [
   { name: "Lowongan", path: "/admin/lowongan", icon: Briefcase },
   { name: "Pendaftar", path: "/admin/applications", icon: FileText },
   { name: "Laporan", path: "/admin/reports", icon: Megaphone },
+  { name: "Blokir NIK", path: "/admin/blacklist", icon: ShieldOff },
 ];
 
 const AdminSidebar: React.FC<Props> = ({ isOpen, onClose }) => {

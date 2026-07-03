@@ -16,6 +16,7 @@ class JobStage extends Model
         'stage_order',
         'start_date',
         'end_date',
+        'grading_end_date',
         'type',
         'weight',
         'test_link',
@@ -25,6 +26,7 @@ class JobStage extends Model
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'grading_end_date' => 'datetime',
         'type' => 'string',
         'is_active' => 'boolean',
     ];
@@ -32,6 +34,16 @@ class JobStage extends Model
     public function job()
     {
         return $this->belongsTo(Job::class);
+    }
+
+    public function documents()
+    {
+        return $this->belongsToMany(
+            \App\Models\FormField::class,
+            'job_stage_form_fields',
+            'job_stage_id',
+            'form_field_id'
+        )->withPivot('weight');
     }
 
     public function results()

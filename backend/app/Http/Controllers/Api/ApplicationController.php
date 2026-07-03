@@ -188,61 +188,24 @@ class ApplicationController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Lowongan tidak ditemukan.'], 404);
                 }
 
-                // Ambil application_id dari query string URL
-                $appId = $request->query('app_id');
-                if (!$appId) {
-                    return response()->json(['status' => 'error', 'message' => 'Parameter Lamaran (app_id) diperlukan.'], 400);
-                }
-
-                // Ambil data lamaran beserta nama user terkait
-                $myApplication = \DB::table('applications')
-                    ->join('users', 'applications.user_id', '=', 'users.id')
-                    ->select('applications.*', 'users.name as user_name')
-                    ->where('applications.id', $appId)
-                    ->where('applications.job_id', $id)
-                    ->first();
-
-                if (!$myApplication) {
-                    return response()->json(['status' => 'error', 'message' => 'Data lamaran tidak ditemukan.'], 404);
-                }
-
-                $titleDocument = "SURAT KEPUTUSAN HASIL AKHIR KELULUSAN SELEKSI";
+                $titleDocument = "LAPORAN HASIL AKHIR SELEKSI SELURUH PELAMAR";
                 $jobTitle = $job->title;
                 $stageName = "HASIL AKHIR (KELULUSAN FINAL)";
 
-                // Ambil status akhir utama lamaran pelamar (Lulus / Tidak Lulus)
-                $currentStatus = strtoupper($myApplication->status); 
-
-                // 🚀 SEKARANG DISERAGAMKAN: Baik Lulus atau Tidak Lulus, breakdown SEMUA tahapan seleksi lowongan ini
-                $allStages = \DB::table('job_stages')
+                // 🚀 Seluruh pelamar yang mendaftar pada lowongan ini, beserta skor
+                // akhir terbobot dan status kelulusan masing-masing.
+                $allApplications = \App\Models\Application::with(['user', 'stageResults', 'job.stages'])
                     ->where('job_id', $id)
-                    ->orderBy('stage_order', 'asc')
-                    ->get();
+                    ->get()
+                    ->sortByDesc('calculated_final_score')
+                    ->values();
 
-                $passedApplicants = $allStages->map(function($stage) use ($myApplication) {
-                    // Cari skor pelamar di tahapan spesifik ini
-                    $stageResult = \DB::table('application_stage_results')
-                        ->where('application_id', $myApplication->id)
-                        ->where('job_stage_id', $stage->id)
-                        ->first();
-
-                    $score = $stageResult ? $stageResult->score : 0;
-                    $finalScore = $score && $score > 0 ? $score : 0;
-
-                    $displayStageName = $stage->stage_name ?? $stage->name;
-
-                    // Tentukan status per-tahapan secara dinamis
-                    if ($stageResult) {
-                        $stageStatus = strtoupper($stageResult->status);
-                    } else {
-                        $stageStatus = 'BELUM DIIKUTI';
-                    }
-
-                    return (object)[
-                        'name' => 'Tahap: ' . $displayStageName,
-                        'score' => $finalScore,
-                        'final_status' => $stageStatus,
-                        'is_breakdown' => 1
+                $passedApplicants = $allApplications->map(function ($app) {
+                    return (object) [
+                        'name' => $app->user->name ?? '-',
+                        'score' => $app->calculated_final_score,
+                        'final_status' => strtoupper($app->status),
+                        'is_breakdown' => 0,
                     ];
                 });
 
@@ -258,17 +221,17 @@ class ApplicationController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Tahapan seleksi tidak ditemukan.'], 404);
                 }
 
-                $titleDocument = "PENGUMUMAN DAFTAR PESERTA LULUS SELEKSI PER TAHAPAN";
+                $titleDocument = "LAPORAN SELURUH PESERTA PADA TAHAPAN SELEKSI";
                 $jobTitle = $stage->job_title;
                 $stageName = $stage->stage_name ?? $stage->name;
 
-                // Ambil pelamar yang lulus di tahapan spesifik ini
+                // 🚀 Seluruh pelamar yang sudah dinilai pada tahapan ini (lulus maupun tidak),
+                // bukan hanya yang lulus.
                 $passedApplicants = \DB::table('application_stage_results')
                     ->join('applications', 'application_stage_results.application_id', '=', 'applications.id')
                     ->join('users', 'applications.user_id', '=', 'users.id')
                     ->where('application_stage_results.job_stage_id', $id)
-                    ->whereIn('application_stage_results.status', ['lulus', 'Lulus', 'selesai', 'Selesai'])
-                    ->select('users.name', 'application_stage_results.score', \DB::raw('"LULUS" as final_status'), \DB::raw('0 as is_breakdown'))
+                    ->select('users.name', 'application_stage_results.score', \DB::raw('UPPER(application_stage_results.status) as final_status'), \DB::raw('0 as is_breakdown'))
                     ->orderBy('application_stage_results.score', 'desc')
                     ->get();
             }
@@ -314,11 +277,11 @@ class ApplicationController extends Controller
 
                 if ($isFinal) {
                     $html .= '<p class="content-text">
-                        Berikut adalah lampiran rincian nilai komponen evaluasi dan rekapitulasi capaian skor Anda pada setiap tahapan seleksi yang telah diselenggarakan untuk posisi formasi di bawah ini:
+                        Berikut adalah laporan rekapitulasi skor akhir terbobot dan status kelulusan seluruh pelamar yang mendaftar pada formasi di bawah ini:
                     </p>';
                 } else {
                     $html .= '<p class="content-text">
-                        Berdasarkan seluruh rangkaian tahapan evaluasi, verifikasi berkas, uji kompetensi, serta penetapan kelayakan acuan seleksi rekrutmen mandiri, dengan ini menetapkan hasil ketetapan evaluasi komponen peserta pada posisi berikut:
+                        Berikut adalah laporan seluruh peserta yang telah dinilai pada tahapan seleksi berikut, beserta skor dan status ketetapannya:
                     </p>';
                 }
 
@@ -327,25 +290,25 @@ class ApplicationController extends Controller
                     <strong>Formasi Lowongan / Jabatan :</strong> ' . $jobTitle . '<br>
                     <strong>Keterangan Dokumen :</strong> ' . $stageName . '<br>
                     <strong>Tanggal Pengesahan :</strong> ' . $date . '
-                    ' . ($isFinal ? '<br><strong>Nama Lengkap Pelamar :</strong> ' . strtoupper($myApplication->user_name) : '') . '
+                    <br><strong>Jumlah Pelamar Terlapor :</strong> ' . $passedApplicants->count() . ' Orang
                 </div>
 
                 <table>
                     <thead>
                         <tr>
                             <th width="8%" class="text-center">NO</th>
-                            <th>' . ($isFinal ? 'KOMPONEN TAHAPAN SELEKSI' : 'NAMA LENGKAP PELAMAR') . '</th>
-                            <th width="18%" class="text-center">' . ($isFinal ? 'SKOR CAPAIAN' : 'AKUMULASI SKOR') . '</th>
+                            <th>NAMA LENGKAP PELAMAR</th>
+                            <th width="18%" class="text-center">' . ($isFinal ? 'SKOR AKHIR' : 'SKOR TAHAPAN') . '</th>
                             <th width="25%" class="text-center">STATUS KETETAPAN</th>
                         </tr>
                     </thead>
                     <tbody>';
-                    
+
                     if($passedApplicants->isEmpty()) {
                         $html .= '<tr><td colspan="4" class="text-center" style="color: #64748b; font-style: italic; padding: 20px;">Belum ada data evaluasi seleksi yang disahkan untuk formasi ini.</td></tr>';
                     } else {
                         foreach ($passedApplicants as $index => $applicant) {
-                            
+
                             // Logika badge warna dinamis per rincian tahapan
                             $statusClean = strtolower($applicant->final_status);
                             if (str_contains($statusClean, 'lulus') || str_contains($statusClean, 'selesai')) {
@@ -358,22 +321,9 @@ class ApplicationController extends Controller
 
                             $html .= '<tr>
                                 <td class="text-center">' . ($index + 1) . '</td>
-                                <td style="' . ($applicant->is_breakdown ? 'font-weight: normal;' : 'text-transform: uppercase; font-weight: 500;') . '">' . e($applicant->name) . '</td>
+                                <td style="text-transform: uppercase; font-weight: 500;">' . e($applicant->name) . '</td>
                                 <td class="text-center" style="font-weight: bold; color: #0D278D;">' . ($applicant->score !== null ? $applicant->score : '-') . '</td>
                                 <td class="text-center"><span class="' . $badgeClass . '">' . e($applicant->final_status) . '</span></td>
-                            </tr>';
-                        }
-                        
-                        // 🚀 BARIS KESIMPULAN AKHIR DINAMIS (IKUT STATUS UTAMA APPLICATIONS)
-                        if ($isFinal && isset($currentStatus)) {
-                            $isLulusUtama = $currentStatus === 'LULUS';
-                            $kesimpulanBadge = $isLulusUtama ? 'badge-lulus' : 'badge-gagal';
-                            $kesimpulanText = $isLulusUtama ? 'LULUS UTAMA SELEKSI' : 'TIDAK LULUS SELEKSI';
-
-                            $html .= '<tr style="background-color: #f8fafc; font-weight: bold;">
-                                <td colspan="2" class="text-center" style="text-transform: uppercase;">KESIMPULAN HASIL AKHIR REKRUTMEN</td>
-                                <td class="text-center" style="color: #0D278D;">-</td>
-                                <td class="text-center"><span class="' . $kesimpulanBadge . '">' . $kesimpulanText . '</span></td>
                             </tr>';
                         }
                     }

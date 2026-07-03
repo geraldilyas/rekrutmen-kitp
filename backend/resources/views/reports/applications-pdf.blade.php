@@ -43,8 +43,11 @@
                 <th>Nama Pelamar</th>
                 <th>Email</th>
                 <th>NIK</th>
-                <th>Status Akhir</th>
+                @foreach($job->stages->sortBy('stage_order') as $stage)
+                    <th>{{ $stage->name }}</th>
+                @endforeach
                 <th>Skor Akhir</th>
+                <th>Status Akhir</th>
             </tr>
         </thead>
         <tbody>
@@ -54,12 +57,16 @@
                     <td>{{ $app->user->name }}</td>
                     <td>{{ $app->user->email }}</td>
                     <td>{{ $app->user->nik }}</td>
+                    @foreach($job->stages->sortBy('stage_order') as $stage)
+                        @php $result = $app->stageResults->firstWhere('job_stage_id', $stage->id); @endphp
+                        <td>{{ $result->score ?? '-' }}</td>
+                    @endforeach
+                    <td>{{ $app->calculated_final_score ?? '-' }}</td>
                     <td>
                         <span class="{{ strtolower($app->status) == 'lulus' ? 'status-lulus' : 'status-tidak' }}">
                             {{ ucfirst($app->status) }}
                         </span>
                     </td>
-                    <td>{{ $app->calculated_final_score ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>

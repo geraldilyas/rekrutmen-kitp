@@ -22,7 +22,7 @@ class JobController extends Controller
     public function index(Request $request)
     {
         // 1. Ambil data dengan Eager Loading agar query super cepat dan tidak merusak data relasi
-        $rawJobs = Job::with(['stages'])
+        $rawJobs = Job::with(['stages.documents'])
             ->withCount('applications')
             ->latest()
             ->get();
@@ -76,15 +76,15 @@ class JobController extends Controller
             'title'          => 'required|string|max:255',
             'category'       => 'required|in:tenaga_pendukung,konsultan_individu',
             'description'    => 'required|string',
-            'qualification'  => 'nullable|string|max:500',
+            'qualification'  => 'required|string|max:500',
             'location'       => 'nullable|string|max:255',
-            'unit_kerja'     => 'nullable|string|max:255',
-            'duration'       => 'nullable|string|max:100',
-            'recruiter_name' => 'nullable|string|max:255',
+            'unit_kerja'     => 'required|string|max:255',
+            'duration'       => 'required|string|max:100',
+            'recruiter_name' => 'required|string|max:255',
             'start_date'     => 'required|date',
             'end_date'       => 'required|date|after_or_equal:start_date',
             'deadline'       => 'nullable|date',
-            'kuota'          => 'nullable|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini
+            'kuota'          => 'required|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',
@@ -93,8 +93,12 @@ class JobController extends Controller
             'stages.*.stage_order' => 'required|integer|min:1',
             'stages.*.start_date' => 'nullable|date',
             'stages.*.end_date'   => 'nullable|date',
+            'stages.*.grading_end_date' => 'nullable|date|after_or_equal:stages.*.end_date',
             'stages.*.weight'     => 'required|numeric|min:0|max:100',
             'stages.*.test_link'  => 'nullable|max:255',
+            'stages.*.documents'               => 'nullable|array',
+            'stages.*.documents.*.form_field_id' => 'required_with:stages.*.documents|exists:form_fields,id',
+            'stages.*.documents.*.weight'        => 'nullable|integer|min:0|max:100',
         ]);
 
         $totalWeight = collect($validated['stages'])->sum('weight');
@@ -103,6 +107,20 @@ class JobController extends Controller
                 'message' => 'Total bobot semua tahapan harus 100%',
                 'current_total' => $totalWeight
             ], 422);
+        }
+
+        foreach ($validated['stages'] as $stage) {
+            if (empty($stage['documents'])) {
+                continue;
+            }
+
+            $docWeight = collect($stage['documents'])->sum('weight');
+            if ($docWeight != $stage['weight']) {
+                return response()->json([
+                    'message' => "Total bobot dokumen pada tahapan \"{$stage['name']}\" harus sama dengan bobot tahapan ({$stage['weight']}%)",
+                    'current_total' => $docWeight
+                ], 422);
+            }
         }
 
         $job = $this->jobService->createJob($validated);
@@ -118,7 +136,7 @@ class JobController extends Controller
      */
     public function show($id)
     {
-        $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields'])->find($id);
+        $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields', 'stages.documents'])->find($id);
 
         if (!$job) {
             return response()->json([
@@ -144,15 +162,15 @@ class JobController extends Controller
             'title'          => 'required|string|max:255',
             'category'       => 'required|in:tenaga_pendukung,konsultan_individu',
             'description'    => 'required|string',
-            'qualification'  => 'nullable|string|max:500',
+            'qualification'  => 'required|string|max:500',
             'location'       => 'nullable|string|max:255',
-            'unit_kerja'     => 'nullable|string|max:255',
-            'duration'       => 'nullable|string|max:100',
-            'recruiter_name' => 'nullable|string|max:255',
+            'unit_kerja'     => 'required|string|max:255',
+            'duration'       => 'required|string|max:100',
+            'recruiter_name' => 'required|string|max:255',
             'start_date'     => 'required|date',
             'end_date'       => 'required|date|after_or_equal:start_date',
             'deadline'       => 'nullable|date',
-            'kuota'          => 'nullable|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini saat update
+            'kuota'          => 'required|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini saat update
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',

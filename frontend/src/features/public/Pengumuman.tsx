@@ -12,7 +12,7 @@ import {
   FileText,
   Sparkles
 } from "lucide-react";
-import { api } from "../../services/api";
+import { api, storageUrl } from "../../services/api";
 
 interface Announcement {
   id: number;
@@ -308,7 +308,7 @@ const Pengumuman: React.FC = () => {
                           {item.announcements.map((doc) => (
                             <a 
                               key={doc.id}
-                              href={`/storage/${doc.file_path}`}
+                              href={storageUrl(doc.file_path)}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-2.5 px-4 py-2 bg-blue-50/50 hover:bg-[#0D278D] border border-blue-100/50 rounded-xl text-xs font-bold text-[#0D278D] hover:text-white transition-all duration-300 group/link shadow-sm hover:shadow-md"
@@ -325,7 +325,7 @@ const Pengumuman: React.FC = () => {
                   <div className="flex items-center md:items-center">
                     <button 
                       onClick={() => {
-                        const fileUrl = `/storage/${item.announcements[0]?.file_path}`;
+                        const fileUrl = storageUrl(item.announcements[0]?.file_path);
                         window.open(fileUrl, "_blank");
                       }}
                       className="bg-transparent border-2 border-[#0D278D] text-[#0D278D] px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-[#0D278D] hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center overflow-hidden"

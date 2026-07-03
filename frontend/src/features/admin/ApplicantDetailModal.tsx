@@ -12,15 +12,20 @@ import {
   XCircle,
   MessageSquare,
   AlertCircle,
+  ExternalLink,
+  Layers,
 } from "lucide-react";
+
+const isLikelyUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
 import { api } from "../../services/api";
-import type { Application } from "../shared/types";
+import type { Application, OtherApplication } from "../shared/types";
 
 interface FullApplicationData {
   user: { name: string; email: string; nik: string | null; phone: string | null };
   job: { title: string };
   documents: { id: number; type: string; file_path: string; uploaded_at: string }[];
-  answers: { answer: string; form_field: { field_name: string } | null }[];
+  answers: { answer: string; form_field: { label?: string; field_name?: string } | null }[];
+  other_applications?: OtherApplication[];
   // 🚀 Tambahkan data tahapan yang fresh dari database agar tidak terkunci tanggal lama
   current_stage_start_date?: string | null;
   current_stage_end_date?: string | null;
@@ -165,6 +170,29 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
             </div>
           </section>
 
+          {/* Other jobs applied to (matched by user_id, so it survives email changes) */}
+          {(() => {
+            const others = detail?.other_applications ?? application.other_applications ?? [];
+            return others.length > 0 ? (
+              <section>
+                <p className="text-[11px] font-bold text-violet-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <Layers size={12} /> Juga Melamar ke {others.length} Lowongan Lain
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {others.map((o) => (
+                    <span
+                      key={o.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 border border-violet-100 text-violet-700 text-xs font-semibold"
+                    >
+                      {o.job_title || `Lowongan #${o.job_id}`}
+                      <span className="text-[10px] font-bold text-violet-400">· {o.status}</span>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            ) : null;
+          })()}
+
           {/* Form answers */}
           {detail?.answers?.length ? (
             <section>
@@ -175,9 +203,21 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
                 {detail.answers.map((ans, i) => (
                   <div key={i} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">
-                      {ans.form_field?.field_name || `Pertanyaan ${i + 1}`}
+                      {ans.form_field?.label || ans.form_field?.field_name || `Pertanyaan ${i + 1}`}
                     </p>
-                    <p className="text-sm text-gray-700">{ans.answer}</p>
+                    {isLikelyUrl(ans.answer) ? (
+                      <a
+                        href={ans.answer}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0D278D] hover:underline break-all"
+                      >
+                        <ExternalLink size={13} className="shrink-0" />
+                        {ans.answer}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-gray-700 break-words">{ans.answer}</p>
+                    )}
                   </div>
                 ))}
               </div>

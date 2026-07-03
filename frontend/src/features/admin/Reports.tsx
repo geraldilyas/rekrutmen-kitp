@@ -13,9 +13,8 @@ import {
   FileSpreadsheet,
   Megaphone,
   Send,
-  Zap,
 } from "lucide-react";
-import { api } from "../../services/api";
+import { api, storageUrl } from "../../services/api";
 
 interface Job {
   id: number;
@@ -40,7 +39,6 @@ const Reports: React.FC = () => {
   const [search, setSearch] = useState("");
   
   const [uploadJobId, setUploadJobId] = useState<number | null>(null);
-  const [isPublishing, setIsPublishing] = useState<number | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsSaving] = useState(false);
@@ -93,28 +91,6 @@ const Reports: React.FC = () => {
     } catch (err: any) {
       console.error("Export failed:", err);
       alert("Gagal mengunduh laporan. Pastikan data sudah tersedia.");
-    }
-  };
-
-  const handleOneClickPublish = async (jobId: number) => {
-    if (announcements[jobId]?.length) {
-      alert("Pengumuman sudah diterbitkan untuk lowongan ini.");
-      return;
-    }
-
-    if (!window.confirm("Terbitkan pengumuman kelulusan secara otomatis? Sistem akan membuatkan PDF daftar peserta lulus dan merangkingnya berdasarkan nilai tertinggi.")) return;
-    
-    setIsPublishing(jobId);
-    setStatus(null);
-
-    try {
-      await api.post(`/admin/reports/publishPassedResults/${jobId}`);
-      setStatus({ type: 'success', message: "Pengumuman hasil seleksi berhasil diterbitkan secara otomatis!" });
-      fetchAnnouncements(jobId);
-    } catch (err: any) {
-      setStatus({ type: 'error', message: err.response?.data?.message || "Gagal menerbitkan pengumuman otomatis" });
-    } finally {
-      setIsPublishing(null);
     }
   };
 
@@ -213,7 +189,7 @@ const Reports: React.FC = () => {
                         {announcements[job.id].map((ann) => (
                           <a 
                             key={ann.id}
-                            href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${ann.file_path}`}
+                            href={storageUrl(ann.file_path)}
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-gray-100 rounded-lg text-xs font-bold text-gray-600 hover:bg-white hover:text-[#0D278D] hover:border-[#0D278D]/30 transition-all"
@@ -256,20 +232,12 @@ const Reports: React.FC = () => {
                     <FileText size={16} /> PDF (Lulus)
                   </button>
                   <div className="w-full h-px bg-gray-100 my-2" />
-                  <button 
+                  <button
                     onClick={() => setUploadJobId(job.id)}
                     disabled={!!announcements[job.id]?.length}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#0D278D] text-[#0D278D] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-50 disabled:bg-gray-50 disabled:text-gray-300 disabled:border-gray-100 transition-all shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0D278D] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FEB700] hover:text-[#0D278D] disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md"
                   >
-                    <Upload size={16} /> Upload Manual
-                  </button>
-                  <button 
-                    onClick={() => handleOneClickPublish(job.id)}
-                    disabled={isPublishing === job.id || !!announcements[job.id]?.length}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0D278D] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FEB700] hover:text-[#0D278D] disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md group"
-                  >
-                    {isPublishing === job.id ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} className={`${!!announcements[job.id]?.length ? 'text-gray-300' : 'text-[#FEB700] group-hover:text-[#0D278D]'}`} />}
-                    <span>{!!announcements[job.id]?.length ? "Sudah Terbit" : "Terbitkan Otomatis"}</span>
+                    <Upload size={16} /> {!!announcements[job.id]?.length ? "Sudah Terbit" : "Upload Manual"}
                   </button>
                 </div>
 

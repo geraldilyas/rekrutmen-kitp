@@ -27,7 +27,8 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Create a new staff user (admin or penyeleksi).
+     * Create a new staff user. Only penyeleksi accounts can be created
+     * from this endpoint — new admins are not allowed.
      */
     public function store(Request $request)
     {
@@ -37,7 +38,7 @@ class AdminUserController extends Controller
             'password'    => 'required|string|min:8|max:100|confirmed',
             'phone'       => 'nullable|string|max:20',
             'address'     => 'nullable|string|max:500',
-            'role'        => 'required|in:admin,penyeleksi',
+            'role'        => 'required|in:penyeleksi',
             'admin_level' => 'nullable|integer|in:1,2,3',
             'parent_id'   => 'nullable|exists:users,id',
         ]);
@@ -67,10 +68,11 @@ class AdminUserController extends Controller
             'password'    => 'nullable|string|min:8|max:100|confirmed',
             'phone'       => 'sometimes|nullable|string|max:20',
             'address'     => 'sometimes|nullable|string|max:500',
-            'role'        => 'sometimes|in:admin,penyeleksi',
             'admin_level' => 'sometimes|nullable|integer|in:1,2,3',
             'parent_id'   => 'sometimes|nullable|exists:users,id',
         ]);
+
+        // Role is fixed at creation time and cannot be changed via update.
 
         if (!empty($validated['password'])) {
             $validated['password'] = \Hash::make($validated['password']);

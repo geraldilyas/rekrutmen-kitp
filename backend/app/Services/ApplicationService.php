@@ -43,7 +43,40 @@ class ApplicationService
             });
         }
 
-        return $query->latest()->get();
+        $applications = $query->latest()->get();
+
+        // Group every application per user so each row can show what other
+        // jobs the same applicant has applied to (matched by user_id, so it
+        // still works even if the user later changes their email/profile).
+        // Jobs that finished more than 7 days ago are dropped from that list.
+        $byUser = $applications->groupBy('user_id');
+        foreach ($applications as $app) {
+            $app->other_applications = $byUser->get($app->user_id, collect())
+                ->where('id', '!=', $app->id)
+                ->filter(fn ($other) => $this->isJobStillRelevant($other->job))
+                ->map(fn ($other) => [
+                    'id' => $other->id,
+                    'job_id' => $other->job_id,
+                    'job_title' => $other->job->title ?? null,
+                    'status' => $other->status,
+                ])
+                ->values();
+        }
+
+        return $applications;
+    }
+
+    /**
+     * A job stays "relevant" for the other-applications badge until 7 days
+     * after its deadline has passed.
+     */
+    private function isJobStillRelevant($job): bool
+    {
+        if (!$job || !$job->deadline) {
+            return true;
+        }
+
+        return Carbon::parse($job->deadline)->addDays(7)->isFuture();
     }
 
     /**
@@ -252,14 +285,16 @@ class ApplicationService
             // Date validation
             $today = Carbon::today();
             $startDate = $currentStage->start_date ? Carbon::parse($currentStage->start_date) : null;
-            $endDate = $currentStage->end_date ? Carbon::parse($currentStage->end_date) : null;
+            $gradingEndDate = $currentStage->grading_end_date
+                ? Carbon::parse($currentStage->grading_end_date)
+                : ($currentStage->end_date ? Carbon::parse($currentStage->end_date) : null);
 
             if ($startDate && $today->lt($startDate)) {
                 throw new \Exception('Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . $startDate->format('d/m/Y'), 403);
             }
 
-            if ($endDate && $today->gt($endDate)) {
-                throw new \Exception('Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $endDate->format('d/m/Y'), 403);
+            if ($gradingEndDate && $today->gt($gradingEndDate)) {
+                throw new \Exception('Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $gradingEndDate->format('d/m/Y'), 403);
             }
 
             // Update stage result

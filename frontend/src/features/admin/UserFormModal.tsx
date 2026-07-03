@@ -153,26 +153,36 @@ const UserFormModal: React.FC<Props> = ({
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
               Role
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {roleOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setForm({ ...form, role: opt.value })}
-                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${form.role === opt.value ? "border-[#0D278D] bg-blue-50 text-[#0D278D]" : "border-gray-100 text-gray-500 hover:border-gray-200"}`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center ${form.role === opt.value ? "bg-[#0D278D] text-white" : "bg-gray-100"}`}
-                  >
-                    <opt.icon size={16} />
+            {mode === "add" ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-[#0D278D] bg-blue-50 text-[#0D278D]">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#0D278D] text-white">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold">Penyeleksi</p>
+                  <p className="text-[10px] opacity-70">
+                    Hanya akun penyeleksi yang bisa ditambahkan di sini
+                  </p>
+                </div>
+              </div>
+            ) : (
+              (() => {
+                const current = roleOptions.find((opt) => opt.value === form.role);
+                return (
+                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-500">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gray-200 text-gray-500">
+                      {current ? <current.icon size={16} /> : <Shield size={16} />}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-700">{current?.label || form.role}</p>
+                      <p className="text-[10px] opacity-70">
+                        Role tidak dapat diubah setelah user dibuat
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold">{opt.label}</p>
-                    <p className="text-[10px] opacity-70">{opt.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                );
+              })()
+            )}
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">

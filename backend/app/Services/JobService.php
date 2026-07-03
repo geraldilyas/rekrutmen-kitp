@@ -76,18 +76,25 @@ class JobService
             }
 
             foreach ($data['stages'] as $stage) {
-                JobStage::create([
+                $jobStage = JobStage::create([
                     'job_id'      => $job->id,
                     'name'        => strip_tags($stage['name']),
                     'stage_order' => $stage['stage_order'],
                     'start_date'  => $stage['start_date'],
                     'end_date'    => $stage['end_date'],
+                    'grading_end_date' => $stage['grading_end_date'] ?? null,
                     'weight'      => $stage['weight'],
                     'test_link'   => $stage['test_link'] ?? null,
                 ]);
+
+                if (!empty($stage['documents'])) {
+                    $jobStage->documents()->sync(collect($stage['documents'])->mapWithKeys(
+                        fn ($doc) => [$doc['form_field_id'] => ['weight' => $doc['weight'] ?? 0]]
+                    ));
+                }
             }
 
-            return $job->load(['stages']);
+            return $job->load(['stages.documents']);
         });
     }
 

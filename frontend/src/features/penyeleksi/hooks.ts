@@ -50,7 +50,13 @@ function mapJob(j: any): Job {
       weight: s.weight,
       start_date: s.start_date ?? null,
       end_date: s.end_date ?? null,
+      grading_end_date: s.grading_end_date ?? null,
       test_link: s.test_link ?? null,
+      documents: (s.documents || []).map((d: any) => ({
+        form_field_id: d.id,
+        label: d.label,
+        weight: d.pivot?.weight ?? 0,
+      })),
     })),
   };
 }
@@ -98,6 +104,12 @@ function mapApplication(app: any): Application {
     applied_at: app.applied_at,
     stage_start_date: pendingResult?.stage?.start_date ?? null,
     stage_end_date: pendingResult?.stage?.end_date ?? null,
+    other_applications: (app.other_applications || []).map((o: any) => ({
+      id: o.id,
+      job_id: o.job_id,
+      job_title: o.job_title,
+      status: o.status,
+    })),
   };
 }
 

@@ -85,6 +85,27 @@ class ApplicationAdminController extends Controller
             $responseData['current_stage_start_date'] = $activeStage ? $activeStage->start_date : null;
             $responseData['current_stage_end_date'] = $activeStage ? $activeStage->end_date : null;
 
+            // Lowongan lain yang dilamar oleh pelamar yang sama (dicocokkan lewat user_id,
+            // jadi tetap terlacak walau pelamar mengganti email). Lowongan yang sudah
+            // selesai lebih dari 7 hari tidak ditampilkan lagi.
+            $responseData['other_applications'] = Application::with('job')
+                ->where('user_id', $application->user_id)
+                ->where('id', '!=', $application->id)
+                ->get()
+                ->filter(function ($other) {
+                    if (!$other->job || !$other->job->deadline) {
+                        return true;
+                    }
+                    return \Carbon\Carbon::parse($other->job->deadline)->addDays(7)->isFuture();
+                })
+                ->map(fn ($other) => [
+                    'id' => $other->id,
+                    'job_id' => $other->job_id,
+                    'job_title' => $other->job->title ?? null,
+                    'status' => $other->status,
+                ])
+                ->values();
+
             return response()->json($responseData);
         } catch (\Throwable $e) {
             return response()->json([

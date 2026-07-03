@@ -27,4 +27,12 @@ class FormFieldService
             'category' => $data['category']
         ]);
     }
+
+    /**
+     * Delete a form field.
+     */
+    public function deleteField(FormField $field)
+    {
+        return $field->delete();
+    }
 }

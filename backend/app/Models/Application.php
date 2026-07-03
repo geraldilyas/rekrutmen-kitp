@@ -16,12 +16,14 @@ class Application extends Model
         'status',
         'final_score',
         'applied_at',
+        'last_reminder_at',
     ];
 
     protected $appends = ['calculated_final_score'];
 
     protected $casts = [
         'applied_at' => 'datetime',
+        'last_reminder_at' => 'datetime',
     ];
 
     public function getCalculatedFinalScoreAttribute()

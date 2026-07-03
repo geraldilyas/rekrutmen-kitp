@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import UsersTable from "./UsersTable";
 import UserFormModal from "./UserFormModal";
+import BlacklistUserModal from "./BlacklistUserModal";
 import { useUsersManagement } from "./hooks";
 import type { User, UserFormData } from "../shared/types";
 
@@ -34,13 +35,15 @@ const UsersManage: React.FC = () => {
     setCurrentPage,
     addUser,
     editUser,
-    deleteUser,
     toggleVerification,
+    blacklistUser,
   } = useUsersManagement();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [blacklistModalOpen, setBlacklistModalOpen] = useState(false);
+  const [userToBlacklist, setUserToBlacklist] = useState<User | null>(null);
 
   const authUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = authUser.role === "admin";
@@ -63,6 +66,16 @@ const UsersManage: React.FC = () => {
     } else if (selectedUser) {
       await editUser(selectedUser.id, data, selectedUser.role);
     }
+  };
+
+  const handleBlacklist = (user: User) => {
+    setUserToBlacklist(user);
+    setBlacklistModalOpen(true);
+  };
+
+  const handleBlacklistSubmit = async (reason: string) => {
+    if (!userToBlacklist) return;
+    await blacklistUser(userToBlacklist.id, reason || undefined);
   };
 
   return (
@@ -147,8 +160,8 @@ const UsersManage: React.FC = () => {
           <UsersTable
             users={users}
             onEdit={handleEdit}
-            onDelete={deleteUser}
             onToggleVerification={toggleVerification}
+            onBlacklist={handleBlacklist}
           />
 
           {/* Pagination */}
@@ -188,6 +201,13 @@ const UsersManage: React.FC = () => {
           mode={mode}
         />
       )}
+
+      <BlacklistUserModal
+        isOpen={blacklistModalOpen}
+        onClose={() => setBlacklistModalOpen(false)}
+        onSubmit={handleBlacklistSubmit}
+        user={userToBlacklist}
+      />
     </div>
   );
 };

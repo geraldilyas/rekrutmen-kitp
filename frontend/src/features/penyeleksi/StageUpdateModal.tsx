@@ -6,12 +6,22 @@ import {
   AlertCircle,
   ExternalLink,
   Lock,
+  MessageSquare,
 } from "lucide-react";
+import { api } from "../../services/api";
 import type {
   Application,
   SelectionStage,
   UpdateStageData,
 } from "../shared/types";
+
+const isLikelyUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
+
+interface AnswerItem {
+  form_field_id: number;
+  answer: string;
+  form_field: { id: number; label: string; field_name?: string } | null;
+}
 
 interface Props {
   isOpen: boolean;
@@ -33,14 +43,28 @@ const StageUpdateModal: React.FC<Props> = ({
   const [decision, setDecision] = useState<"lulus" | "tidak_lulus">("lulus");
   const [note, setNote] = useState("");
   const [score, setScore] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<AnswerItem[]>([]);
+  const [checkedDocs, setCheckedDocs] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
       setDecision("lulus");
       setNote("");
       setScore(null);
+      setCheckedDocs(new Set());
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !application) {
+      setAnswers([]);
+      return;
+    }
+    api
+      .get(`/admin/applications/${application.id}`)
+      .then((res) => setAnswers(res.data?.answers || []))
+      .catch(() => setAnswers([]));
+  }, [isOpen, application?.id]);
 
   if (!isOpen || !application) return null;
 
@@ -48,6 +72,23 @@ const StageUpdateModal: React.FC<Props> = ({
     (s) => s.order === application.current_stage_order,
   );
   const bobot = currentStage?.weight || 0;
+  const stageDocuments = currentStage?.documents || [];
+  const hasDocumentChecklist = stageDocuments.length > 0;
+
+  const toggleDoc = (formFieldId: number) => {
+    setCheckedDocs((prev) => {
+      const next = new Set(prev);
+      if (next.has(formFieldId)) next.delete(formFieldId);
+      else next.add(formFieldId);
+
+      const checkedWeight = stageDocuments
+        .filter((d) => next.has(d.form_field_id))
+        .reduce((s, d) => s + (Number(d.weight) || 0), 0);
+      setScore(bobot > 0 ? Math.round((checkedWeight / bobot) * 100) : 0);
+
+      return next;
+    });
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -148,6 +189,97 @@ const StageUpdateModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Pertanyaan & Jawaban Pelamar (di luar dokumen tahapan ini) */}
+          {(() => {
+            const docFieldIds = new Set(stageDocuments.map((d) => d.form_field_id));
+            const questionAnswers = answers.filter((a) => !docFieldIds.has(a.form_field_id));
+            return questionAnswers.length > 0 ? (
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase mb-1.5">
+                  <MessageSquare size={13} /> Pertanyaan &amp; Jawaban Pelamar
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {questionAnswers.map((ans, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+                        {ans.form_field?.label || ans.form_field?.field_name || `Pertanyaan ${i + 1}`}
+                      </p>
+                      {isLikelyUrl(ans.answer) ? (
+                        <a
+                          href={ans.answer}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0D278D] hover:underline break-all"
+                        >
+                          <ExternalLink size={13} className="shrink-0" />
+                          {ans.answer}
+                        </a>
+                      ) : (
+                        <p className="text-sm text-gray-700 break-words">{ans.answer}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })()}
+
+          {/* Dokumen tahapan ini — centang untuk menilai */}
+          {hasDocumentChecklist && (
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+                Dokumen Tahapan Ini (centang untuk menilai)
+              </label>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {stageDocuments.map((doc) => {
+                  const ans = answers.find((a) => a.form_field_id === doc.form_field_id);
+                  const checked = checkedDocs.has(doc.form_field_id);
+                  return (
+                    <div
+                      key={doc.form_field_id}
+                      className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${checked ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleDoc(doc.form_field_id)}
+                        className="mt-1 w-4 h-4 accent-[#0D278D] shrink-0 cursor-pointer"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold text-gray-700">{doc.label}</p>
+                          <span className="text-[10px] font-bold text-[#0D278D] bg-blue-100 px-1.5 py-0.5 rounded shrink-0">
+                            {doc.weight}%
+                          </span>
+                        </div>
+                        {ans?.answer ? (
+                          isLikelyUrl(ans.answer) ? (
+                            <a
+                              href={ans.answer}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D278D] hover:underline break-all mt-1"
+                            >
+                              <ExternalLink size={12} className="shrink-0" />
+                              {ans.answer}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-gray-600 break-words mt-1">{ans.answer}</p>
+                          )
+                        ) : (
+                          <p className="text-xs text-gray-400 italic mt-1">Belum diisi pelamar</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                Skor otomatis dihitung dari jumlah bobot dokumen yang dicentang terhadap bobot tahapan ({bobot}%).
+              </p>
+            </div>
+          )}
+
           {/* Link Tes */}
           {currentStage?.test_link && (
             <a
@@ -169,7 +301,9 @@ const StageUpdateModal: React.FC<Props> = ({
             <input
               type="number"
               value={score ?? ""}
+              readOnly={hasDocumentChecklist}
               onChange={(e) => {
+                if (hasDocumentChecklist) return;
                 const val =
                   e.target.value === ""
                     ? null
@@ -178,8 +312,8 @@ const StageUpdateModal: React.FC<Props> = ({
               }}
               min="0"
               max="100"
-              placeholder="Masukkan skor 0-100"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:border-[#0D278D] transition-all"
+              placeholder={hasDocumentChecklist ? "Centang dokumen di atas" : "Masukkan skor 0-100"}
+              className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0D278D] transition-all ${hasDocumentChecklist ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-gray-50 focus:bg-white"}`}
             />
             <p className="text-[11px] text-gray-400 mt-1.5">
               Dinilai oleh:{" "}

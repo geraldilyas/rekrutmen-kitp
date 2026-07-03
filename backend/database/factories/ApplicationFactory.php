@@ -19,10 +19,42 @@ class ApplicationFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->state(['role' => 'user']),
             'job_id' => Job::factory(),
             'status' => 'pending',
             'applied_at' => now(),
         ];
+    }
+
+    /**
+     * Newly submitted application, not yet touched by any reviewer.
+     */
+    public function pending(): static
+    {
+        return $this->state(fn () => ['status' => 'pending']);
+    }
+
+    /**
+     * Application currently mid-way through the selection stages.
+     */
+    public function inSeleksi(): static
+    {
+        return $this->state(fn () => ['status' => 'seleksi']);
+    }
+
+    /**
+     * Application that passed every stage.
+     */
+    public function lulus(): static
+    {
+        return $this->state(fn () => ['status' => 'Lulus']);
+    }
+
+    /**
+     * Application rejected at some stage.
+     */
+    public function tidakLulus(): static
+    {
+        return $this->state(fn () => ['status' => 'Tidak Lulus']);
     }
 }
