@@ -17,11 +17,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DummyDataSeeder::class,
-        ]);
-    }
-    public function run(): void
-    {
-        $this->call([
             JobFromExcelSeeder::class,
         ]);
     }

@@ -33,7 +33,6 @@ Route::get('/health', function () {
     ]);
 });
 
-// 🚀 PINDAH KE SINI: Rute unduh PDF dipasang secara publik agar browser tab baru bisa langsung download tanpa error Auth Token
 Route::get('/stages/{stageId}/download-passed-pdf', [ApplicationController::class, 'downloadPassedPdf']);
 
 Route::middleware('throttle:api')->group(function () {
@@ -49,7 +48,6 @@ Route::middleware('throttle:api')->group(function () {
     // --- AUTHENTICATED ROUTES ---
     Route::middleware('auth:sanctum')->group(function () {
 
-        // 🚀 TAMBAHAN: Rute Sinkronisasi Pasfoto User Profile
         Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
 
         // User Profile & Logout
@@ -83,7 +81,7 @@ Route::middleware('throttle:api')->group(function () {
             // View all registered users (role = user)
             Route::get('/users/registered', [AdminUserController::class, 'users']);
 
-            // Applications — read & grade (penyeleksi needs these)
+            // Applications — read & grade 
             Route::prefix('applications')->group(function () {
                 Route::get('/', [ApplicationAdminController::class, 'index']);
                 Route::post('/{id}/init-stage', [ApplicationAdminController::class, 'initStage']);
