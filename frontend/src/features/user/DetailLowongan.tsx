@@ -19,9 +19,20 @@ import {
   Megaphone,
   Loader2,
   User,
+  ListChecks,
+  CircleDot,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useUserDocuments } from "../shared/profileHooks";
+
+interface JobStageInfo {
+  id: number | string;
+  name: string;
+  stage_order: number;
+  start_date: string | null;
+  end_date: string | null;
+  is_active?: boolean;
+}
 
 interface JobDetail {
   id: number;
@@ -52,6 +63,8 @@ interface JobDetail {
     file_path: string;
     published_at: string;
   }>;
+  stages?: JobStageInfo[];
+  selection_stages?: JobStageInfo[];
 }
 
 interface Application {
@@ -262,6 +275,32 @@ const DetailLowongan: React.FC = () => {
   const isClosed = job?.deadline ? new Date() > new Date(job.deadline) : false;
   const isNotOpenYet = job?.start_date ? new Date() < new Date(job.start_date) : false;
 
+  const formatShortDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  // Tahap Seleksi: data ini murni informatif, otomatis mengikuti tahapan yang
+  // ditambahkan admin pada lowongan (tidak terkait progres lamaran pengguna).
+  const selectionStages: JobStageInfo[] = (job?.stages || job?.selection_stages || [])
+    .filter((s) => s.is_active !== false)
+    .slice()
+    .sort((a, b) => (a.stage_order ?? 0) - (b.stage_order ?? 0));
+
+  const getStageState = (stage: JobStageInfo): "selesai" | "aktif" | "upcoming" => {
+    const now = new Date();
+    const start = stage.start_date ? new Date(stage.start_date) : null;
+    const end = stage.end_date ? new Date(stage.end_date) : null;
+
+    if (start && end) {
+      if (now > end) return "selesai";
+      if (now >= start && now <= end) return "aktif";
+      return "upcoming";
+    }
+    if (start && now >= start) return "aktif";
+    return "upcoming";
+  };
+
   if (loading) {
   return (
     <div className="bg-white min-h-screen font-['Poppins'] flex items-center justify-center">
@@ -440,6 +479,72 @@ const DetailLowongan: React.FC = () => {
                 </div>
               </section>
             )}
+
+            {selectionStages.length > 0 && (
+              <section>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-2 tracking-tight flex items-center gap-3">
+                  <ListChecks size={28} className="text-[#FEB700]" />
+                  Tahap Seleksi
+                </h2>
+                <p className="text-gray-500 text-[13px] md:text-sm font-medium mb-10">
+                  Berikut alur tahapan seleksi pada lowongan ini.
+                </p>
+
+                <div className="relative">
+                  <div className="hidden md:block absolute top-[22px] left-[4%] right-[4%] h-[2px] bg-gray-100 z-0" />
+
+                  <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-2 relative z-10 w-full">
+                    {selectionStages.map((stage, index) => {
+                      const state = getStageState(stage);
+
+                      let circleClass = "bg-white border-2 border-gray-200 text-gray-300";
+                      let titleClass = "text-gray-400 font-medium";
+                      let statusLabel = "Akan Datang";
+                      let StageIcon = CircleDot;
+
+                      if (state === "selesai") {
+                        circleClass = "bg-[#0D278D] border-[#0D278D] text-white shadow-[0_4px_15px_rgba(13,39,141,0.2)]";
+                        titleClass = "text-[#0D278D] font-bold";
+                        statusLabel = "Selesai";
+                        StageIcon = CheckCircle2;
+                      } else if (state === "aktif") {
+                        circleClass = "bg-white border-[#FEB700] text-[#FEB700] ring-4 ring-yellow-50";
+                        titleClass = "text-[#0D278D] font-bold";
+                        statusLabel = "Sedang Berlangsung";
+                        StageIcon = Clock;
+                      }
+
+                      return (
+                        <div
+                          key={stage.id}
+                          className="flex flex-row md:flex-col items-center gap-4 md:gap-3 w-full md:flex-1 shrink-0"
+                        >
+                          <div
+                            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${circleClass}`}
+                          >
+                            <StageIcon size={18} />
+                          </div>
+
+                          <div className="text-left md:text-center w-full md:px-2">
+                            <p className="text-[10px] font-mono text-gray-300 mb-0.5">0{index + 1}</p>
+                            <h3 className={`text-[13px] md:text-[14px] leading-snug ${titleClass}`}>
+                              {stage.name}
+                            </h3>
+                            <p className="text-[11px] text-gray-400 font-medium mt-0.5">{statusLabel}</p>
+                            {(stage.start_date || stage.end_date) && (
+                              <p className="text-[10px] text-gray-400 mt-1">
+                                {formatShortDate(stage.start_date)}
+                                {stage.end_date ? ` - ${formatShortDate(stage.end_date)}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            )}
           </motion.div>
 
           {/* Action Sidebar Right Column */}
@@ -458,7 +563,9 @@ const DetailLowongan: React.FC = () => {
                   <div className="flex flex-col justify-center">
                     <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Batas Waktu</p>
                     <p className="font-semibold text-gray-800 text-[15px]">
-                      {job.deadline ? new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : '-'}
+                      {job.deadline
+                        ? `${new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}, Pukul ${new Date(job.deadline).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
+                        : '-'}
                     </p>
                   </div>
                 </div>

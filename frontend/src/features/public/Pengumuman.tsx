@@ -7,12 +7,20 @@ import {
   Award,
   Clock,
   ChevronRight,
+  ChevronDown,
   Brain,
-  Filter,
   FileText,
-  Sparkles
+  Sparkles,
+  Calendar,
+  Layers,
 } from "lucide-react";
 import { api, storageUrl } from "../../services/api";
+
+const dropdownVariants = {
+  hidden: { opacity: 0, y: -10, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -5, scale: 0.95, transition: { duration: 0.15 } }
+};
 
 interface Announcement {
   id: number;
@@ -53,12 +61,42 @@ const itemVariants = {
   },
 };
 
+const monthNames = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
 const Pengumuman: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState("Semua");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const filters = ["Semua", "Tenaga Pendukung", "Konsultan Individu"];
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const listMonths = [
+    { value: "all", label: "Semua Bulan" },
+    { value: "0", label: "Januari" },
+    { value: "1", label: "Februari" },
+    { value: "2", label: "Maret" },
+    { value: "3", label: "April" },
+    { value: "4", label: "Mei" },
+    { value: "5", label: "Juni" },
+    { value: "6", label: "Juli" },
+    { value: "7", label: "Agustus" },
+    { value: "8", label: "September" },
+    { value: "9", label: "Oktober" },
+    { value: "10", label: "November" },
+    { value: "11", label: "Desember" },
+  ];
+
+  const categoryOptions = [
+    { value: "all", label: "Semua Kategori" },
+    { value: "Tenaga Pendukung", label: "Tenaga Pendukung" },
+    { value: "Konsultan Individu", label: "Konsultan Individu" },
+  ];
+
+  const toggleDropdown = (name: string) => setOpenDropdown(openDropdown === name ? null : name);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -90,13 +128,31 @@ const Pengumuman: React.FC = () => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  const filteredData =
-    activeFilter === "Semua"
-      ? announcements
-      : announcements.filter((item) => getCategoryDisplay(item.category) === activeFilter);
+  // Tahun-tahun yang tersedia diambil otomatis dari data pengumuman yang ada,
+  // supaya dropdown filter tahun selalu relevan (termasuk pengumuman lama).
+  const availableYears = Array.from(
+    new Set(
+      announcements
+        .filter((item) => item.deadline)
+        .map((item) => new Date(item.deadline).getFullYear())
+    )
+  ).sort((a, b) => b - a);
+
+  const filteredData = announcements.filter((item) => {
+    if (activeFilter !== "all" && getCategoryDisplay(item.category) !== activeFilter) return false;
+
+    if (monthFilter !== "all" || yearFilter !== "all") {
+      if (!item.deadline) return false;
+      const d = new Date(item.deadline);
+      if (monthFilter !== "all" && d.getMonth() !== Number(monthFilter)) return false;
+      if (yearFilter !== "all" && d.getFullYear() !== Number(yearFilter)) return false;
+    }
+
+    return true;
+  });
 
   return (
-    <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setIsFilterOpen(false)}>
+    <div className="bg-white min-h-screen font-['Poppins']" onClick={() => setOpenDropdown(null)}>
 
       {/* --- HERO TOP PANEL --- */}
       <div className="bg-[#0D278D] pt-32 pb-24 relative rounded-b-[2.5rem] md:rounded-b-[4rem] overflow-hidden">
@@ -153,44 +209,122 @@ const Pengumuman: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-[1rem] text-[14px] font-bold cursor-pointer border transition-all duration-300 ${
-                isFilterOpen
-                  ? "bg-[#0D278D] text-white border-[#0D278D]"
-                  : "bg-white text-[#0D278D] border-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-              }`}
-            >
-              <Filter size={18} />
-              <span>{activeFilter}</span>
-            </button>
+          {/* Filter Row — same style as Lowongan */}
+          <div className="flex flex-row flex-wrap items-center gap-3 relative z-30" onClick={(e) => e.stopPropagation()}>
 
-           <AnimatePresence>
-                         {isFilterOpen && (
-                           <motion.div
-                             initial={{ width: 0, opacity: 0 }}
-                             animate={{ width: "auto", opacity: 1 }}
-                             exit={{ width: 0, opacity: 0 }}
-                             transition={{ duration: 0.35, ease: "easeOut" }}
-                             className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-2xl border border-gray-100 absolute md:relative right-0 top-14 md:top-auto z-30 whitespace-nowrap overflow-hidden"
-                           >
-                             {filters.map((filter) => (
-                               <button
-                                 key={filter}
-                                 onClick={() => { setActiveFilter(filter); setIsFilterOpen(false); }}
-                                 className={`px-5 h-[40px] flex items-center justify-center rounded-xl text-[14px] font-bold cursor-pointer transition-all duration-300 whitespace-nowrap ${
-                                   activeFilter === filter ? "bg-white border border-[#0D278D] text-[#0D278D] shadow-[0_2px_10px_rgba(0,0,0,0.04)]" : "text-gray-500 hover:text-[#0D278D] hover:bg-blue-50/50"
-                                 }`}
-                               >
-                                 {filter}
-                               </button>
-                             ))}
-                           </motion.div>
-                         )}
-                       </AnimatePresence>
-                     </div>
-                   </motion.div>
+            {/* 1. Dropdown Kategori */}
+            <div className="relative w-full sm:w-[180px]">
+              <button
+                onClick={() => toggleDropdown("category")}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
+                  openDropdown === "category" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                }`}
+              >
+                <Layers size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
+                <span className="truncate mr-1">
+                  {categoryOptions.find(o => o.value === activeFilter)?.label ?? "Semua Kategori"}
+                </span>
+                <motion.div animate={{ rotate: openDropdown === "category" ? 180 : 0 }} className="flex items-center shrink-0">
+                  <ChevronDown size={14} />
+                </motion.div>
+              </button>
+              <AnimatePresence>
+                {openDropdown === "category" && (
+                  <motion.div
+                    variants={dropdownVariants} initial="hidden" animate="visible" exit="exit"
+                    className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden z-50 p-1.5"
+                  >
+                    {categoryOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setActiveFilter(opt.value); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* 2. Dropdown Bulan */}
+            <div className="relative w-full sm:w-[160px]">
+              <button
+                onClick={() => toggleDropdown("month")}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
+                  openDropdown === "month" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                }`}
+              >
+                <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
+                <span className="truncate mr-1">
+                  {listMonths.find(m => m.value === monthFilter)?.label ?? "Semua Bulan"}
+                </span>
+                <motion.div animate={{ rotate: openDropdown === "month" ? 180 : 0 }} className="flex items-center shrink-0">
+                  <ChevronDown size={14} />
+                </motion.div>
+              </button>
+              <AnimatePresence>
+                {openDropdown === "month" && (
+                  <motion.div
+                    variants={dropdownVariants} initial="hidden" animate="visible" exit="exit"
+                    className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl max-h-[240px] overflow-y-auto p-1.5 z-50"
+                  >
+                    {listMonths.map((m) => (
+                      <button
+                        key={m.value}
+                        onClick={() => { setMonthFilter(m.value); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer"
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* 3. Dropdown Tahun */}
+            <div className="relative w-full sm:w-[140px]">
+              <button
+                onClick={() => toggleDropdown("year")}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
+                  openDropdown === "year" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                }`}
+              >
+                <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
+                <span className="truncate mr-1">{yearFilter === "all" ? "Semua Tahun" : yearFilter}</span>
+                <motion.div animate={{ rotate: openDropdown === "year" ? 180 : 0 }} className="flex items-center shrink-0">
+                  <ChevronDown size={14} />
+                </motion.div>
+              </button>
+              <AnimatePresence>
+                {openDropdown === "year" && (
+                  <motion.div
+                    variants={dropdownVariants} initial="hidden" animate="visible" exit="exit"
+                    className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl max-h-[200px] overflow-y-auto p-1.5 z-50"
+                  >
+                    <button
+                      onClick={() => { setYearFilter("all"); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer"
+                    >
+                      Semua Tahun
+                    </button>
+                    {availableYears.map((yr) => (
+                      <button
+                        key={yr}
+                        onClick={() => { setYearFilter(yr.toString()); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2 rounded-lg text-xs font-semibold text-[#0D278D] hover:bg-gray-50 block cursor-pointer"
+                      >
+                        {yr}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
 
         {/* --- CONTAINER PENGUMUMAN SELEKSI LIST --- */}
         <motion.div variants={itemVariants} className="space-y-2">

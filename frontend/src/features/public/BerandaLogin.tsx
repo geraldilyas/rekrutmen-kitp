@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   MonitorUp,
-  FileCheck,
-  Brain,
   Award,
   GraduationCap,
   Clock,
   Briefcase,
-  ArrowRight,
-  MessageCircle,
-  Users,
-  Megaphone,
   LayoutGrid,
   TableProperties,
   Calendar,
   RotateCw,
-  Sparkles
+  Sparkles,
+  Mail,
+  Users, // 🚀 Tambah import Users
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -30,15 +26,51 @@ interface Job {
   qualification: string;
   start_date: string;
   deadline: string;
+  kuota?: number | string | null; // 🚀 Tambah properti kuota
 }
 
-const tahapanSeleksi = [
-  { id: 1, title: "Registrasi Online", icon: MonitorUp },
-  { id: 2, title: "Seleksi Administrasi", icon: FileCheck },
-  { id: 3, title: "Pengumuman Administrasi", icon: Megaphone },
-  { id: 4, title: "Tes Kompetensi", icon: Brain },
-  { id: 5, title: "Wawancara", icon: Users },
-  { id: 6, title: "Pengumuman Akhir", icon: Award },
+
+const alurRekrutmenSempurna = [
+  {
+    id: 1,
+    title: "Eksplorasi Lowongan",
+    icon: Briefcase,
+    colorClass: "text-[#0D278D] border-[#0D278D]/30 group-hover:border-[#0D278D] group-hover:bg-blue-50/50",
+    titleColor: "text-[#0D278D]",
+    desc: "Pelamar dapat mengeksplorasi secara transparan daftar lowongan formasi yang berstatus sedang dibuka, akan dibuka, maupun yang sudah ditutup."
+  },
+  {
+    id: 2,
+    title: "Detail & Pendaftaran",
+    icon: MonitorUp,
+    colorClass: "text-[#0D278D] border-[#0D278D]/30 group-hover:border-[#0D278D] group-hover:bg-blue-50/50",
+    titleColor: "text-[#0D278D]",
+    desc: "Sistem menyajikan semua detail informasi dari lowongan tersebut secara lengkap dan pelamar dapat langsung mendaftar secara digital."
+  },
+  {
+    id: 3,
+    title: "Notifikasi Email",
+    icon: Mail,
+    colorClass: "text-[#0D278D] border-[#0D278D]/30 group-hover:border-[#0D278D] group-hover:bg-blue-50/50",
+    titleColor: "text-[#0D278D]",
+    desc: "Ketika pelamar telah berhasil melakukan pendaftaran lowongan, pelamar akan otomatis mendapatkan notifikasi ke email yang terdaftar saat akun dibuat."
+  },
+  {
+    id: 4,
+    title: "Monitoring Status",
+    icon: Clock,
+    colorClass: "text-[#0D278D] border-[#0D278D]/30 group-hover:border-[#0D278D] group-hover:bg-blue-50/50",
+    titleColor: "text-[#0D278D]",
+    desc: "Pelamar dapat memonitoring status lamaran mereka sekaligus menerima notifikasi email ketika lolos ataupun tidak lolos pada semua tahapan seleksi."
+  },
+  {
+    id: 5,
+    title: "Pengumuman Akhir",
+    icon: Award,
+    colorClass: "text-[#0D278D] border-[#0D278D]/30 group-hover:border-[#0D278D] group-hover:bg-blue-50/50",
+    titleColor: "text-[#0D278D]",
+    desc: "Tahapan final berupa rilis pengumuman akhir kelulusan yang mana pelamar dapat melihat hasil akhir penetapan lolos atau tidaknya lamaran."
+  }
 ];
 
 const scrollRevealVariants = {
@@ -55,26 +87,11 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.04, 
+      staggerChildren: 0.04,
       delayChildren: 0.05,
     }
   }
 };
-
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.85, y: 20 },
-  visible: { 
-    opacity: 1, 
-    scale: 1, 
-    y: 0,
-    transition: { 
-      type: "spring",
-      stiffness: 100, 
-      damping: 15,
-      duration: 0.4
-    }
-  }
-} as const;
 
 const itemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -90,6 +107,20 @@ export const BerandaLogin: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start center", "end center"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 20,
+    restDelta: 0.001
+  });
+
+  const lineHeight = useTransform(smoothProgress, [0, 1], ["0%", "100%"]);
 
   useEffect(() => {
     fetchLatestJobs();
@@ -154,14 +185,6 @@ export const BerandaLogin: React.FC = () => {
     return deadline.toLocaleDateString("id-ID", optionsWithYear);
   };
 
-  const handleActionPendaftaran = (job?: Job) => {
-    if (job?.id) {
-      navigate(`/detail-lowongan/${job.id}`);
-    } else {
-      navigate("/lowongan");
-    }
-  };
-
   return (
     <div className="bg-white min-h-screen pt-20 overflow-x-hidden font-['Poppins']">
 
@@ -207,7 +230,7 @@ export const BerandaLogin: React.FC = () => {
                 onClick={() => document.getElementById("tahapan")?.scrollIntoView({ behavior: "smooth" })}
                 className="bg-white/5 border border-white/20 text-white px-8 py-3.5 sm:py-4 rounded-2xl font-bold hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all duration-300 backdrop-blur-sm shadow-lg w-full sm:w-auto"
               >
-                Panduan Pendaftaran
+                Panduan Alur Rekrutmen
               </button>
             </div>
           </motion.div>
@@ -216,7 +239,7 @@ export const BerandaLogin: React.FC = () => {
 
       <motion.section
         id="lowongan"
-        className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20"
+        className="py-16 md:py-24 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 relative z-20"
         variants={scrollRevealVariants}
         initial="hidden"
         whileInView="visible"
@@ -227,10 +250,10 @@ export const BerandaLogin: React.FC = () => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-2">Lowongan Pilihan</h2>
             <p className="text-gray-500 text-sm md:text-base">Temukan posisi yang sesuai dengan keahlian dan kompetensi Anda</p>
           </div>
-          
+
           <div className="flex items-center gap-4 self-end w-full md:w-auto justify-end" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-center shrink-0">
-              <button 
+              <button
                 type="button"
                 onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
                 className="w-12 h-12 rounded-full bg-transparent hover:bg-blue-50/40 text-[#0D278D] flex items-center justify-center transition-all duration-300 border-0 outline-none cursor-pointer focus:outline-none relative group select-none"
@@ -239,13 +262,13 @@ export const BerandaLogin: React.FC = () => {
                 <motion.div
                   key={`ring-${viewMode}`}
                   initial={{ rotate: 0, opacity: 0, scale: 0.8 }}
-                  animate={{ 
-                    rotate: 360, 
-                    opacity: [0, 1, 1, 0], 
+                  animate={{
+                    rotate: 360,
+                    opacity: [0, 1, 1, 0],
                     scale: [0.8, 1.05, 1]
                   }}
-                  transition={{ 
-                    duration: 0.55, 
+                  transition={{
+                    duration: 0.55,
                     ease: "easeInOut",
                     times: [0, 0.2, 0.8, 1]
                   }}
@@ -254,7 +277,7 @@ export const BerandaLogin: React.FC = () => {
                   <RotateCw size={40} className="stroke-[1.0]" />
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                   animate={{ rotate: viewMode === "grid" ? 0 : 180 }}
                   transition={{ type: "spring", stiffness: 130, damping: 13 }}
                   className="relative z-10 flex items-center justify-center text-[#0D278D] group-hover:scale-105 transition-transform duration-300"
@@ -303,16 +326,16 @@ export const BerandaLogin: React.FC = () => {
                 exit={{ opacity: 0, transition: { duration: 0.25 } }}
                 className="text-center py-24 flex flex-col items-center justify-center select-none"
               >
-                <div 
+                <div
                   className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
                   style={{
                     maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
                     WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
                   }}
                 >
-                  <svg 
-                    className="absolute w-[200%] h-full left-0" 
-                    viewBox="0 0 200 40" 
+                  <svg
+                    className="absolute w-[200%] h-full left-0"
+                    viewBox="0 0 200 40"
                     preserveAspectRatio="none"
                   >
                     <defs>
@@ -327,11 +350,11 @@ export const BerandaLogin: React.FC = () => {
                       d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
                       fill="none"
                       stroke="url(#riverGradient)"
-                      strokeWidth="7" 
+                      strokeWidth="7"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       initial={{ x: 0 }}
-                      animate={{ x: -100 }} 
+                      animate={{ x: -100 }}
                       transition={{
                         duration: 4.5,
                         ease: "linear",
@@ -354,8 +377,8 @@ export const BerandaLogin: React.FC = () => {
                 <p className="text-gray-500 text-sm font-medium">Belum ada lowongan aktif saat ini.</p>
               </motion.div>
             ) : viewMode === "grid" ? (
-   
-              <motion.div 
+
+              <motion.div
                 key="grid-layout"
                 variants={containerVariants}
                 initial="hidden"
@@ -367,19 +390,18 @@ export const BerandaLogin: React.FC = () => {
                   const status = getStatusJob(job.start_date, job.deadline);
                   const isComingSoon = status === "akan_dibuka";
                   const isClosed = status === "sudah_tutup";
-                  
+
                   return (
-                    <motion.div 
-                      key={job.id} 
-                      variants={itemVariants} 
-                      whileHover={{ y: -8 }} 
-                      className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border bg-white transition-all duration-300 flex flex-col justify-between group ${
-                        isClosed 
-                          ? "opacity-60 bg-gray-50/30 border-gray-200 hover:border-gray-400 hover:shadow-lg" 
-                          : isComingSoon 
-                            ? "opacity-95 border-[#FEB700] hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]" 
+                    <motion.div
+                      key={job.id}
+                      variants={itemVariants}
+                      whileHover={{ y: -8 }}
+                      className={`p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border bg-white transition-all duration-300 flex flex-col justify-between group ${isClosed
+                          ? "opacity-60 bg-gray-50/30 border-gray-200 hover:border-gray-400 hover:shadow-lg"
+                          : isComingSoon
+                            ? "opacity-95 border-[#FEB700] hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.25)]"
                             : "border-gray-100 hover:border-[#FEB700] hover:shadow-[0_20px_50px_-20px_rgba(254,183,0,0.3)]"
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="flex justify-between items-center mb-6 gap-2">
@@ -389,18 +411,35 @@ export const BerandaLogin: React.FC = () => {
                             <span>{formatDeadline(job.deadline, job.start_date)}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-[#FEB700]" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
-                          <span className={`text-xs font-semibold uppercase tracking-wider ${
-                            isClosed 
-                              ? "text-gray-400" 
-                              : job.category === "konsultan_individu" 
-                                ? "text-[#FEB700]" 
-                                : "text-[#0D278D]"
-                          }`}>
-                            {getCategoryDisplay(job.category)}
-                          </span>
+
+                        {/* 🚀 MODIFIKASI GRID: Wrapper Flex untuk Kategori & Kuota */}
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          <div className="flex items-center gap-1.5">
+                            <Briefcase size={16} className={isClosed ? "text-gray-400" : isComingSoon ? "text-[#FEB700]" : job.category === "konsultan_individu" ? "text-[#FEB700]" : "text-[#0D278D]"} />
+                            <span className={`text-xs font-semibold uppercase tracking-wider ${isClosed
+                                ? "text-gray-400"
+                                : job.category === "konsultan_individu"
+                                  ? "text-[#FEB700]"
+                                  : "text-[#0D278D]"
+                              }`}>
+                              {getCategoryDisplay(job.category)}
+                            </span>
+                          </div>
+
+                          {/* Render Kuota Badge */}
+                          {job.kuota && Number(job.kuota) > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-[#0D278D] border border-blue-100">
+                              <Users size={12} />
+                              Kuota: {job.kuota} Orang
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                              <Users size={12} />
+                              Kuota: Terbuka
+                            </span>
+                          )}
                         </div>
+
                         <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 transition-colors leading-tight ${isClosed ? "text-gray-400 line-through group-hover:text-gray-600" : "text-[#0D278D] group-hover:text-[#FEB700]"}`}>{job.title}</h3>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6 sm:mb-8 line-clamp-3">{job.description}</p>
                       </div>
@@ -409,17 +448,16 @@ export const BerandaLogin: React.FC = () => {
                           <GraduationCap size={18} className="text-gray-400 mr-1 shrink-0" />
                           <span className="w-auto px-2.5 sm:px-3 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-[#0D278D] truncate">{job.qualification}</span>
                         </div>
-                        
-                        <button 
+
+                        <button
                           onClick={() => navigate(`/detail-lowongan/${job.id}`)}
                           disabled={isClosed}
-                          className={`group px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm flex items-center shrink-0 border gap-1.5 cursor-pointer ${
-                            isClosed 
-                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
-                              : isComingSoon 
-                                ? "bg-[#FEB700] border-[#FEB700] text-white hover:bg-[#FEB700]/80" 
+                          className={`group px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm flex items-center shrink-0 border gap-1.5 cursor-pointer ${isClosed
+                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200"
+                              : isComingSoon
+                                ? "bg-[#FEB700] border-[#FEB700] text-white hover:bg-[#FEB700]/80"
                                 : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-                          }`}
+                            }`}
                         >
                           <span>{isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}</span>
                           {!isClosed && <ChevronRight size={18} className={`transition-all duration-300 ${isComingSoon ? "opacity-100 ml-1" : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-4"}`} />}
@@ -430,7 +468,7 @@ export const BerandaLogin: React.FC = () => {
                 })}
               </motion.div>
             ) : (
-    
+
               <motion.div
                 key="table-layout"
                 variants={containerVariants}
@@ -440,18 +478,21 @@ export const BerandaLogin: React.FC = () => {
                 className="w-full relative z-10 overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(13,39,141,0.02)]"
               >
                 <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-separate table-fixed min-w-[1150px]">
+                  {/* 🚀 MODIFIKASI TABEL: Menyesuaikan min-w ke 1250px */}
+                  <table className="w-full text-left border-separate table-fixed min-w-[1250px]">
                     <thead>
                       <tr className="bg-white text-[#0D278D] text-[11px] font-semibold uppercase tracking-[0.05em] select-none">
-                        <th className="py-5 px-8 w-[36%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
-                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Jenis Kategori</th>
-                        <th className="py-5 px-4 w-[20%] font-extrabold text-center">Periode Pendaftaran</th>
-                        <th className="py-5 px-4 w-[15%] font-extrabold text-center">Kualifikasi</th>
-                        <th className="py-5 px-4 w-[16%] font-extrabold text-center">Status</th>
-                        <th className="py-5 pr-8 pl-2 w-[160px]" />
+                        {/* 🚀 Penyesuaian Rasio Lebar Th Kolom */}
+                        <th className="py-5 px-6 w-[30%] font-extrabold text-[#0D278D] border-l-[5px] border-l-[#0D278D] text-center">Formasi Lowongan</th>
+                        <th className="py-5 px-4 w-[14%] font-extrabold text-center">Jenis Kategori</th>
+                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Kuota</th> {/* 🚀 Tambah Th Kuota */}
+                        <th className="py-5 px-4 w-[18%] font-extrabold text-center">Periode Pendaftaran</th>
+                        <th className="py-5 px-4 w-[14%] font-extrabold text-center">Kualifikasi</th>
+                        <th className="py-5 px-4 w-[12%] font-extrabold text-center">Status</th>
+                        <th className="py-5 pr-6 pl-2 w-[150px]" />
                       </tr>
                     </thead>
-                    <motion.tbody 
+                    <motion.tbody
                       variants={containerVariants}
                       className="text-gray-700 text-sm font-medium"
                     >
@@ -461,20 +502,17 @@ export const BerandaLogin: React.FC = () => {
                         const isClosed = status === "sudah_tutup";
 
                         return (
-                          <motion.tr 
+                          <motion.tr
                             key={job.id}
                             variants={itemVariants}
-                            className={`transition-colors duration-200 group even:bg-gray-50/20 ${
-                              isClosed ? "opacity-60 bg-gray-50/10" : "hover:bg-[#0D278D]/[0.015]"
-                            }`}
+                            className={`transition-colors duration-200 group even:bg-gray-50/20 ${isClosed ? "opacity-60 bg-gray-50/10" : "hover:bg-[#0D278D]/[0.015]"
+                              }`}
                           >
-                            <td className={`py-5 px-8 align-middle border-l-[5px] transition-all duration-300 text-center ${
-                              isClosed ? "border-l-gray-300" : isComingSoon ? "border-l-amber-500" : "border-l-[#0D278D]"
-                            }`}>
+                            <td className={`py-5 px-6 align-middle border-l-[5px] transition-all duration-300 text-center ${isClosed ? "border-l-gray-300" : isComingSoon ? "border-l-amber-500" : "border-l-[#0D278D]"
+                              }`}>
                               <div className="max-w-full whitespace-normal break-words flex justify-center w-full">
-                                <h4 className={`text-[14px] font-bold tracking-tight transition-colors duration-200 leading-relaxed text-center ${
-                                  isClosed ? "text-gray-400 line-through" : "text-gray-900 group-hover:text-[#0D278D]"
-                                }`}>
+                                <h4 className={`text-[14px] font-bold tracking-tight transition-colors duration-200 leading-relaxed text-center ${isClosed ? "text-gray-400 line-through" : "text-gray-900 group-hover:text-[#0D278D]"
+                                  }`}>
                                   {job.title}
                                 </h4>
                               </div>
@@ -484,6 +522,20 @@ export const BerandaLogin: React.FC = () => {
                                 {getCategoryDisplay(job.category)}
                               </span>
                             </td>
+
+                            {/* 🚀 DATA KUOTA TABEL */}
+                            <td className="py-5 px-4 align-middle text-center">
+                              {job.kuota && Number(job.kuota) > 0 ? (
+                                <span className="text-gray-900 text-xs font-bold bg-blue-50/80 px-2.5 py-1 rounded-md border border-blue-100 inline-flex items-center gap-1">
+                                  {job.kuota} Orang
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs font-normal">
+                                  Tidak dibatasi
+                                </span>
+                              )}
+                            </td>
+
                             <td className="py-5 px-4 align-middle text-center">
                               <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold whitespace-nowrap text-center w-full">
                                 <Calendar size={13} className="text-gray-500 shrink-0" />
@@ -500,30 +552,28 @@ export const BerandaLogin: React.FC = () => {
                             <td className="py-5 px-4 align-middle text-center">
                               {renderStatusBadge(status)}
                             </td>
-                            <td className="py-5 pr-8 pl-2 align-middle text-right w-[160px]">
+                            <td className="py-5 pr-6 pl-2 align-middle text-right w-[150px]">
                               <div className="flex justify-end items-center w-full">
-                                <button 
+                                <button
                                   onClick={() => navigate(`/detail-lowongan/${job.id}`)}
                                   disabled={isClosed}
-                                  className={`group px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[135px] ${
-                                    isClosed 
-                                      ? "bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200" 
-                                      : isComingSoon 
-                                        ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
+                                  className={`group px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm flex items-center justify-center border cursor-pointer outline-none select-none min-w-[135px] ${isClosed
+                                      ? "bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed shadow-none hover:bg-gray-200"
+                                      : isComingSoon
+                                        ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
                                         : "bg-transparent border-[#0D278D] text-[#0D278D] hover:bg-[#0D278D] hover:text-white"
-                                  }`}
+                                    }`}
                                 >
                                   <span className="whitespace-nowrap inline-block text-center">
                                     {isClosed ? "Ditutup" : isComingSoon ? "Lihat Detail" : "Lamar"}
                                   </span>
                                   {!isClosed && (
-                                    <ChevronRight 
-                                      size={15} 
-                                      className={`transition-all duration-300 transform shrink-0 ${
-                                        isComingSoon 
-                                          ? "opacity-100 ml-1" 
+                                    <ChevronRight
+                                      size={15}
+                                      className={`transition-all duration-300 transform shrink-0 ${isComingSoon
+                                          ? "opacity-100 ml-1"
                                           : "opacity-0 -translate-x-2 w-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:w-3.5 group-hover:ml-1"
-                                      }`} 
+                                        }`}
                                     />
                                   )}
                                 </button>
@@ -541,133 +591,88 @@ export const BerandaLogin: React.FC = () => {
         </div>
       </motion.section>
 
-      <motion.section 
-        id="tahapan" 
-        className="py-24 bg-white relative overflow-hidden border-y border-gray-100 font-['Poppins']"
+      {/* SECTION TAHAPAN (Tetap utuh) */}
+      <motion.section
+        id="tahapan"
+        ref={containerRef}
         variants={scrollRevealVariants}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-120px" }}
+        viewport={{ once: true, margin: "-100px" }}
+        className="py-32 bg-gradient-to-b from-white to-gray-50/30 border-t border-gray-100 font-['Poppins'] relative select-none"
       >
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-40 -right-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50" />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-20">
-            <span className="text-[11px] font-bold tracking-[0.05em] uppercase text-[#0D278D] bg-blue-50 px-3.5 py-1.5 rounded-xl mb-3.5 inline-block select-none border border-blue-100/50">
-              Alur Rekrutmen BBWSMS
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0D278D] mb-4 tracking-tight">
-              Tahapan Seleksi Resmi
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 relative">
+          <div className="text-center max-w-4xl mx-auto mb-36 relative select-none">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50/50 border border-blue-100/60 mb-5 backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0D278D] animate-pulse" />
+              <span className="text-[10px] font-semibold tracking-[0.01em] uppercase text-[#0D278D]">Alur Penerimaan</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0D278D] tracking-tight leading-[1.15] max-w-2xl mx-auto">
+              Tahapan dan Alur Sistem {" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB700] to-[#ffe066]">Rekrutmen</span>
             </h2>
-            <div className="w-12 h-[3px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mx-auto mb-4" />
-            <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
-              Proses rekrutmen dilaksanakan secara transparan, akuntabel, dan bebas biaya melalui sistem penyeleksian berkas digital terintegrasi.
+            <p className="text-gray-400 text-xs sm:text-sm font-medium mt-4 max-w-xl mx-auto leading-relaxed">
+              Ikuti langkah-langkah terstruktur di bawah ini untuk memulai perjalanan karir profesional Anda bersama kami.
             </p>
+            <div className="flex items-center justify-center gap-1.5 mt-6">
+              <div className="w-2 h-2 rounded-full bg-[#FEB700]" />
+              <div className="w-12 h-[2px] bg-gradient-to-r from-[#FEB700] to-transparent rounded-full" />
+            </div>
           </div>
 
-          <div className="relative w-full px-4 md:px-10">
-            <div className="hidden lg:block absolute inset-x-[10%] top-14 h-[5px] z-0 pointer-events-none">
-              <motion.div 
-                initial={{ clipPath: "inset(0 100% 0 0)" }}
-                whileInView={{ clipPath: "inset(0 0% 0 0)" }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 1.5, ease: "linear" }}
-                className="w-full h-full rounded-full relative overflow-hidden"
-              >
-                <motion.div
-                  animate={{ backgroundPosition: ["0% 50%", "200% 50%"] }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  style={{ backgroundSize: "200% 100%" }}
-                  className="w-full h-full bg-gradient-to-r from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
-                />
-              </motion.div>
+          <div className="relative w-full">
+            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-[5.5px] -translate-x-1/2 z-0">
+              <div className="absolute inset-0 bg-gray-200 rounded-full" />
+              <motion.div className="absolute top-0 left-0 right-0 bg-[#0D278D] origin-top rounded-full" style={{ height: lineHeight }} />
             </div>
-
-            <div className="block lg:hidden absolute top-6 bottom-6 left-10 md:left-12 w-[4px] z-0 pointer-events-none">
-              <motion.div
-                initial={{ clipPath: "inset(0 0 100% 0)" }}
-                whileInView={{ clipPath: "inset(0 0 0% 0)" }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 1.5, ease: "linear" }}
-                className="w-full h-full rounded-full relative overflow-hidden"
-              >
-                <motion.div
-                  animate={{ backgroundPosition: ["50% 0%", "50% 200%"] }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  style={{ backgroundSize: "100% 200%" }}
-                  className="w-full h-full bg-gradient-to-b from-[#0D278D] via-[#3B82F6] via-[#2563EB] to-[#0D278D] rounded-full"
-                />
-              </motion.div>
-            </div>
-
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              className="flex flex-col lg:grid lg:grid-cols-5 gap-y-12 lg:gap-x-4 relative z-10 w-full"
-            >
-              {tahapanSeleksi
-                .filter((step) => step.title !== "Pengumuman Administrasi")
-                .map((step) => {
-                  return (
-                    <div key={step.id} className="w-full relative">
-                      <motion.div 
-                        variants={cardVariants} 
-                        whileHover={{ y: -8 }}
-                        className="flex flex-row lg:flex-col items-center justify-start lg:text-center group p-3 bg-transparent rounded-2xl transition-all duration-300 select-none"
-                      >
-                        <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-[0_10px_30px_-15px_rgba(13,39,141,0.08)] group-hover:border-[#FEB700] group-hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.2)] transition-all duration-300 shrink-0">
-                          <div className="w-[66px] h-[66px] sm:w-[78px] sm:h-[78px] rounded-full bg-white border border-dashed border-gray-200 flex items-center justify-center group-hover:border-[#FEB700] transition-colors">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-inner bg-[#0D278D] text-white group-hover:bg-[#FEB700] transition-colors duration-300">
-                              <step.icon size={20} strokeWidth={2.2} />
-                            </div>
-                          </div>
-                          <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full font-bold text-[11px] flex items-center justify-center border-2 border-white bg-[#0D278D] text-white group-hover:bg-[#FEB700] font-mono shadow-sm transition-all duration-300">
-                            {tahapanSeleksi.filter((s) => s.title !== "Pengumuman Administrasi").indexOf(step) + 1}
-                          </div>
-                        </div>
-
-                        <div className="text-left lg:text-center pl-6 lg:pl-0 lg:mt-5 flex-1 min-w-0">
-                          <h3 className="text-sm sm:text-base font-semibold text-[#0D278D] group-hover:text-[#FEB700] transition-colors duration-200 leading-tight tracking-tight truncate max-w-full">
-                            {step.title}
-                          </h3>
-                          <div className="w-4 h-[2px] bg-gradient-to-r from-[#0D278D] to-[#3B82F6] rounded-full mt-2 lg:mx-auto transition-all duration-300 group-hover:w-10 opacity-0 group-hover:opacity-100" />
-                        </div>
-                      </motion.div>
-                    </div>
-                  );
-                })}
-            </motion.div>
-          </div>
-        </div>
-      </motion.section>
-
-      <motion.section 
-        className="py-16 md:py-24 px-4 relative"
-        variants={scrollRevealVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-120px" }}
-      >
-        <div className="max-w-5xl mx-auto bg-[#0D278D] rounded-[2rem] p-8 sm:p-12 md:p-16 text-center relative overflow-hidden shadow-2xl border border-white/10">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400 rounded-full blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/3" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400 rounded-full blur-[80px] opacity-20 translate-y-1/3 -translate-x-1/3" />
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-6 sm:mb-8"><span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" /><span className="text-white text-xs font-bold tracking-widest uppercase">Pendaftaran Sedang Dibuka</span></div>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 sm:mb-6 tracking-tight">Siap Berkontribusi bagi <span className="text-[#3B82F6]">Negeri?</span></h2>
-            <p className="text-blue-100/80 text-sm sm:text-lg mb-8 sm:mb-12 max-w-2xl mx-auto font-light leading-relaxed">Daerah aliran sungai dan bendungan nasional menanti bakti Anda. Daftarkan diri Anda sekarang bersama kementerian PUPR.</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto px-4 sm:px-0">
-              <button onClick={() => handleActionPendaftaran()} className="group bg-gradient-to-r from-[#0D278D] to-[#3B82F6] text-white px-8 md:px-12 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-all shadow-md"><span>Mulai Pendaftaran</span><ArrowRight size={20} className="transform group-hover:translate-x-1.5 transition-transform" /></button>
-              <button className="group bg-white/5 border border-white/10 text-white px-8 md:px-12 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-3 backdrop-blur-md hover:bg-white/10 transition-all"><MessageCircle size={20} className="text-blue-300 group-hover:-translate-y-1 transition-all" /><span>Hubungi Kami</span></button>
+            <div className="space-y-32 relative z-10 w-full">
+              {alurRekrutmenSempurna.map((alur, index) => {
+                const isEven = index % 2 === 0;
+                const stepStart = index / (alurRekrutmenSempurna.length - 0.7);
+                return <ScrollStepItem key={alur.id} alur={alur} isEven={isEven} smoothProgress={smoothProgress} stepStart={stepStart} />;
+              })}
             </div>
           </div>
         </div>
       </motion.section>
 
+    </div>
+  );
+};
+
+interface StepItemProps {
+  alur: any;
+  isEven: boolean;
+  smoothProgress: any;
+  stepStart: number;
+}
+
+const ScrollStepItem: React.FC<StepItemProps> = ({ alur, isEven, smoothProgress, stepStart }) => {
+  const adjustedStepStart = alur.id === 5 ? stepStart - 0.08 : stepStart;
+  const pinBg = useTransform(smoothProgress, [adjustedStepStart - 0.03, adjustedStepStart + 0.03], ["#d1d5db", "#0D278D"]);
+  const numberBg = useTransform(smoothProgress, [adjustedStepStart - 0.02, adjustedStepStart + 0.02], ["#e5e7eb", "#0D278D"]);
+  const numberText = useTransform(smoothProgress, [adjustedStepStart - 0.04, adjustedStepStart + 0.04], ["#9ca3af", "#ffffff"]);
+  const contentOpacity = useTransform(smoothProgress, [adjustedStepStart - 0.08, adjustedStepStart + 0.08], [0.2, 1]);
+  const iconColor = useTransform(smoothProgress, [adjustedStepStart - 0.06, adjustedStepStart + 0.04], ["rgba(156, 163, 175, 0.4)", "#0D278D"]);
+
+  return (
+    <div className={`flex flex-col md:flex-row items-start md:items-center w-full relative ${isEven ? "md:flex-row-reverse" : ""}`}>
+      <div className="w-full md:w-1/2 pl-6 md:pl-20 md:px-20 flex flex-col justify-center">
+        <motion.div style={{ opacity: contentOpacity }} className={`space-y-3 max-w-md ${isEven ? "md:text-right md:ml-auto" : "md:text-left md:mr-auto"}`}>
+          <motion.div style={{ backgroundColor: numberBg, color: numberText }} className={`w-9 h-9 rounded-full font-mono text-md font-bold flex items-center justify-center shadow-md border-2 border-white select-none ${isEven ? "md:ml-auto" : "md:mr-auto"}`}>{alur.id}</motion.div>
+          <h4 className="text-2xl font-extrabold text-[#0D278D] tracking-tight">{alur.title}</h4>
+          <p className="text-gray-500 text-s sm:text-[14px] leading-relaxed font-normal">{" "}{alur.desc}</p>
+        </motion.div>
+      </div>
+      <div className={`w-full md:w-1/2 pl-6 flex items-center justify-center mt-6 md:mt-0 ${isEven ? "md:pr-2" : "md:pl-2"}`}>
+        <motion.div style={{ opacity: contentOpacity }} whileHover={{ scale: 1.05, rotate: isEven ? 5 : -5 }} className="w-32 h-32 rounded-[2rem] border bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.02)] border-[#0D278D] flex items-center justify-center relative group">
+          <div className="absolute inset-2 rounded-[1.5rem] bg-[#0D278D]/[0.02] border border-[#0D278D]/5" />
+          <motion.div style={{ color: iconColor }} className="flex items-center justify-center relative z-10 transition-transform duration-300 group-hover:scale-110"><alur.icon size={36} className="stroke-[1.6]" /></motion.div>
+        </motion.div>
+      </div>
+      <div className="absolute left-4 md:left-1/2 top-4 md:top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+        <motion.div style={{ backgroundColor: pinBg }} className="w-5 h-5 rounded-full shadow-md pointer-events-none" />
+      </div>
     </div>
   );
 };

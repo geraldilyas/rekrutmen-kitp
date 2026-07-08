@@ -174,7 +174,43 @@ class JobController extends Controller
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',
+            'stages'                 => 'nullable|array|min:1',
+            'stages.*.id'            => 'nullable|integer|exists:job_stages,id',
+            'stages.*.name'          => 'required_with:stages|string|max:255',
+            'stages.*.stage_order'   => 'required_with:stages|integer|min:1',
+            'stages.*.start_date'    => 'nullable|date',
+            'stages.*.end_date'      => 'nullable|date',
+            'stages.*.grading_end_date' => 'nullable|date|after_or_equal:stages.*.end_date',
+            'stages.*.weight'        => 'required_with:stages|numeric|min:0|max:100',
+            'stages.*.test_link'     => 'nullable|max:255',
+            'stages.*.documents'                 => 'nullable|array',
+            'stages.*.documents.*.form_field_id' => 'required_with:stages.*.documents|exists:form_fields,id',
+            'stages.*.documents.*.weight'        => 'nullable|integer|min:0|max:100',
         ]);
+
+        if (!empty($validated['stages'])) {
+            $totalWeight = collect($validated['stages'])->sum('weight');
+            if ($totalWeight != 100) {
+                return response()->json([
+                    'message' => 'Total bobot semua tahapan harus 100%',
+                    'current_total' => $totalWeight
+                ], 422);
+            }
+
+            foreach ($validated['stages'] as $stage) {
+                if (empty($stage['documents'])) {
+                    continue;
+                }
+
+                $docWeight = collect($stage['documents'])->sum('weight');
+                if ($docWeight != $stage['weight']) {
+                    return response()->json([
+                        'message' => "Total bobot dokumen pada tahapan \"{$stage['name']}\" harus sama dengan bobot tahapan ({$stage['weight']}%)",
+                        'current_total' => $docWeight
+                    ], 422);
+                }
+            }
+        }
 
         $job = $this->jobService->updateJob($job, $validated);
 

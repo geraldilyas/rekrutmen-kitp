@@ -24,10 +24,16 @@ interface Props {
   availablePenyeleksi: User[];
 }
 
-// 🚀 HELPER SAKTI: Memotong format string ISO (Timestamp) database menjadi YYYY-MM-DD murni
+// 🚀 HELPER: Normalisasi berbagai format tanggal dari backend ("2026-06-01",
+// "2026-06-01 09:00:00", "2026-06-01T09:00:00.000000Z", dst) menjadi format
+// yang dibutuhkan input type="datetime-local": "YYYY-MM-DDTHH:mm"
 const formatForInputDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "";
-  return dateStr.split("T")[0]; // Mengambil 10 karakter pertama: "2026-06-01"
+  const normalized = dateStr.replace(" ", "T");
+  const [datePart, timePart] = normalized.split("T");
+  if (!datePart) return "";
+  if (!timePart) return `${datePart}T00:00`;
+  return `${datePart}T${timePart.slice(0, 5)}`;
 };
 
 const emptyForm: JobFormData = {
@@ -132,48 +138,46 @@ const JobFormModal: React.FC<Props> = ({
     }
   };
 
-  // 🚀 FIXED LOGIC: Mengunci sinkronisasi data dari backend/initialData maupun reset ke emptyForm
+  // 🚀 FIXED LOGIC: Selalu sinkronkan form dari initialData saat modal dibuka
+  // atau saat job yang diedit berganti. Guard lama (`if (prev.title) return prev`)
+  // dibuang karena bikin form edit menampilkan sisa state lama (misalnya dari
+  // sesi "Tambah Lowongan" sebelumnya) alih-alih data asli job yang sedang diedit.
   useEffect(() => {
     if (!isOpen) return;
 
     if (mode === "edit" && initialData) {
-      setForm((prev) => {
-        // Jika sudah terisi, jangan overwrite demi kenyamanan ketik
-        if (prev.title) return prev;
-
-        return {
-          title: initialData.title || "",
-          category: initialData.category || "tenaga_pendukung",
-          description: initialData.description || "",
-          qualification: initialData.qualification || "",
-          requirements: initialData.requirements || "",
-          duration: initialData.duration || "",
-          location: initialData.location || "",
-          unit_kerja: initialData.unit_kerja || "",
-          recruiter_name: initialData.recruiter_name || "",
-          penyeleksi_ids: (initialData as any).penyeleksi_ids || [],
-          start_date: formatForInputDate(initialData.start_date),
-          end_date: formatForInputDate(initialData.end_date),
-          kuota: (initialData as any).kuota ?? "", // 🚀 FIX FRONTEND: Ambil data kuota lama dari database agar muncul di input form edit
-          form_fields: (initialData as any).form_fields || ["CV", "Ijazah"],
-          selection_stages: ((initialData as any).stages || []).map((stage: any) => ({
-            id: String(stage.id),
-            name: stage.name,
-            description: stage.description || "",
-            order: stage.stage_order,
-            stage_order: stage.stage_order,
-            start_date: formatForInputDate(stage.start_date),
-            end_date: formatForInputDate(stage.end_date),
-            grading_end_date: formatForInputDate(stage.grading_end_date),
-            weight: stage.weight,
-            test_link: stage.test_link || "",
-            documents: (stage.documents || []).map((doc: any) => ({
-              form_field_id: doc.id,
-              label: doc.label,
-              weight: doc.pivot?.weight ?? 0,
-            })),
+      setForm({
+        title: initialData.title || "",
+        category: initialData.category || "tenaga_pendukung",
+        description: initialData.description || "",
+        qualification: initialData.qualification || "",
+        requirements: initialData.requirements || "",
+        duration: initialData.duration || "",
+        location: initialData.location || "",
+        unit_kerja: initialData.unit_kerja || "",
+        recruiter_name: initialData.recruiter_name || "",
+        penyeleksi_ids: (initialData as any).penyeleksi_ids || [],
+        start_date: formatForInputDate(initialData.start_date),
+        end_date: formatForInputDate(initialData.end_date),
+        kuota: (initialData as any).kuota ?? "", // 🚀 FIX FRONTEND: Ambil data kuota lama dari database agar muncul di input form edit
+        form_fields: (initialData as any).form_fields || ["CV", "Ijazah"],
+        selection_stages: ((initialData as any).selection_stages || []).map((stage: any) => ({
+          id: String(stage.id),
+          name: stage.name,
+          description: stage.description || "",
+          order: stage.order ?? stage.stage_order,
+          stage_order: stage.order ?? stage.stage_order,
+          start_date: formatForInputDate(stage.start_date),
+          end_date: formatForInputDate(stage.end_date),
+          grading_end_date: formatForInputDate(stage.grading_end_date),
+          weight: stage.weight,
+          test_link: stage.test_link || "",
+          documents: (stage.documents || []).map((doc: any) => ({
+            form_field_id: doc.form_field_id ?? doc.id,
+            label: doc.label,
+            weight: doc.weight ?? doc.pivot?.weight ?? 0,
           })),
-        };
+        })),
       });
     } else {
       setForm(emptyForm);
@@ -460,26 +464,29 @@ const JobFormModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Periode Lowongan Utama */}
+{/* Periode Lowongan Utama (tanggal + jam buka/tutup) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Tanggal Mulai</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Tanggal &amp; Jam Buka</label>
               <input
-                type="date"
+                type="datetime-local"
                 value={form.start_date}
                 onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 className={inputClass("start_date")}
               />
+              <p className="text-[11px] text-gray-400 mt-1">Lowongan otomatis terbuka pada tanggal &amp; jam ini.</p>
               {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Tanggal Selesai</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Tanggal &amp; Jam Tutup</label>
               <input
-                type="date"
+                type="datetime-local"
                 value={form.end_date}
+                min={form.start_date || undefined}
                 onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                 className={inputClass("end_date")}
               />
+              <p className="text-[11px] text-gray-400 mt-1">Batas akhir pendaftaran (deadline) mengikuti tanggal &amp; jam ini.</p>
               {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
             </div>
           </div>
@@ -700,25 +707,35 @@ const JobFormModal: React.FC<Props> = ({
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Berakhir</label>
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Mulai</label>
                             <input
-                              type="date"
+                              type="datetime-local"
+                              value={stage.start_date || ""}
+                              onChange={(e) => updateStage(stage.id, "start_date", e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Berakhir</label>
+                            <input
+                              type="datetime-local"
                               value={stage.end_date || ""}
+                              min={stage.start_date || undefined}
                               onChange={(e) => updateStage(stage.id, "end_date", e.target.value)}
                               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Berakhir Penilaian</label>
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Berakhir Penilaian</label>
                             <input
-                              type="date"
+                              type="datetime-local"
                               value={stage.grading_end_date || ""}
                               min={stage.end_date || undefined}
                               onChange={(e) => updateStage(stage.id, "grading_end_date", e.target.value)}
                               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
                             />
                             <p className="text-[10px] text-gray-400 mt-1">
-                              Batas akhir admin dan penyeleksi memberikan nilai untuk tahapan ini. Jika kosong, maka berkahir sesuai tanggal berakhir tahapan.
+                              Batas akhir admin dan penyeleksi memberikan nilai untuk tahapan ini. Jika kosong, maka berakhir sesuai tanggal &amp; jam berakhir tahapan.
                             </p>
                           </div>
                         </div>

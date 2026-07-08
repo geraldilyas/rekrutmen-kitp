@@ -93,7 +93,7 @@ const Footer: React.FC = () => {
             <p className="text-gray-500 text-sm leading-relaxed max-w-sm pt-1">
               Direktorat Jenderal Sumber Daya Air. <br />
               Balai Besar Wilayah Sungai Mesuji Sekampung. <br />
-              Mengelola sumber daya air secara terpadu untuk kemakmuran rakyat.
+              Air Terkelola, Negeri Sejahtera.
             </p>
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors leading-relaxed">

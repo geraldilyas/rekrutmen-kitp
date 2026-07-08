@@ -127,7 +127,53 @@ class JobService
                 $job->formFields()->sync($data['form_fields']);
             }
 
-            return $job->load('stages');
+            // 🚀 FIX: Sinkronkan tahapan seleksi saat update lowongan.
+            // Sebelumnya method ini tidak menyentuh stages sama sekali, sehingga
+            // tahapan seleksi tidak pernah bisa diubah/ditambah/dihapus lewat form edit.
+            if (isset($data['stages'])) {
+                $existingIds = $job->stages()->pluck('id')->toArray();
+                $keepIds = [];
+
+                foreach ($data['stages'] as $stage) {
+                    $stagePayload = [
+                        'job_id'           => $job->id,
+                        'name'             => strip_tags($stage['name']),
+                        'stage_order'      => $stage['stage_order'],
+                        'start_date'       => $stage['start_date'] ?? null,
+                        'end_date'         => $stage['end_date'] ?? null,
+                        'grading_end_date' => $stage['grading_end_date'] ?? null,
+                        'weight'           => $stage['weight'],
+                        'test_link'        => $stage['test_link'] ?? null,
+                    ];
+
+                    $stageId = $stage['id'] ?? null;
+
+                    if ($stageId && in_array($stageId, $existingIds)) {
+                        $jobStage = JobStage::find($stageId);
+                        $jobStage->update($stagePayload);
+                    } else {
+                        $jobStage = JobStage::create($stagePayload);
+                    }
+
+                    $keepIds[] = $jobStage->id;
+
+                    if (!empty($stage['documents'])) {
+                        $jobStage->documents()->sync(collect($stage['documents'])->mapWithKeys(
+                            fn ($doc) => [$doc['form_field_id'] => ['weight' => $doc['weight'] ?? 0]]
+                        ));
+                    } else {
+                        $jobStage->documents()->sync([]);
+                    }
+                }
+
+                // Hapus tahapan lama yang sudah tidak ada di payload (dihapus admin di form edit)
+                $toDelete = array_diff($existingIds, $keepIds);
+                if (!empty($toDelete)) {
+                    JobStage::whereIn('id', $toDelete)->delete();
+                }
+            }
+
+            return $job->load(['stages.documents']);
         });
     }
 

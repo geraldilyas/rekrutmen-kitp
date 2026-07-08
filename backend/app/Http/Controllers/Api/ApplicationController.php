@@ -99,11 +99,12 @@ class ApplicationController extends Controller
                         'name' => $stage->stage_name ?? $stage->name,
                         'status' => $userResult ? $userResult->status : 'locked',
                         // Injeksi Nilai & Catatan ke dalam tahapan
-                        'score' => $userResult ? $userResult->score : null, // Mengambil kolom nilai/score dari stage_results
+                        'score' => $userResult ? $userResult->score : null,
                         'notes' => $userResult ? $userResult->notes : null,
+                        'start_date' => $stage->start_date,
                         'end_date' => $stage->end_date,
-                        'download_pdf_lulus' => $pdfUrl, // Link PDF otomatis aktif
-                        'total_applicants' => $totalApplicants // Menyisipkan jumlah pengaju di tiap tahapan seleksi
+                        'download_pdf_lulus' => $pdfUrl,
+                        'total_applicants' => $totalApplicants
                     ];
                 });
 

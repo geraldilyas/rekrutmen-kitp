@@ -40,11 +40,14 @@ class ReportService
 
         $applications = $query->get()->sortByDesc('calculated_final_score')->values();
 
-        return Pdf::loadView('reports.applications-pdf', [
+        // Gunakan template khusus untuk laporan seleksi akhir (combine per-tahapan + rekap akhir)
+        $view = $passedOnly ? 'reports.seleksi-akhir-pdf' : 'reports.applications-pdf';
+
+        return Pdf::loadView($view, [
             'job' => $job,
             'applications' => $applications,
             'report_title' => $title
-        ]);
+        ])->setPaper('a4', 'portrait');
     }
 
     /**

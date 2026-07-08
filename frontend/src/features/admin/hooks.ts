@@ -101,8 +101,8 @@ export function useJobsManagement() {
         ...j,
         status: determineStatus(j.start_date, j.deadline),
         totalPendaftar: j.applications_count || 0,
-        penyeleksi_names: j.stages?.map((s: any) => s.reviewer_name).filter(Boolean) || [],
-        selection_stages: j.stages?.map((s: any) => ({
+        penyeleksi_names: j.selection_stages?.map((s: any) => s.reviewer_name).filter(Boolean) || [],
+        selection_stages: j.selection_stages?.map((s: any) => ({
           id: String(s.id),
           name: s.name,
           order: s.stage_order,
@@ -163,6 +163,9 @@ export function useJobsManagement() {
     deadline: data.end_date,
     kuota: data.kuota !== undefined && data.kuota !== "" ? data.kuota : null, // 🚀 FIX MUTLAK: Tambahkan baris ini agar lolos ke Axios!
     stages: (data.selection_stages || []).map((s: any) => ({
+      // Hanya kirim id kalau ini stage yang sudah tersimpan di DB (numeric).
+      // Stage baru yang ditambah di form edit punya id client-side "s-<timestamp>".
+      ...(s.id && /^\d+$/.test(String(s.id)) ? { id: Number(s.id) } : {}),
       name: s.name,
       stage_order: s.order,
       weight: s.weight,
@@ -189,9 +192,9 @@ export function useJobsManagement() {
 
   const editJob = useCallback(async (id: number, data: any) => {
     try {
-        const payload = buildJobPayload(data);
-        const { stages, ...updatePayload } = payload;
-        await api.put(`/admin/jobs/${id}`, updatePayload);
+        // 🚀 FIX: stages tidak lagi dibuang dari payload — tahapan seleksi
+        // sekarang ikut ter-update ketika lowongan diedit.
+        await api.put(`/admin/jobs/${id}`, buildJobPayload(data));
         fetchJobs();
     } catch (err) {
         console.error("Error editing job:", err);

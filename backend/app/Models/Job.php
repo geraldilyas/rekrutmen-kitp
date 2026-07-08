@@ -57,14 +57,14 @@ class Job extends Model
     {
             return $this->hasMany(\App\Models\JobStage::class, 'job_id')->orderBy('stage_order');    }
 
-    protected function casts(): array
-    {
-        return [
-            'start_date' => 'date',
-            'end_date'   => 'date',
-            'deadline'   => 'date',
-        ];
-    }
+ protected function casts(): array
+{
+    return [
+        'start_date' => 'datetime',
+        'end_date'   => 'datetime',
+        'deadline'   => 'datetime',
+    ];
+}
 
     protected static function booted()
     {
