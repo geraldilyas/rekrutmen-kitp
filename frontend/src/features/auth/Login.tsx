@@ -32,7 +32,7 @@ export default function Login() {
     setForgotLoading(true);
     setForgotError("");
     try {
-      const res = await api.post("/auth/forgot-password", { email: forgotEmail });
+      await api.post("/auth/forgot-password", { email: forgotEmail });
       setForgotStep(2);
     } catch (err: any) {
       setForgotError(err?.response?.data?.message || "Gagal mengirim kode verifikasi.");
@@ -330,12 +330,6 @@ export default function Login() {
                   {forgotError && (
                     <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-xl">
                       <p className="text-red-600 text-[11px] font-bold leading-relaxed">{forgotError}</p>
-                    </div>
-                  )}
-
-                  {forgotSuccess && (
-                    <div className="mb-4 p-3 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl">
-                      <p className="text-emerald-600 text-[11px] font-bold leading-relaxed">{forgotSuccess}</p>
                     </div>
                   )}
 
