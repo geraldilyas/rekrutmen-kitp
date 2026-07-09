@@ -337,6 +337,12 @@ export default function Login() {
                     </div>
                   )}
 
+                  {forgotSuccess && (
+                    <div className="mb-4 p-3 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl">
+                      <p className="text-emerald-600 text-[11px] font-bold leading-relaxed">{forgotSuccess}</p>
+                    </div>
+                  )}
+
                   <form onSubmit={handleRequestOtp} className="space-y-4">
                     <div className="group/input">
                       <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
