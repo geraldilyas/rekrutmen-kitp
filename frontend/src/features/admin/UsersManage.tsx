@@ -35,7 +35,6 @@ const UsersManage: React.FC = () => {
     setCurrentPage,
     addUser,
     editUser,
-    toggleVerification,
     blacklistUser,
   } = useUsersManagement();
 
@@ -160,7 +159,6 @@ const UsersManage: React.FC = () => {
           <UsersTable
             users={users}
             onEdit={handleEdit}
-            onToggleVerification={toggleVerification}
             onBlacklist={handleBlacklist}
           />
 

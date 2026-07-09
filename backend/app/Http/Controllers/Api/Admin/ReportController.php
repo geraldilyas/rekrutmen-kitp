@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Job;
 use App\Models\Announcement;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ApplicationsExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use App\Services\ReportService;
 
 class ReportController extends Controller
@@ -33,30 +32,22 @@ class ReportController extends Controller
     }
 
     /**
-     * Export applications for a specific job as Excel.
+     * Download an editable Word (.docx) draft listing every applicant, their
+     * NIK, scores per stage, final score, and status — for the admin to edit
+     * outside the system and re-upload as the official final announcement.
      */
-    public function exportExcel(Request $request, $job_id)
-    {
-        $job = Job::findOrFail($job_id);
-        $status = $request->has('passed_only') ? 'Lulus' : null;
-        $suffix = $status ? '-lulus' : '';
-        
-        $filename = 'pelamar-' . str_replace(' ', '-', strtolower($job->title)) . '-' . date('Y-m-d') . $suffix . '.xlsx';
-
-        return Excel::download(new ApplicationsExport($job_id, $status), $filename);
-    }
-
-    /**
-     * Export applications for a specific job as PDF.
-     */
-    public function exportPdf(Request $request, $job_id)
+    public function exportFinalWordTemplate($job_id)
     {
         $job = Job::with('stages')->findOrFail($job_id);
-        $pdf = $this->reportService->generateApplicationsPdf($job, $request->has('passed_only'));
+        $phpWord = $this->reportService->generateFinalAnnouncementWord($job);
 
-        $filename = 'laporan-pelamar-' . str_replace(' ', '-', strtolower($job->title)) . '.pdf';
+        $filename = 'draf-hasil-akhir-' . str_replace(' ', '-', strtolower($job->title)) . '.docx';
+        $tempPath = tempnam(sys_get_temp_dir(), 'word') . '.docx';
 
-        return $pdf->download($filename);
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $filename)->deleteFileAfterSend(true);
     }
 
     /**
@@ -64,11 +55,25 @@ class ReportController extends Controller
      */
     public function createAnnouncement(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'job_id' => 'required|exists:jobs,id',
             'title' => 'required|string|max:255',
-            'file' => 'required|file|mimes:pdf,xlsx,xls,doc,docx|max:5120',
+            'file' => 'required|file|mimes:pdf|max:5120',
+        ], [
+            'file.required' => 'File dokumen wajib diunggah.',
+            'file.file' => 'File yang diunggah tidak valid.',
+            'file.mimes' => 'File harus berupa dokumen PDF.',
+            'file.max' => 'Ukuran file maksimal 5 MB.',
+            'title.required' => 'Judul pengumuman wajib diisi.',
+            'job_id.exists' => 'Lowongan tidak ditemukan.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
         $job = Job::with(['stages', 'announcements'])->findOrFail($request->job_id);
 
@@ -81,45 +86,12 @@ class ReportController extends Controller
     }
 
     /**
-     * Auto-generate and publish the passed participants PDF as an announcement.
-     */
-    public function publishPassedResults(Request $request, $job_id)
-    {
-        $job = Job::with(['stages', 'announcements'])->findOrFail($job_id);
-
-        try {
-            $announcement = $this->reportService->publishPassedResults($job);
-            return response()->json(['message' => 'Pengumuman hasil seleksi berhasil diterbitkan secara otomatis.', 'data' => $announcement], 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
-    }
-
-    /**
      * Get announcements for a job.
      */
     public function getAnnouncements($job_id)
     {
         $announcements = Announcement::where('job_id', $job_id)->get();
         return response()->json(['data' => $announcements]);
-    }
-
-    /**
-     * Mark selection process as completed.
-     */
-    public function completeSelection($job_id)
-    {
-        $job = Job::with('stages')->findOrFail($job_id);
-
-        try {
-            $updatedJob = $this->reportService->completeSelection($job);
-            return response()->json([
-                'message' => 'Proses seleksi berhasil dinyatakan selesai.',
-                'data' => $updatedJob
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
     }
 }
 

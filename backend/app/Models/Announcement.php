@@ -13,6 +13,7 @@ class Announcement extends Model
 
     protected $fillable = [
         'job_id',
+        'job_stage_id',
         'title',
         'file_path',
         'published_at'
@@ -25,5 +26,10 @@ class Announcement extends Model
     public function job()
     {
         return $this->belongsTo(Job::class);
+    }
+
+    public function stage()
+    {
+        return $this->belongsTo(JobStage::class, 'job_stage_id');
     }
 }

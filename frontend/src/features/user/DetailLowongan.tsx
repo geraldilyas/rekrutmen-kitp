@@ -71,6 +71,8 @@ interface Application {
   id: number;
   job_id: number;
   status: string;
+  is_editable?: boolean;
+  answers?: Array<{ form_field_id: number; answer: string }>;
 }
 
 const DetailLowongan: React.FC = () => {
@@ -83,6 +85,9 @@ const DetailLowongan: React.FC = () => {
   // Application & Form State
   const isLoggedIn = !!localStorage.getItem("token");
   const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [myApplication, setMyApplication] = useState<Application | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [lastActionWasEdit, setLastActionWasEdit] = useState(false);
   const [applyLoading, setApplyLoading] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState("");
@@ -155,7 +160,9 @@ const DetailLowongan: React.FC = () => {
             ? appsResponse.data
             : appsResponse.data.data || [];
 
-          setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
+          const matchedApp = myApps.find((a) => String(a.job_id) === jobId) || null;
+          setAlreadyApplied(!!matchedApp);
+          setMyApplication(matchedApp);
         } catch (appErr) {
           console.error("Gagal memuat status lamaran user, tetapi detail lowongan tetap ditampilkan:", appErr);
           setAlreadyApplied(false); // Default jika backend error
@@ -205,6 +212,33 @@ const DetailLowongan: React.FC = () => {
     }
   };
 
+  const startEditApplication = () => {
+    if (!myApplication) return;
+
+    const answersById: { [key: number]: string } = {};
+    (myApplication.answers || []).forEach((a) => {
+      answersById[a.form_field_id] = a.answer;
+    });
+
+    setUploadedFiles((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        const fieldId = Number(key);
+        if (answersById[fieldId] !== undefined) {
+          next[fieldId] = { ...next[fieldId], value: answersById[fieldId] };
+        }
+      });
+      return next;
+    });
+
+    setIsEditMode(true);
+    setApplyError("");
+    setShowApplyForm(true);
+    setTimeout(() => {
+      document.getElementById("dynamic-form-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+  };
+
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -227,13 +261,23 @@ const DetailLowongan: React.FC = () => {
           value: item.value.trim()
         }));
 
-      await api.post("/applications", {
-        job_id: Number(id),
-        answers: answersPayload
-      });
+      if (isEditMode && myApplication) {
+        const res = await api.put(`/applications/${myApplication.id}`, {
+          answers: answersPayload
+        });
+        setMyApplication((prev) => prev ? { ...prev, answers: res.data?.data?.answers ?? prev.answers } : prev);
+        setLastActionWasEdit(true);
+      } else {
+        await api.post("/applications", {
+          job_id: Number(id),
+          answers: answersPayload
+        });
+        setAlreadyApplied(true);
+        setLastActionWasEdit(false);
+      }
 
+      setIsEditMode(false);
       setApplySuccess(true);
-      setAlreadyApplied(true);
       setShowApplyForm(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -620,7 +664,7 @@ const DetailLowongan: React.FC = () => {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 border border-green-100 flex gap-3 mb-4">
                     <CheckCircle2 size={20} className="text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-green-800 text-sm">Lamaran terkirim!</p>
+                      <p className="font-bold text-green-800 text-sm">{lastActionWasEdit ? "Lamaran berhasil diperbarui!" : "Lamaran terkirim!"}</p>
                       <button onClick={() => navigate("/status")} className="text-[#0D278D] text-xs font-bold hover:underline mt-1">
                         Lihat Status Lamaran →
                       </button>
@@ -631,6 +675,11 @@ const DetailLowongan: React.FC = () => {
                     <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-amber-800 text-sm">Anda sudah melamar</p>
+                      {myApplication?.is_editable && (
+                        <p className="text-[11px] text-amber-700 mt-0.5">
+                          Lamaran masih dapat diedit karena belum mulai dinilai.
+                        </p>
+                      )}
                       <button onClick={() => navigate("/status")} className="text-[#0D278D] text-xs font-bold hover:underline mt-1">
                         Cek Status →
                       </button>
@@ -657,6 +706,25 @@ const DetailLowongan: React.FC = () => {
               ) : isClosed ? (
                 <button disabled className="w-full bg-gray-100 text-gray-400 border-2 border-gray-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
                   Pendaftaran Ditutup
+                </button>
+              ) : showApplyForm ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowApplyForm(false);
+                    setIsEditMode(false);
+                  }}
+                  className="w-full py-4 rounded-full font-bold text-[15px] transition-all flex items-center justify-center gap-2 cursor-pointer border-2 bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200"
+                >
+                  <span>Sembunyikan Form</span>
+                </button>
+              ) : (alreadyApplied || applySuccess) && myApplication?.is_editable ? (
+                <button
+                  type="button"
+                  onClick={startEditApplication}
+                  className="w-full bg-white text-[#0D278D] border-2 border-[#0D278D] py-4 rounded-full font-bold text-[15px] hover:bg-[#0d278d] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <Send size={16} /> Edit Lamaran
                 </button>
               ) : alreadyApplied || applySuccess ? (
                 <button disabled className="w-full bg-green-50 text-green-600 border-2 border-green-200 py-4 rounded-full font-bold text-[15px] cursor-not-allowed flex items-center justify-center gap-2">
@@ -702,10 +770,12 @@ const DetailLowongan: React.FC = () => {
 
                 <div className="text-left mb-12 border-b border-gray-900 pb-6">
                   <h3 className="text-2xl font-extrabold text-[#0D278D] font-['Poppins']">
-                    Formulir Lamaran
+                    {isEditMode ? "Edit Lamaran" : "Formulir Lamaran"}
                   </h3>
                   <p className="text-xs text-gray-400 mt-1 font-medium tracking-wide">
-                    Lengkapi pertanyaan berikut, lalu lampirkan dokumen pendukung yang diwajibkan.
+                    {isEditMode
+                      ? "Perbarui jawaban dan tautan berkas Anda selama lamaran belum mulai dinilai."
+                      : "Lengkapi pertanyaan berikut, lalu lampirkan dokumen pendukung yang diwajibkan."}
                   </p>
                 </div>
 
@@ -830,11 +900,11 @@ const DetailLowongan: React.FC = () => {
                   })()}
 
                   <div className="pt-8 flex flex-col sm:flex-row justify-end gap-3 mt-4">
-                    <button type="button" disabled={applyLoading} onClick={() => setShowApplyForm(false)} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all disabled:opacity-50">
+                    <button type="button" disabled={applyLoading} onClick={() => { setShowApplyForm(false); setIsEditMode(false); }} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all disabled:opacity-50">
                       Batalkan
                     </button>
                     <button type="submit" disabled={applyLoading} className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                      {applyLoading ? <Loader2 className="animate-spin" size={16} /> : <><Send size={12} /> Kirim Lamaran</>}
+                      {applyLoading ? <Loader2 className="animate-spin" size={16} /> : <><Send size={12} /> {isEditMode ? "Simpan Perubahan" : "Kirim Lamaran"}</>}
                     </button>
                   </div>
                 </form>

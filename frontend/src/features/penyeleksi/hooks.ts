@@ -43,7 +43,7 @@ function mapJob(j: any): Job {
     totalPendaftar: j.applications_count || 0,
     penyeleksi_ids: j.penyeleksi_ids || [],
     penyeleksi_names: j.penyeleksi_names || [],
-    selection_stages: (j.stages || []).map((s: any) => ({
+    selection_stages: (j.selection_stages || []).map((s: any) => ({
       id: String(s.id),
       name: s.name,
       order: s.stage_order,
@@ -51,7 +51,7 @@ function mapJob(j: any): Job {
       start_date: s.start_date ?? null,
       end_date: s.end_date ?? null,
       grading_end_date: s.grading_end_date ?? null,
-      test_link: s.test_link ?? null,
+      info: s.info ?? null,
       documents: (s.documents || []).map((d: any) => ({
         form_field_id: d.id,
         label: d.label,

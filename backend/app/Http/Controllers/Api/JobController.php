@@ -101,7 +101,7 @@ class JobController extends Controller
             'stages.*.end_date'   => 'nullable|date',
             'stages.*.grading_end_date' => 'nullable|date|after_or_equal:stages.*.end_date',
             'stages.*.weight'     => 'required|numeric|min:0|max:100',
-            'stages.*.test_link'  => 'nullable|max:255',
+            'stages.*.info'       => 'nullable|string|max:2000',
             'stages.*.documents'               => 'nullable|array',
             'stages.*.documents.*.form_field_id' => 'required_with:stages.*.documents|exists:form_fields,id',
             'stages.*.documents.*.weight'        => 'nullable|integer|min:0|max:100',
@@ -190,7 +190,7 @@ class JobController extends Controller
             'stages.*.end_date'      => 'nullable|date',
             'stages.*.grading_end_date' => 'nullable|date|after_or_equal:stages.*.end_date',
             'stages.*.weight'        => 'required_with:stages|numeric|min:0|max:100',
-            'stages.*.test_link'     => 'nullable|max:255',
+            'stages.*.info'          => 'nullable|string|max:2000',
             'stages.*.documents'                 => 'nullable|array',
             'stages.*.documents.*.form_field_id' => 'required_with:stages.*.documents|exists:form_fields,id',
             'stages.*.documents.*.weight'        => 'nullable|integer|min:0|max:100',
@@ -246,9 +246,15 @@ class JobController extends Controller
      */
     public function announcements()
     {
+        // Halaman pengumuman publik hanya menampilkan 1 dokumen rekap akhir per
+        // lowongan (yang merangkum seluruh tahapan), bukan pengumuman per-tahapan.
         $jobs = Job::withoutGlobalScopes()
-            ->whereHas('announcements')
-            ->with(['announcements'])
+            ->whereHas('announcements', function ($q) {
+                $q->whereNull('job_stage_id');
+            })
+            ->with(['announcements' => function ($q) {
+                $q->whereNull('job_stage_id');
+            }])
             ->withCount('applications')
             ->withCount(['applications as accepted_count' => function ($query) {
                 $query->where('status', 'lulus');

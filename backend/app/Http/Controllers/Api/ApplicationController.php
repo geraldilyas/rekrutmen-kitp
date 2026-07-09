@@ -41,7 +41,35 @@ class ApplicationController extends Controller
                 'data' => $application
             ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 422);
+        }
+    }
+
+    /**
+     * Let the authenticated applicant edit their own submitted answers,
+     * only allowed before their application starts being graded.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'answers' => 'nullable|array',
+            'answers.*.field_id' => 'required|exists:form_fields,id',
+            'answers.*.value' => 'required|string|max:1000',
+        ]);
+
+        $application = Application::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        try {
+            $updated = $this->applicationService->updateApplication($application, $validated);
+
+            return response()->json([
+                'message' => 'Lamaran berhasil diperbarui',
+                'data' => $updated
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 422);
         }
     }
 
@@ -70,7 +98,8 @@ class ApplicationController extends Controller
                 'job.stages' => function($q) {
                     $q->orderBy('stage_order', 'asc');
                 },
-                'stageResults.stage'
+                'stageResults.stage',
+                'answers'
             ])->where('user_id', $userId)->get();
 
             // 2. [ENGINE AUTO-GUGUR TETAP BERJALAN DI SINI - bisa dipertahankan dari kode sebelumnya]
@@ -129,9 +158,12 @@ class ApplicationController extends Controller
                         'id' => $stage->id,
                         'name' => $stage->stage_name ?? $stage->name,
                         'status' => $stageStatus,
-                        // Injeksi Nilai & Catatan hanya jika sudah dirilis
+                        // Injeksi Nilai hanya jika sudah dirilis
                         'score' => $isReleased ? $userResult->score : null,
-                        'notes' => $isReleased ? $userResult->notes : null,
+                        // Informasi tahapan diambil dari konfigurasi tahapan (diisi admin saat
+                        // membuat lowongan), sama untuk semua pelamar — bukan lagi dari catatan
+                        // penilaian per-pelamar.
+                        'notes' => $stage->info,
                         'start_date' => $stage->start_date,
                         'end_date' => $stage->end_date,
                         'download_pdf_lulus' => $isReleased ? $pdfUrl : null,
@@ -186,6 +218,7 @@ class ApplicationController extends Controller
                 ]);
 
                 $app->timeline = $fullTimeline;
+                $app->is_editable = $app->isEditable();
                 return $app;
             });
 

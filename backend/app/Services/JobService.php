@@ -84,7 +84,7 @@ class JobService
                     'end_date'    => $stage['end_date'],
                     'grading_end_date' => $stage['grading_end_date'] ?? null,
                     'weight'      => $stage['weight'],
-                    'test_link'   => $stage['test_link'] ?? null,
+                    'info'        => $stage['info'] ?? null,
                 ]);
 
                 if (!empty($stage['documents'])) {
@@ -144,7 +144,7 @@ class JobService
                         'end_date'         => $stage['end_date'] ?? null,
                         'grading_end_date' => $stage['grading_end_date'] ?? null,
                         'weight'           => $stage['weight'],
-                        'test_link'        => $stage['test_link'] ?? null,
+                        'info'             => $stage['info'] ?? null,
                     ];
 
                     $stageId = $stage['id'] ?? null;

@@ -18,10 +18,12 @@ class ApplicationStageResult extends Model
         'notes',
         'reviewed_by',
         'reviewed_at',
+        'released_at',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'released_at' => 'datetime',
     ];
 
     public function application()

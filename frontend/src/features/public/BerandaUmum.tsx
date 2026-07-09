@@ -31,7 +31,19 @@ interface Job {
   deadline: string;
   requirements: string;
   kuota?: number | string | null; // 🚀 Tambah properti kuota
+  selection_stages?: { name: string; start_date: string; end_date: string }[];
 }
+
+const ADMIN_STAGE_NAME = "seleksi administrasi";
+const getPendaftaranPeriod = (job: Job): { start: string; end: string } => {
+  const adminStage = job.selection_stages?.find(
+    (s) => s.name?.trim().toLowerCase() === ADMIN_STAGE_NAME
+  );
+  if (adminStage?.start_date && adminStage?.end_date) {
+    return { start: adminStage.start_date, end: adminStage.end_date };
+  }
+  return { start: job.start_date, end: job.deadline };
+};
 
 const alurRekrutmenSempurna = [
   {
@@ -527,6 +539,7 @@ export const BerandaUmum: React.FC = () => {
                   const status = getStatusJob(job.start_date, job.deadline);
                   const isComingSoon = status === "akan_dibuka";
                   const isClosed = status === "sudah_tutup";
+                  const pendaftaranPeriod = getPendaftaranPeriod(job);
 
                   return (
                     <motion.div
@@ -545,7 +558,7 @@ export const BerandaUmum: React.FC = () => {
                           {renderStatusBadge(status)}
                           <div className={`flex items-center gap-1.5 text-xs font-semibold shrink-0 ${isComingSoon ? "text-[#FEB700]" : isClosed ? "text-[#0D278D]" : "text-gray-500"}`}>
                             <Clock size={14} />
-                            <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                            <span>{formatDeadline(pendaftaranPeriod.end, pendaftaranPeriod.start)}</span>
                           </div>
                         </div>
 
@@ -631,6 +644,7 @@ export const BerandaUmum: React.FC = () => {
                         const status = getStatusJob(job.start_date, job.deadline);
                         const isComingSoon = status === "akan_dibuka";
                         const isClosed = status === "sudah_tutup";
+                        const pendaftaranPeriod = getPendaftaranPeriod(job);
 
                         return (
                           <motion.tr
@@ -670,7 +684,7 @@ export const BerandaUmum: React.FC = () => {
                             <td className="py-5 px-4 align-middle text-center">
                               <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-semibold whitespace-nowrap text-center w-full">
                                 <Calendar size={13} className="text-gray-500 shrink-0" />
-                                <span>{formatDeadline(job.deadline, job.start_date)}</span>
+                                <span>{formatDeadline(pendaftaranPeriod.end, pendaftaranPeriod.start)}</span>
                               </div>
                             </td>
 

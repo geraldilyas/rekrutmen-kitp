@@ -23,7 +23,7 @@ class JobStageFactory extends Factory
             'start_date' => now()->subWeek(),
             'end_date' => now()->addWeek(),
             'grading_end_date' => now()->addWeek(),
-            'test_link' => null,
+            'info' => null,
         ];
     }
 

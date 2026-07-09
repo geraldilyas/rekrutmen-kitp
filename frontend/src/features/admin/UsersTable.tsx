@@ -4,8 +4,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  BadgeCheck,
-  Clock,
   User as UserIcon,
   ShieldOff,
 } from "lucide-react";
@@ -14,7 +12,6 @@ import type { User } from "../shared/types";
 interface Props {
   users: User[];
   onEdit: (user: User) => void;
-  onToggleVerification: (id: number) => void;
   onBlacklist?: (user: User) => void;
 }
 
@@ -42,7 +39,6 @@ const roleConfig: Record<
 const UsersTable: React.FC<Props> = ({
   users,
   onEdit,
-  onToggleVerification,
   onBlacklist,
 }) => {
   if (users.length === 0)
@@ -70,9 +66,6 @@ const UsersTable: React.FC<Props> = ({
               </th>
               <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                 Role
-              </th>
-              <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Status
               </th>
               <th className="text-center px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                 Aksi
@@ -136,19 +129,6 @@ const UsersTable: React.FC<Props> = ({
                       />
                       {role.label}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-center align-middle">
-                    <button
-                      onClick={() => onToggleVerification(user.id)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-all hover:scale-105 ${user.email_verified_at ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500 border-gray-200 hover:border-emerald-200 hover:text-emerald-600"}`}
-                    >
-                      {user.email_verified_at ? (
-                        <BadgeCheck size={12} className="text-emerald-600" />
-                      ) : (
-                        <Clock size={12} />
-                      )}
-                      {user.email_verified_at ? "Verified" : "Unverified"}
-                    </button>
                   </td>
                   <td className="px-4 py-3 text-center align-middle">
                     <div className="inline-flex items-center gap-1">

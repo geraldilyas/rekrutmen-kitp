@@ -91,6 +91,14 @@ class ApplicationService
      */
     public function apply(array $data, int $userId)
     {
+        // Blokir pelamar dengan NIK yang masuk blacklist — dicek di sini juga (bukan
+        // hanya saat login/registrasi) supaya sesi yang sudah aktif sebelum NIK-nya
+        // diblokir tetap tidak bisa melamar lowongan baru.
+        $user = \App\Models\User::findOrFail($userId);
+        if ($user->nik && \App\Models\BlacklistedNik::where('nik', $user->nik)->exists()) {
+            throw new \Exception('Akun ini telah diblokir oleh admin dan tidak dapat melamar lowongan.', 403);
+        }
+
         // 🚀 FIX 1: Paksa pemanggilan Job secara Absolute path agar tidak tersesat ke Services
         $job = \App\Models\Job::with('formFields')->findOrFail($data['job_id']);
 
@@ -158,6 +166,41 @@ class ApplicationService
         $this->sendSubmittedNotification($application);
 
         return $application;
+    }
+
+    /**
+     * Let an applicant edit their own submitted answers, as long as their
+     * application hasn't started being graded yet (see Application::isEditable()).
+     */
+    public function updateApplication(Application $application, array $data)
+    {
+        if (!$application->isEditable()) {
+            throw new \Exception('Lamaran tidak dapat diubah karena sudah mulai dinilai oleh admin/penyeleksi.', 422);
+        }
+
+        $job = \App\Models\Job::with('formFields')->findOrFail($application->job_id);
+
+        $requiredFieldIds = $job->formFields->where('is_required', true)->pluck('id')->toArray();
+        $submittedFieldIds = collect($data['answers'] ?? [])->pluck('field_id')->toArray();
+        $missingFields = array_diff($requiredFieldIds, $submittedFieldIds);
+
+        if (!empty($missingFields)) {
+            throw new \Exception('Beberapa field wajib belum diisi.', 422);
+        }
+
+        return DB::transaction(function () use ($application, $data) {
+            $application->answers()->delete();
+
+            foreach ($data['answers'] ?? [] as $answer) {
+                \App\Models\ApplicationAnswer::create([
+                    'application_id' => $application->id,
+                    'form_field_id' => $answer['field_id'],
+                    'answer' => strip_tags($answer['value']),
+                ]);
+            }
+
+            return $application->fresh(['answers']);
+        });
     }
 
     /**
@@ -329,10 +372,12 @@ class ApplicationService
                 'reviewed_by' => auth()->id()
             ]);
 
-            // Langsung rilis hasil dan perbarui status pelamar setelah penilaian disimpan.
-            // Penyeleksi yang menyimpan nilai berarti sudah membuat keputusan definitif,
-            // sehingga tidak perlu menunggu end_date untuk merilis hasil dan mengirim notifikasi.
-            $this->releaseResultsForStage($stageResult);
+            // Nilai disimpan tapi TIDAK langsung dirilis/diemailkan ke pelamar di sini.
+            // Rilis hasil (transisi status & email notifikasi) hanya terjadi otomatis
+            // ketika masa penilaian tahapan berakhir (grading_end_date, fallback end_date),
+            // via app:release-stage-results — mengikuti logika yang sama dengan
+            // pengumuman PDF per-tahapan (ReportService::isStageGradingClosed / publishStageAnnouncement),
+            // supaya semua pelamar pada satu tahapan menerima hasil serentak, bukan satu-satu.
 
             return $stageResult;
         });
@@ -340,7 +385,8 @@ class ApplicationService
 
     /**
      * Rilis hasil penilaian satu tahapan (transisi status aplikasi & kirim email).
-     * Dipanggil otomatis ketika end_date sudah lewat atau lewat cron job/command.
+     * Dipanggil otomatis oleh app:release-stage-results begitu masa penilaian
+     * tahapan (grading_end_date, fallback end_date) telah berakhir.
      */
     public function releaseResultsForStage(ApplicationStageResult $stageResult)
     {

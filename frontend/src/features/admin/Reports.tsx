@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ExternalLink,
   Loader2,
-  FileSpreadsheet,
   Megaphone,
   Send,
 } from "lucide-react";
@@ -22,8 +21,6 @@ interface Job {
   deadline: string;
   applications_count: number;
   unit_kerja: string;
-  selection_status?: string;
-  selection_ready?: boolean;
 }
 
 interface Announcement {
@@ -43,8 +40,11 @@ const Reports: React.FC = () => {
   const [uploadJobId, setUploadJobId] = useState<number | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, must match backend's max:5120
 
   useEffect(() => {
     fetchJobs();
@@ -74,25 +74,22 @@ const Reports: React.FC = () => {
     }
   };
 
-  const handleExport = async (jobId: number, type: 'excel' | 'pdf', passedOnly: boolean = false) => {
+  const handleDownloadWordDraft = async (jobId: number) => {
     try {
-      const urlParams = passedOnly ? "?passed_only=1" : "";
-      const response = await api.get(`/admin/reports/export/${jobId}/${type}${urlParams}`, {
+      const response = await api.get(`/admin/reports/export/${jobId}/word-template`, {
         responseType: 'blob',
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      const extension = type === 'excel' ? 'xlsx' : 'pdf';
-      const suffix = passedOnly ? '-lulus' : '';
-      link.setAttribute('download', `laporan-pelamar-${jobId}${suffix}.${extension}`);
+      link.setAttribute('download', `draf-hasil-akhir-${jobId}.docx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err: any) {
-      console.error("Export failed:", err);
-      alert("Gagal mengunduh laporan. Pastikan data sudah tersedia.");
+      console.error("Word draft download failed:", err);
+      alert("Gagal mengunduh draf Word. Pastikan data sudah tersedia.");
     }
   };
 
@@ -102,7 +99,8 @@ const Reports: React.FC = () => {
 
     setIsSaving(true);
     setStatus(null);
-    
+    setUploadError("");
+
     const formData = new FormData();
     formData.append("job_id", uploadJobId.toString());
     formData.append("title", uploadTitle);
@@ -118,24 +116,46 @@ const Reports: React.FC = () => {
       setUploadFile(null);
       fetchAnnouncements(uploadJobId);
     } catch (err: any) {
-      setStatus({ type: 'error', message: err.response?.data?.message || "Gagal menerbitkan pengumuman" });
+      setUploadError(err.response?.data?.message || "Gagal menerbitkan pengumuman. Silakan coba lagi.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCompleteSelection = async (jobId: number) => {
-    if (!window.confirm("Apakah Anda yakin ingin menandai proses seleksi lowongan ini telah SELESAI?\nSetelah selesai, Anda dapat menerbitkan pengumuman hasil akhir.")) return;
-    try {
-      await api.post(`/admin/reports/${jobId}/complete-selection`);
-      setStatus({ type: 'success', message: "Proses seleksi lowongan berhasil dinyatakan SELESAI!" });
-      fetchJobs();
-    } catch (err: any) {
-      setStatus({ type: 'error', message: err.response?.data?.message || "Gagal menyelesaikan seleksi" });
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setUploadError("");
+
+    if (!file) {
+      setUploadFile(null);
+      return;
     }
+
+    if (file.type !== "application/pdf") {
+      setUploadError("File harus berupa dokumen PDF.");
+      setUploadFile(null);
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      setUploadError("Ukuran file maksimal 5 MB.");
+      setUploadFile(null);
+      e.target.value = "";
+      return;
+    }
+
+    setUploadFile(file);
   };
 
-  const filteredJobs = jobs.filter(job => 
+  const closeUploadModal = () => {
+    setUploadJobId(null);
+    setUploadTitle("");
+    setUploadFile(null);
+    setUploadError("");
+  };
+
+  const filteredJobs = jobs.filter(job =>
     job.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -145,7 +165,7 @@ const Reports: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Laporan & Pengumuman</h1>
-          <p className="text-sm text-gray-500 font-medium">Ekspor data pelamar dan terbitkan pengumuman. Pengumuman hanya tersedia untuk lowongan yang telah melewati deadline dan seluruh tahapan seleksi.</p>
+          <p className="text-sm text-gray-500 font-medium">Ekspor data pelamar dan terbitkan pengumuman. Untuk hasil akhir, unduh Draf Word berisi data seluruh pelamar, edit sesuai kebutuhan, lalu unggah kembali sebagai pengumuman resmi.</p>
         </div>
         
         <div className="relative">
@@ -220,50 +240,22 @@ const Reports: React.FC = () => {
                 {/* Aksi: Ekspor & Upload */}
                 <div className="flex flex-wrap lg:flex-col justify-end gap-3 lg:w-64">
                   <p className="w-full text-[10px] font-black text-gray-400 uppercase tracking-widest lg:text-right">Ekspor Data Pelamar:</p>
-                  <button 
-                    onClick={() => handleExport(job.id, 'excel')}
-                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                  >
-                    <FileSpreadsheet size={16} /> Excel
-                  </button>
-                  <button 
-                    onClick={() => handleExport(job.id, 'excel', true)}
-                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                  >
-                    <FileSpreadsheet size={16} /> Excel (Lulus)
-                  </button>
-                  <button 
-                    onClick={() => handleExport(job.id, 'pdf')}
-                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-rose-50 text-rose-700 border border-rose-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                  >
-                    <FileText size={16} /> PDF
-                  </button>
-                  <button 
-                    onClick={() => handleExport(job.id, 'pdf', true)}
-                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all shadow-sm"
-                  >
-                    <FileText size={16} /> PDF (Lulus)
-                  </button>
-                  <div className="w-full h-px bg-gray-100 my-2" />
-                  
-                  {job.selection_status !== 'selesai' ? (
-                    <button
-                      onClick={() => handleCompleteSelection(job.id)}
-                      disabled={!job.selection_ready}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-100 text-white disabled:text-gray-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md"
-                    >
-                      <CheckCircle2 size={16} />
-                      {job.selection_ready ? "Selesai Seleksi" : "Tahapan Belum Selesai"}
-                    </button>
-                  ) : (
-                    <div className="w-full text-center py-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-widest">
-                      ✓ Seleksi Selesai
-                    </div>
-                  )}
 
                   <button
-                    onClick={() => setUploadJobId(job.id)}
-                    disabled={job.selection_status !== 'selesai' || !!announcements[job.id]?.length}
+                    onClick={() => handleDownloadWordDraft(job.id)}
+                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-[#0D278D] border border-blue-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#0D278D] hover:text-white transition-all shadow-sm"
+                  >
+                    <FileText size={16} /> Draf Word Hasil Akhir
+                  </button>
+
+                  <div className="w-full h-px bg-gray-100 my-2" />
+
+                  <button
+                    onClick={() => {
+                      setUploadError("");
+                      setUploadJobId(job.id);
+                    }}
+                    disabled={!!announcements[job.id]?.length}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0D278D] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FEB700] hover:text-[#0D278D] disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md animate-in fade-in duration-300"
                   >
                     <Upload size={16} /> {!!announcements[job.id]?.length ? "Sudah Terbit" : "Upload Manual"}
@@ -284,7 +276,7 @@ const Reports: React.FC = () => {
       {/* Modal Upload Pengumuman */}
       {uploadJobId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setUploadJobId(null)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeUploadModal} />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -312,19 +304,19 @@ const Reports: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">File Dokumen (PDF/Excel)</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">File Dokumen (PDF)</label>
                 <div className="relative group">
-                  <input 
-                    type="file" 
-                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                    className="hidden" 
+                  <input
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
                     id="announcement-file"
-                    accept=".pdf,.xlsx,.xls,.doc,.docx"
+                    accept=".pdf,application/pdf"
                     required
                   />
-                  <label 
+                  <label
                     htmlFor="announcement-file"
-                    className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-gray-100 group-hover:border-[#0D278D]/30 bg-slate-50 rounded-2xl cursor-pointer transition-all"
+                    className={`flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${uploadError ? "border-red-200 bg-red-50/40" : "border-gray-100 group-hover:border-[#0D278D]/30 bg-slate-50"}`}
                   >
                     <Download className="text-gray-300 group-hover:text-[#0D278D]" size={32} />
                     <p className="text-xs font-bold text-gray-400">
@@ -332,12 +324,21 @@ const Reports: React.FC = () => {
                     </p>
                   </label>
                 </div>
+                <p className="text-[11px] text-gray-400 pt-1">
+                  Hanya menerima dokumen berformat PDF, dengan ukuran maksimal 5 MB.
+                </p>
+                {uploadError && (
+                  <div className="flex items-start gap-2 mt-2 p-3 rounded-xl bg-red-50 border border-red-100">
+                    <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs font-semibold text-red-700">{uploadError}</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button 
                   type="button"
-                  onClick={() => setUploadJobId(null)}
+                  onClick={closeUploadModal}
                   className="flex-1 px-6 py-4 rounded-full text-sm font-black uppercase tracking-widest text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all"
                 >
                   Batal

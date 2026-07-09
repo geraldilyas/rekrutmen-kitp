@@ -36,7 +36,7 @@ export interface SelectionStage {
   start_date: string;
   end_date: string;
   grading_end_date?: string | null;
-  test_link: string | null;
+  info: string | null;
   sk_path?: string | null;
   documents?: StageDocument[];
 }

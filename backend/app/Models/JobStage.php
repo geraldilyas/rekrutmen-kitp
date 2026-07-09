@@ -19,7 +19,7 @@ class JobStage extends Model
         'grading_end_date',
         'type',
         'weight',
-        'test_link',
+        'info',
         'is_active',
     ];
 

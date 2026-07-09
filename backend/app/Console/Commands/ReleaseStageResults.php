@@ -42,13 +42,23 @@ class ReleaseStageResults extends Command
         $now = Carbon::now();
 
         // Cari semua stage result yang statusnya bukan pending (berarti sudah dinilai),
-        // released_at nya null (belum dirilis),
-        // dan end_date stage nya sudah berlalu atau sekarang (<= now)
+        // released_at nya null (belum dirilis), dan masa penilaian tahapannya sudah
+        // berakhir (grading_end_date, fallback end_date jika grading_end_date kosong) —
+        // definisi deadline yang sama persis dengan yang dipakai untuk menerbitkan
+        // pengumuman PDF per-tahapan (lihat ReportService::isStageGradingClosed),
+        // sehingga email hasil tahapan terkirim serentak ke semua pelamar begitu
+        // tahapan tersebut resmi ditutup.
         $unreleasedResults = ApplicationStageResult::where('status', '!=', 'pending')
             ->whereNull('released_at')
             ->whereHas('stage', function ($query) use ($now) {
-                $query->whereNotNull('end_date')
-                      ->where('end_date', '<=', $now);
+                $query->where(function ($q) use ($now) {
+                    $q->where('grading_end_date', '<=', $now)
+                      ->orWhere(function ($sq) use ($now) {
+                          $sq->whereNull('grading_end_date')
+                             ->whereNotNull('end_date')
+                             ->where('end_date', '<=', $now);
+                      });
+                });
             })
             ->get();
 

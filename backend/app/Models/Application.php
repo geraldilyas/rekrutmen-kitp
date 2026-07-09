@@ -73,6 +73,23 @@ class Application extends Model
         return $this->hasMany(ApplicationStageResult::class);
     }
 
+    /**
+     * An applicant can still edit their submitted answers as long as their
+     * earliest stage (by stage_order) hasn't been graded yet by an admin or
+     * penyeleksi — i.e. its ApplicationStageResult status is still "pending".
+     * Once grading has started, the application is locked from edits.
+     */
+    public function isEditable(): bool
+    {
+        $firstResult = $this->stageResults()
+            ->join('job_stages', 'job_stages.id', '=', 'application_stage_results.job_stage_id')
+            ->orderBy('job_stages.stage_order')
+            ->select('application_stage_results.*')
+            ->first();
+
+        return !$firstResult || $firstResult->status === 'pending';
+    }
+
     public function histories()
     {
         return $this->hasMany(ApplicationStatusHistory::class);

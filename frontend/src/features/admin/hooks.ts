@@ -110,7 +110,7 @@ export function useJobsManagement() {
           start_date: s.start_date,
           end_date: s.end_date,
           grading_end_date: s.grading_end_date,
-          test_link: s.test_link,
+          info: s.info,
           documents: (s.documents || []).map((d: any) => ({
             form_field_id: d.id,
             label: d.label,
@@ -171,7 +171,7 @@ export function useJobsManagement() {
       start_date: s.start_date || null,
       end_date: s.end_date || null,
       grading_end_date: s.grading_end_date || null,
-      test_link: s.test_link || null,
+      info: s.info || null,
       documents: (s.documents || []).map((d: any) => ({
         form_field_id: d.form_field_id,
         weight: d.weight || 0,
@@ -488,14 +488,20 @@ export function useApplications() {
             ...j,
             status: determineStatus(j.start_date, j.deadline),
             totalPendaftar: appData.filter((a: any) => a.job_id === j.id).length,
-            selection_stages: (j.stages || []).map((s: any) => ({
+            selection_stages: (j.selection_stages || []).map((s: any) => ({
                 id: String(s.id),
                 name: s.name,
                 order: s.stage_order,
                 weight: s.weight,
                 start_date: s.start_date,
                 end_date: s.end_date,
-                test_link: s.test_link ?? null,
+                grading_end_date: s.grading_end_date ?? null,
+                info: s.info ?? null,
+                documents: (s.documents || []).map((d: any) => ({
+                    form_field_id: d.id,
+                    label: d.label,
+                    weight: d.pivot?.weight ?? 0,
+                })),
             })),
         }));
 

@@ -16,3 +16,7 @@ Schedule::command('app:send-application-reminders')->daily();
 // notifikasi secara serentak ketika tanggal tahapan telah berakhir.
 Schedule::command('app:release-stage-results')->hourly();
 
+// Terbitkan otomatis pengumuman PDF hasil setiap tahapan (NIK, skor, status,
+// diurutkan skor tertinggi) begitu masa penilaian tahapan tersebut berakhir.
+Schedule::command('app:publish-stage-announcements')->hourly();
+

@@ -70,6 +70,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::prefix('applications')->group(function () {
             Route::get('/my', [ApplicationController::class, 'myApplications']);
             Route::post('/', [ApplicationController::class, 'apply']);
+            Route::put('/{id}', [ApplicationController::class, 'update']);
         });
 
         // User Master Documents
@@ -118,12 +119,9 @@ Route::middleware('throttle:api')->group(function () {
             // Reports & Announcements
             Route::prefix('reports')->group(function () {
                 Route::get('/closed-jobs', [ReportController::class, 'closedJobs']);
-                Route::get('/export/{job_id}/excel', [ReportController::class, 'exportExcel']);
-                Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
+                Route::get('/export/{job_id}/word-template', [ReportController::class, 'exportFinalWordTemplate']);
                 Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
                 Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
-                Route::post('/{job_id}/complete-selection', [ReportController::class, 'completeSelection']);
-                Route::post('/publish-passed/{job_id}', [ReportController::class, 'publishPassedResults']);
             });
 
 
