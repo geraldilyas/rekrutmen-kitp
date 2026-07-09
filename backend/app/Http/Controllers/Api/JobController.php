@@ -21,8 +21,15 @@ class JobController extends Controller
      */
     public function index(Request $request)
     {
+        // 🚀 FIX: 'applications' dihitung dengan withoutGlobalScopes() pada relasinya sendiri,
+        // karena ApplicationDataScope (pembatasan visibilitas admin L2/L3) tidak ikut
+        // terhapus hanya dengan withoutGlobalScopes() pada query Job — itu scope terpisah
+        // yang melekat pada model Application, sehingga tanpa ini jumlah pelamar bisa
+        // salah/0 untuk admin L2/L3 yang bukan pembuat lowongan tersebut.
         $query = Job::with(['stages.documents', 'penyeleksi'])
-            ->withCount('applications');
+            ->withCount(['applications' => function ($q) {
+                $q->withoutGlobalScopes();
+            }]);
 
         $user = auth('sanctum')->user();
 
@@ -255,9 +262,11 @@ class JobController extends Controller
             ->with(['announcements' => function ($q) {
                 $q->whereNull('job_stage_id');
             }])
-            ->withCount('applications')
+            ->withCount(['applications' => function ($q) {
+                $q->withoutGlobalScopes();
+            }])
             ->withCount(['applications as accepted_count' => function ($query) {
-                $query->where('status', 'lulus');
+                $query->withoutGlobalScopes()->where('status', 'lulus');
             }])
             ->latest()
             ->get();

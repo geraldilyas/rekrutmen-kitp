@@ -21,7 +21,9 @@ class ReportService
     {
         $now = now();
         return Job::with(['stages'])
-            ->withCount('applications')
+            ->withCount(['applications' => function ($q) {
+                $q->withoutGlobalScopes();
+            }])
             ->get()
             ->filter(function($job) use ($now) {
                 return $this->isJobEligible($job);

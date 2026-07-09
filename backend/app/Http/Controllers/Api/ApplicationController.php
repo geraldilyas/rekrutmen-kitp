@@ -93,7 +93,9 @@ class ApplicationController extends Controller
             $applications = Application::with([
                 'job' => function($query) {
                     // Hitung total pelamar yang mendaftar di lowongan ini secara real-time
-                    $query->withCount('applications');
+                    $query->withCount(['applications' => function ($q) {
+                        $q->withoutGlobalScopes();
+                    }]);
                 },
                 'job.stages' => function($q) {
                     $q->orderBy('stage_order', 'asc');

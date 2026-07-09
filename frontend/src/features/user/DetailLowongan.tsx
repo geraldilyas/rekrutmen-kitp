@@ -21,6 +21,8 @@ import {
   User,
   ListChecks,
   CircleDot,
+  MapPin,
+  Users,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useUserDocuments } from "../shared/profileHooks";
@@ -43,6 +45,7 @@ interface JobDetail {
   qualification: string;
   duration: string;
   location: string;
+  kuota?: number | string | null;
   unit_kerja: string;
   recruiter_name: string | null;
   requirements: string;
@@ -645,6 +648,28 @@ const DetailLowongan: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-[#0D278D] shrink-0">
+                    <MapPin size={20} strokeWidth={1.5} />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Lokasi</p>
+                    <p className="font-semibold text-gray-800 text-[15px]">{job.location || "-"}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-[#0D278D] shrink-0">
+                    <Users size={20} strokeWidth={1.5} />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Kuota</p>
+                    <p className="font-semibold text-gray-800 text-[15px]">
+                      {job.kuota && Number(job.kuota) > 0 ? `${job.kuota} Orang` : "Terbuka"}
+                    </p>
+                  </div>
+                </div>
+
                 {job.recruiter_name && (
                   <div className="flex gap-4">
                     <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-[#0D278D] shrink-0">
@@ -869,11 +894,6 @@ const DetailLowongan: React.FC = () => {
                                     <CheckCircle2 size={12} />
                                     Tahapan: {adminStage.name}
                                   </span>
-                                  {adminStage.weight != null && (
-                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
-                                      Bobot Penilaian: {adminStage.weight}%
-                                    </span>
-                                  )}
                                 </div>
                               )}
                             </div>

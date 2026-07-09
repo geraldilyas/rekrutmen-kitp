@@ -247,7 +247,6 @@ export function useUsersManagement() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
-  const [filterVerification, setFilterVerification] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -264,7 +263,7 @@ export function useUsersManagement() {
   // Reset to page 1 on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterRole, filterVerification]);
+  }, [filterRole]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -274,7 +273,6 @@ export function useUsersManagement() {
           page: currentPage,
           search: debouncedSearch || undefined,
           role: filterRole !== "all" ? filterRole : undefined,
-          verification: filterVerification !== "all" ? filterVerification : undefined,
         }
       });
       
@@ -296,7 +294,7 @@ export function useUsersManagement() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, filterRole, filterVerification, currentPage]);
+  }, [debouncedSearch, filterRole, currentPage]);
 
   useEffect(() => {
     fetchUsers();
@@ -356,8 +354,6 @@ export function useUsersManagement() {
     setSearch,
     filterRole,
     setFilterRole,
-    filterVerification,
-    setFilterVerification,
     setCurrentPage,
     addUser,
     editUser,

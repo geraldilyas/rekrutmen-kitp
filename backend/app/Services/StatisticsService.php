@@ -64,7 +64,9 @@ class StatisticsService
      */
     public function getApplicationsPerJob()
     {
-        return Job::withCount('applications')->get();
+        return Job::withCount(['applications' => function ($q) {
+            $q->withoutGlobalScopes();
+        }])->get();
     }
 
     /**

@@ -191,7 +191,16 @@ class AuthController extends Controller
 
         // Kirim email
         $user = User::where('email', $email)->first();
-        $user->notify(new ResetPasswordCode($code));
+
+        try {
+            $user->notify(new ResetPasswordCode($code));
+        } catch (\Exception $e) {
+            Log::error('Gagal mengirim email kode reset password: ' . $e->getMessage(), ['email' => $email]);
+
+            return response()->json([
+                'message' => 'Gagal mengirim kode verifikasi. Silakan coba lagi beberapa saat lagi.'
+            ], 503);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -239,6 +248,11 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
+
+        // Cabut semua sesi/token aktif — reset password ada untuk memulihkan akun
+        // yang mungkin bocor/dicuri, jadi sesi lama (termasuk milik penyerang bila
+        // ada) harus ikut tidak berlaku begitu kata sandi baru berhasil diset.
+        $user->tokens()->delete();
 
         // Hapus token reset dari DB
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();

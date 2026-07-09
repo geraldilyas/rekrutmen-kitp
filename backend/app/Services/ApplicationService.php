@@ -372,21 +372,98 @@ class ApplicationService
                 'reviewed_by' => auth()->id()
             ]);
 
-            // Nilai disimpan tapi TIDAK langsung dirilis/diemailkan ke pelamar di sini.
-            // Rilis hasil (transisi status & email notifikasi) hanya terjadi otomatis
-            // ketika masa penilaian tahapan berakhir (grading_end_date, fallback end_date),
-            // via app:release-stage-results — mengikuti logika yang sama dengan
-            // pengumuman PDF per-tahapan (ReportService::isStageGradingClosed / publishStageAnnouncement),
-            // supaya semua pelamar pada satu tahapan menerima hasil serentak, bukan satu-satu.
+            // Majukan pelamar ke tahap berikutnya (atau finalisasi) SEGERA —
+            // ini murni pembukuan internal (membuat baris ApplicationStageResult
+            // tahap berikutnya, mengubah status aplikasi) dan harus terjadi
+            // langsung, supaya admin/penyeleksi bisa langsung menilai tahap
+            // selanjutnya tanpa menunggu jadwal rilis.
+            //
+            // Notifikasi EMAIL ke pelamar tetap ditahan sampai masa penilaian
+            // tahapan ini berakhir (grading_end_date, fallback end_date), via
+            // app:release-stage-results — mengikuti logika yang sama dengan
+            // pengumuman PDF per-tahapan (ReportService::isStageGradingClosed),
+            // supaya semua pelamar pada satu tahapan menerima email serentak.
+            $this->advanceApplicationState($application, $currentStage, $stageResult);
 
             return $stageResult;
         });
     }
 
     /**
-     * Rilis hasil penilaian satu tahapan (transisi status aplikasi & kirim email).
+     * Pembukuan internal yang harus terjadi segera setelah sebuah tahap
+     * dinilai: membuat baris ApplicationStageResult untuk tahap berikutnya
+     * (atau finalisasi jika ini tahap terakhir), dan memperbarui status
+     * aplikasi. Tidak mengirim email — lihat sendStageResultNotification().
+     */
+    protected function advanceApplicationState(Application $application, JobStage $currentStage, ApplicationStageResult $stageResult)
+    {
+        if ($stageResult->status === 'tidak_lulus') {
+            $application->update(['status' => 'Tidak Lulus']);
+
+            ApplicationStatusHistory::create([
+                'application_id' => $application->id,
+                'status' => 'Tidak Lulus',
+                'notes' => 'Gagal pada tahap: ' . $currentStage->name . '. ' . ($stageResult->notes ?? ''),
+                'created_at' => now(),
+            ]);
+
+            return;
+        }
+
+        if ($stageResult->status !== 'lulus') {
+            return;
+        }
+
+        $nextStage = \App\Models\JobStage::where('job_id', $application->job_id)
+            ->where('stage_order', '>', $currentStage->stage_order)
+            ->orderBy('stage_order')
+            ->first();
+
+        if ($nextStage) {
+            $existingNextStage = ApplicationStageResult::where('application_id', $application->id)
+                ->where('job_stage_id', $nextStage->id)
+                ->first();
+
+            if (!$existingNextStage) {
+                ApplicationStageResult::create([
+                    'application_id' => $application->id,
+                    'job_stage_id' => $nextStage->id,
+                    'status' => 'pending',
+                ]);
+            }
+
+            $application->update(['status' => 'seleksi']);
+
+            ApplicationStatusHistory::create([
+                'application_id' => $application->id,
+                'status' => 'seleksi',
+                'notes' => 'Lolos tahap ' . $currentStage->name . '. Lanjut ke tahap berikutnya.',
+                'created_at' => now(),
+            ]);
+        } else {
+            $application->load(['stageResults', 'job.stages']);
+            $finalScore = $application->calculated_final_score;
+
+            $application->update([
+                'status' => 'pending_keputusan',
+                'final_score' => $finalScore,
+            ]);
+
+            ApplicationStatusHistory::create([
+                'application_id' => $application->id,
+                'status' => 'pending_keputusan',
+                'notes' => 'Pelamar telah menyelesaikan seluruh tahap seleksi. Menunggu penentuan keputusan final berdasarkan kuota.',
+                'created_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Rilis hasil penilaian satu tahapan (kirim email notifikasi ke pelamar).
      * Dipanggil otomatis oleh app:release-stage-results begitu masa penilaian
-     * tahapan (grading_end_date, fallback end_date) telah berakhir.
+     * tahapan (grading_end_date, fallback end_date) telah berakhir. Status
+     * aplikasi & tahap berikutnya SUDAH diperbarui sejak dinilai — lihat
+     * advanceApplicationState() — di sini hanya mengirim notifikasi.
      */
     public function releaseResultsForStage(ApplicationStageResult $stageResult)
     {
@@ -399,101 +476,47 @@ class ApplicationService
             $currentStage = \App\Models\JobStage::findOrFail($stageResult->job_stage_id);
             $application = Application::findOrFail($stageResult->application_id);
 
-            // Update status rilis
             $stageResult->update([
                 'released_at' => now(),
             ]);
 
-            // Jalankan transisi status & kirim email
-            if ($stageResult->status === 'tidak_lulus') {
-                $this->handleStageFailure($application, $currentStage, $stageResult->notes ?? '');
-            } elseif ($stageResult->status === 'lulus') {
-                $this->handleStageSuccess($application, $currentStage);
-            }
+            $this->sendStageResultNotification($application, $currentStage, $stageResult);
 
             return $stageResult;
         });
     }
 
-    protected function handleStageFailure(Application $application, JobStage $currentStage, string $notes)
+    /**
+     * Compose and send the applicant-facing email for a graded stage result,
+     * based on the application state already set by advanceApplicationState().
+     */
+    protected function sendStageResultNotification(Application $application, JobStage $currentStage, ApplicationStageResult $stageResult)
     {
-        $application->update(['status' => 'Tidak Lulus']);
+        if ($stageResult->status === 'tidak_lulus') {
+            $message = 'Anda dinyatakan tidak lulus pada tahap seleksi **' . $currentStage->name . '**.'
+                . ($stageResult->notes ? ' Catatan dari panitia: ' . $stageResult->notes : '');
 
-        ApplicationStatusHistory::create([
-            'application_id' => $application->id,
-            'status' => 'Tidak Lulus',
-            'notes' => 'Gagal pada tahap: ' . $currentStage->name . '. ' . $notes,
-            'created_at' => now(),
-        ]);
+            $this->sendStatusNotification($application, $message);
+            return;
+        }
 
-        $message = 'Anda dinyatakan tidak lulus pada tahap seleksi **' . $currentStage->name . '**.'
-            . ($notes ? ' Catatan dari panitia: ' . $notes : '');
+        if ($stageResult->status !== 'lulus') {
+            return;
+        }
 
-        $this->sendStatusNotification($application, $message);
-    }
-
-    protected function handleStageSuccess(Application $application, JobStage $currentStage)
-    {
-        // 🚀 FIX 2: Paksa panggil JobStage secara Absolute Path juga di sini demi keamanan relasi DB
         $nextStage = \App\Models\JobStage::where('job_id', $application->job_id)
             ->where('stage_order', '>', $currentStage->stage_order)
             ->orderBy('stage_order')
             ->first();
 
         if ($nextStage) {
-            $this->moveToNextStage($application, $nextStage, $currentStage->name);
+            $message = 'Anda dinyatakan **lolos** pada tahap **' . $currentStage->name . '** dan akan melanjutkan ke tahap **'
+                . $nextStage->name . '**. Pantau jadwal dan pengumuman tahap berikutnya secara berkala.';
         } else {
-            $this->finalizeApplication($application);
+            $message = 'Anda telah menyelesaikan seluruh tahapan seleksi. Status Anda saat ini adalah menunggu keputusan akhir dari panitia rekrutmen.';
         }
-    }
-
-    protected function moveToNextStage(Application $application, JobStage $nextStage, string $currentStageName)
-    {
-        $existingNextStage = ApplicationStageResult::where('application_id', $application->id)
-            ->where('job_stage_id', $nextStage->id)
-            ->first();
-
-        if (!$existingNextStage) {
-            ApplicationStageResult::create([
-                'application_id' => $application->id,
-                'job_stage_id' => $nextStage->id,
-                'status' => 'pending',
-            ]);
-        }
-
-        $application->update(['status' => 'seleksi']);
-
-        ApplicationStatusHistory::create([
-            'application_id' => $application->id,
-            'status' => 'seleksi',
-            'notes' => 'Lolos tahap ' . $currentStageName . '. Lanjut ke tahap berikutnya.',
-            'created_at' => now(),
-        ]);
-
-        $message = 'Anda dinyatakan **lolos** pada tahap **' . $currentStageName . '** dan akan melanjutkan ke tahap **'
-            . $nextStage->name . '**. Pantau jadwal dan pengumuman tahap berikutnya secara berkala.';
 
         $this->sendStatusNotification($application, $message);
-    }
-
-    protected function finalizeApplication(Application $application)
-    {
-        // Hitung dan simpan final score terlebih dahulu
-        $application->load(['stageResults', 'job.stages']);
-        $finalScore = $application->calculated_final_score;
-
-        // Set status sementara "menunggu keputusan" — belum tentu lulus, tergantung kuota
-        $application->update([
-            'status'      => 'pending_keputusan',
-            'final_score' => $finalScore,
-        ]);
-
-        ApplicationStatusHistory::create([
-            'application_id' => $application->id,
-            'status'         => 'pending_keputusan',
-            'notes'          => 'Pelamar telah menyelesaikan seluruh tahap seleksi. Menunggu penentuan keputusan final berdasarkan kuota.',
-            'created_at'     => now(),
-        ]);
 
         $message = 'Anda telah menyelesaikan seluruh tahapan seleksi. Status Anda saat ini adalah menunggu keputusan akhir dari panitia rekrutmen.';
         $this->sendStatusNotification($application, $message);

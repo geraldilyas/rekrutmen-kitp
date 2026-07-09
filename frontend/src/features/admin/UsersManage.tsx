@@ -13,12 +13,6 @@ const roleTabs = [
   { key: "user", label: "Pendaftar" },
 ];
 
-const verifyTabs = [
-  { key: "all", label: "Semua" },
-  { key: "verified", label: "Verified" },
-  { key: "unverified", label: "Unverified" },
-];
-
 const UsersManage: React.FC = () => {
   const {
     users,
@@ -30,8 +24,6 @@ const UsersManage: React.FC = () => {
     setSearch,
     filterRole,
     setFilterRole,
-    filterVerification,
-    setFilterVerification,
     setCurrentPage,
     addUser,
     editUser,
@@ -107,23 +99,6 @@ const UsersManage: React.FC = () => {
               onClick={() => setFilterRole(tab.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 filterRole === tab.key
-                  ? "bg-white text-[#0D278D] shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Verification filter */}
-        <div className="flex gap-1 p-1 bg-gray-50 rounded-xl w-fit">
-          {verifyTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilterVerification(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                filterVerification === tab.key
                   ? "bg-white text-[#0D278D] shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
