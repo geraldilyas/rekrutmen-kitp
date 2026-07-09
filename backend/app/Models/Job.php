@@ -38,6 +38,11 @@ class Job extends Model
         return $this->hasMany(Announcement::class);
     }
 
+    public function penyeleksi()
+    {
+        return $this->belongsToMany(User::class, 'job_penyeleksi', 'job_id', 'user_id');
+    }
+
     public function applications()
     {
         return $this->hasMany(Application::class);

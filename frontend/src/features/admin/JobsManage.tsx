@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import JobsTable from "./JobsTable";
 import JobFormModal from "./JobFormModal";
-import { useJobsManagement, useUsersManagement } from "./hooks";
+import { useJobsManagement, usePenyeleksiOptions } from "./hooks";
 import type { Job, JobFormData } from "../shared/types";
 
 const statusTabs = [
@@ -24,8 +24,7 @@ const JobsManage: React.FC = () => {
     editJob,
     deleteJob,
   } = useJobsManagement();
-  const { users } = useUsersManagement();
-  const availablePenyeleksi = users.filter((u) => u.role === "penyeleksi");
+  const { penyeleksi: availablePenyeleksi } = usePenyeleksiOptions();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState<"add" | "edit">("add");

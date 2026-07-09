@@ -61,11 +61,6 @@ const itemVariants = {
   },
 };
 
-const monthNames = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
 const Pengumuman: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);

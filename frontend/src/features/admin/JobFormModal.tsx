@@ -698,15 +698,6 @@ const JobFormModal: React.FC<Props> = ({
                             </div>
                           )}
                           <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Mulai</label>
-                            <input
-                              type="date"
-                              value={stage.start_date || ""}
-                              onChange={(e) => updateStage(stage.id, "start_date", e.target.value)}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
-                            />
-                          </div>
-                          <div>
                             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Mulai</label>
                             <input
                               type="datetime-local"

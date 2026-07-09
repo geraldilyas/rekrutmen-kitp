@@ -94,6 +94,10 @@ class JobService
                 }
             }
 
+            if (!empty($data['penyeleksi_ids'])) {
+                $job->penyeleksi()->sync($data['penyeleksi_ids']);
+            }
+
             return $job->load(['stages.documents']);
         });
     }
@@ -127,9 +131,6 @@ class JobService
                 $job->formFields()->sync($data['form_fields']);
             }
 
-            // 🚀 FIX: Sinkronkan tahapan seleksi saat update lowongan.
-            // Sebelumnya method ini tidak menyentuh stages sama sekali, sehingga
-            // tahapan seleksi tidak pernah bisa diubah/ditambah/dihapus lewat form edit.
             if (isset($data['stages'])) {
                 $existingIds = $job->stages()->pluck('id')->toArray();
                 $keepIds = [];
@@ -166,7 +167,10 @@ class JobService
                     }
                 }
 
-                // Hapus tahapan lama yang sudah tidak ada di payload (dihapus admin di form edit)
+                if (isset($data['penyeleksi_ids'])) {
+                    $job->penyeleksi()->sync($data['penyeleksi_ids']);
+                }
+                
                 $toDelete = array_diff($existingIds, $keepIds);
                 if (!empty($toDelete)) {
                     JobStage::whereIn('id', $toDelete)->delete();

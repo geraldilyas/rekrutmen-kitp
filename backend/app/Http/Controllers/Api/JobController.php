@@ -21,13 +21,19 @@ class JobController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Ambil data dengan Eager Loading agar query super cepat dan tidak merusak data relasi
-        $rawJobs = Job::with(['stages.documents'])
-            ->withCount('applications')
-            ->latest()
-            ->get();
+        $query = Job::with(['stages.documents', 'penyeleksi'])
+            ->withCount('applications');
 
-        // 2. Kita bungkus pakai collection dan re-mapping datanya sebelum dikirim ke React
+        $user = auth('sanctum')->user();
+
+        if ($user && $user->role === 'penyeleksi') {
+            $query->whereHas('penyeleksi', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
+
+        $rawJobs = $query->latest()->get();
+
         $jobs = $rawJobs->map(function($job) {
             
             // Mencari tahapan seleksi yang saat ini sedang aktif berdasarkan tanggal hari ini
@@ -49,21 +55,19 @@ class JobController extends Controller
                 'start_date'       => $job->start_date,
                 'end_date'         => $job->end_date,
                 'deadline'         => $job->deadline, 
-                'kuota'            => $job->kuota, // 🚀 FIX: Wajib di-return agar terdeteksi oleh React!
+                'kuota'            => $job->kuota, 
                 'status'           => $job->status ?? 'active',
                 
-                // 🚀 Menggunakan properti hasil withCount
                 'totalPendaftar'   => $job->applications_count,
                 
                 // Hitung otomatis pelamar yang lulus & gagal di tahap aktif saat ini
                 'jumlah_lolos'     => $activeStage ? $activeStage->results()->where('status', 'lulus')->count() : 0,
                 'jumlah_gagal'     => $activeStage ? $activeStage->results()->where('status', 'tidak_lulus')->count() : 0,
-                
+                'penyeleksi_ids'   => $job->penyeleksi->pluck('id'),
                 'selection_stages' => $job->stages
             ];
         });
 
-        // 3. Kirim ke React frontend lo
         return response()->json($jobs);
     }
 
@@ -86,6 +90,8 @@ class JobController extends Controller
             'deadline'       => 'nullable|date',
             'kuota'          => 'required|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini
             'requirements'   => 'nullable|string',
+            'penyeleksi_ids'   => 'nullable|array',
+            'penyeleksi_ids.*' => 'exists:users,id',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',
             'stages'         => 'required|array|min:1',
@@ -136,7 +142,7 @@ class JobController extends Controller
      */
     public function show($id)
     {
-        $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields', 'stages.documents'])->find($id);
+        $job = Job::withoutGlobalScopes()->with(['announcements', 'formFields', 'stages.documents', 'penyeleksi'])->find($id);
 
         if (!$job) {
             return response()->json([
@@ -170,7 +176,9 @@ class JobController extends Controller
             'start_date'     => 'required|date',
             'end_date'       => 'required|date|after_or_equal:start_date',
             'deadline'       => 'nullable|date',
-            'kuota'          => 'required|integer|min:1', // 🚀 FIX: Daftarkan rules validasi kuota disini saat update
+            'kuota'          => 'required|integer|min:1', 
+            'penyeleksi_ids'   => 'nullable|array',
+            'penyeleksi_ids.*' => 'exists:users,id',
             'requirements'   => 'nullable|string',
             'form_fields'    => 'nullable|array',
             'form_fields.*'  => 'exists:form_fields,id',

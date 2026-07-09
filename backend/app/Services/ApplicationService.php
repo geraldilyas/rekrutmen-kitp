@@ -22,6 +22,13 @@ class ApplicationService
     {
         $query = Application::with(['user', 'job', 'stageResults.stage', 'stageResults.reviewer']);
 
+        $user = auth()->user();
+        if ($user && $user->role === 'penyeleksi') {
+            $query->whereHas('job.penyeleksi', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
+    
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }

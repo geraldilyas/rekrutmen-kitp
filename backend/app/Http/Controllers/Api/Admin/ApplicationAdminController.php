@@ -24,11 +24,15 @@ class ApplicationAdminController extends Controller
     public function index(Request $request)
     {
         try {
-            // Kita panggil service utama Anda
-            $applications = $this->applicationService->getApplications($request->all());
+            $filters = $request->all();
+
+            $user = auth()->user();
+            if ($user && $user->role === 'penyeleksi') {
+                $filters['penyeleksi_user_id'] = $user->id; // batasi hanya job miliknya
+            }
+
+            $applications = $this->applicationService->getApplications($filters);
             
-            // Jika service mengembalikan data mentah kosong atau error tersembunyi, 
-            // pastikan response distruktur dengan baik agar React tidak membaca data undefined.
             return response()->json($applications, 200);
             
         } catch (\Throwable $e) {
@@ -53,18 +57,20 @@ class ApplicationAdminController extends Controller
      * Show application detail.
      */
     public function show($id)
-    {
+    {   
         try {
             $application = Application::with([
                 'user',
-                'job.stages', // 🚀 Pastikan stages dari job di-eager load juga
+                'job.stages',
+                'job.penyeleksi',
                 'documents',
                 'answers.formField',
                 'histories',
                 'stageResults.stage'
             ])->findOrFail($id);
 
-            // 🚀 Solusi Aman: Pastikan properti job tidak null sebelum memproses stages
+            $this->authorizePenyeleksi($application->job);
+
             $activeStage = null;
             if ($application->job && isset($application->job->stages)) {
                 $activeStage = collect($application->job->stages)->first(function($stage) {
@@ -81,13 +87,9 @@ class ApplicationAdminController extends Controller
             // Ubah model menjadi array agar kita bisa menyisipkan field tambahan untuk React
             $responseData = $application->toArray();
 
-            // 🚀 Sisipkan data tanggal tahapan yang paling update ke level teratas JSON
             $responseData['current_stage_start_date'] = $activeStage ? $activeStage->start_date : null;
             $responseData['current_stage_end_date'] = $activeStage ? $activeStage->end_date : null;
 
-            // Lowongan lain yang dilamar oleh pelamar yang sama (dicocokkan lewat user_id,
-            // jadi tetap terlacak walau pelamar mengganti email). Lowongan yang sudah
-            // selesai lebih dari 7 hari tidak ditampilkan lagi.
             $responseData['other_applications'] = Application::with('job')
                 ->where('user_id', $application->user_id)
                 ->where('id', '!=', $application->id)
@@ -126,7 +128,9 @@ class ApplicationAdminController extends Controller
             'notes' => 'nullable|string|max:1000'
         ]);
 
-        $application = Application::findOrFail($id);
+        $application = Application::with('job')->findOrFail($id);
+        $this->authorizePenyeleksi($application->job);
+
         $result = $this->applicationService->updateApplicationStatus($application, $validated);
 
         return response()->json([
@@ -140,6 +144,9 @@ class ApplicationAdminController extends Controller
      */
     public function initStage($id)
     {
+        $application = Application::with('job.stages')->findOrFail($id);
+        $this->authorizePenyeleksi($application->job);
+    
         try {
             $application = Application::with('job.stages')->findOrFail($id);
             $result = $this->applicationService->initializeFirstStage($application);
@@ -156,6 +163,8 @@ class ApplicationAdminController extends Controller
     public function applicationStages($id)
     {
         $application = Application::with(['job.stages', 'stageResults.stage'])->find($id);
+        if (!$application) return response()->json(['message' => 'Application not found'], 404);
+        $this->authorizePenyeleksi($application->job);  
 
         if (!$application) {
             return response()->json(['message' => 'Application not found'], 404);
@@ -184,7 +193,8 @@ class ApplicationAdminController extends Controller
         ]);
 
         try {
-            $stageResult = ApplicationStageResult::findOrFail($id);
+            $stageResult = ApplicationStageResult::with('application.job')->findOrFail($id);
+            $this->authorizePenyeleksi($stageResult->application->job);
             $result = $this->applicationService->updateStageResult($stageResult, $validated);
 
             $message = $validated['status'] === 'tidak_lulus' 
@@ -211,12 +221,22 @@ class ApplicationAdminController extends Controller
         }
     }
 
+    private function authorizePenyeleksi($job): void
+    {
+        $user = auth()->user();
+        if ($job && $user && $user->role === 'penyeleksi' && !$job->penyeleksi()->where('user_id', $user->id)->exists()) {
+            abort(403, 'Anda tidak ditugaskan sebagai penyeleksi pada lowongan ini.');
+        }
+    }
+
     /**
      * Delete an application.
      */
     public function destroy($id)
     {
-        $application = Application::findOrFail($id);
+        $application = Application::with('job')->findOrFail($id);
+        $this->authorizePenyeleksi($application->job);
+
         $this->applicationService->deleteApplication($application);
 
         return response()->json(['message' => 'Lamaran berhasil dihapus']);

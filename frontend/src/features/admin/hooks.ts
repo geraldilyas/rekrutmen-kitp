@@ -161,10 +161,9 @@ export function useJobsManagement() {
     start_date: data.start_date,
     end_date: data.end_date,
     deadline: data.end_date,
-    kuota: data.kuota !== undefined && data.kuota !== "" ? data.kuota : null, // 🚀 FIX MUTLAK: Tambahkan baris ini agar lolos ke Axios!
+    kuota: data.kuota !== undefined && data.kuota !== "" ? data.kuota : null, 
+    penyeleksi_ids: data.penyeleksi_ids || [],
     stages: (data.selection_stages || []).map((s: any) => ({
-      // Hanya kirim id kalau ini stage yang sudah tersimpan di DB (numeric).
-      // Stage baru yang ditambah di form edit punya id client-side "s-<timestamp>".
       ...(s.id && /^\d+$/.test(String(s.id)) ? { id: Number(s.id) } : {}),
       name: s.name,
       stage_order: s.order,
@@ -365,6 +364,51 @@ export function useUsersManagement() {
     toggleVerification,
     blacklistUser,
   };
+}
+
+export function usePenyeleksiOptions() {
+  const [penyeleksi, setPenyeleksi] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAllPenyeleksi = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const first = await api.get("/admin/users", {
+        params: { role: "penyeleksi", page: 1, per_page: 500 },
+      });
+
+      const firstData = first.data;
+      const isPaginated = firstData && Array.isArray(firstData.data);
+      let list: User[] = isPaginated ? firstData.data : (Array.isArray(firstData) ? firstData : []);
+
+      const lastPage: number = isPaginated ? (firstData.last_page || 1) : 1;
+      if (isPaginated && lastPage > 1) {
+        const remainingPages = Array.from({ length: lastPage - 1 }, (_, i) => i + 2);
+        const rest = await Promise.all(
+          remainingPages.map((page) =>
+            api.get("/admin/users", { params: { role: "penyeleksi", page, per_page: 500 } }),
+          ),
+        );
+        rest.forEach((res) => {
+          if (Array.isArray(res.data?.data)) list = list.concat(res.data.data);
+        });
+      }
+
+      setPenyeleksi(list);
+    } catch (err) {
+      console.error("Error fetching penyeleksi options:", err);
+      setPenyeleksi([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllPenyeleksi();
+  }, [fetchAllPenyeleksi]);
+
+  return { penyeleksi, loading, refresh: fetchAllPenyeleksi };
 }
 
 // ============================================================
