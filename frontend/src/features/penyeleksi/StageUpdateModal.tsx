@@ -43,7 +43,7 @@ const StageUpdateModal: React.FC<Props> = ({
   const currentStage = application ? stages.find(
     (s) => s.order === application.current_stage_order
   ) : null;
-  const isAdminStage = currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi";
+  const isAdminStage = !!(currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi");
   const bobot = currentStage?.weight || 0;
   const stageDocuments = currentStage?.documents || [];
   const hasDocumentChecklist = isAdminStage && stageDocuments.length > 0;

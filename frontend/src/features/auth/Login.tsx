@@ -24,7 +24,6 @@ export default function Login() {
   const [forgotStep, setForgotStep] = useState(1); // 1 = email, 2 = OTP + password, 3 = success
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState("");
-  const [forgotSuccess, setForgotSuccess] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -32,10 +31,8 @@ export default function Login() {
     e.preventDefault();
     setForgotLoading(true);
     setForgotError("");
-    setForgotSuccess("");
     try {
-      const res = await api.post("/auth/forgot-password", { email: forgotEmail });
-      setForgotSuccess(res.data.message || "Kode verifikasi berhasil dikirim.");
+      await api.post("/auth/forgot-password", { email: forgotEmail });
       setForgotStep(2);
     } catch (err: any) {
       setForgotError(err?.response?.data?.message || "Gagal mengirim kode verifikasi.");
@@ -224,7 +221,6 @@ export default function Login() {
                     setForgotEmail(email);
                     setForgotStep(1);
                     setForgotError("");
-                    setForgotSuccess("");
                     setOtpCode("");
                     setNewPassword("");
                     setConfirmPassword("");
