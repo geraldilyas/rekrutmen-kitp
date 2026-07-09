@@ -86,24 +86,55 @@ class ApplicationController extends Controller
 
                 $totalApplicants = $app->job->applications_count ?? 0;
 
-                // Map tahapan kustom dari admin
-                $adminStages = collect($app->job->stages)->map(function ($stage) use ($app, $totalApplicants) {
+                // Map tahapan kustom dari admin dengan logika rilis bertahap & aman
+                $allPreviousReleased = true;
+                $adminStages = collect($app->job->stages)->map(function ($stage) use ($app, $totalApplicants, &$allPreviousReleased) {
                     // Cari hasil milik pelamar ini di tahapan ini
                     $userResult = collect($app->stageResults)->firstWhere('job_stage_id', $stage->id);
                     
-                    // 🚀 KODE BARU: URL langsung mengarah ke fungsi generate PDF otomatis bawaan sistem
+                    // Rilis jika:
+                    // 1. Kolom released_at tidak null
+                    // 2. ATAU end_date tahapan sudah lewat atau null (fallback untuk data lama)
+                    $isReleased = $userResult && (
+                        $userResult->released_at !== null ||
+                        !$stage->end_date ||
+                        \Carbon\Carbon::parse($stage->end_date)->isPast()
+                    );
+                    
+                    // URL langsung mengarah ke fungsi generate PDF otomatis bawaan sistem
                     $pdfUrl = url("/api/stages/{$stage->id}/download-passed-pdf");
+
+                    // Tentukan status tahapan
+                    if (!$allPreviousReleased) {
+                        $stageStatus = 'locked';
+                    } else {
+                        if ($userResult) {
+                            if ($isReleased) {
+                                $stageStatus = $userResult->status; // 'lulus' atau 'tidak_lulus'
+                                if ($userResult->status === 'tidak_lulus') {
+                                    $allPreviousReleased = false; // gugur, kunci berikutnya
+                                }
+                            } else {
+                                $stageStatus = 'aktif';
+                                $allPreviousReleased = false; // belum dirilis, kunci berikutnya
+                            }
+                        } else {
+                            // Belum ada hasil
+                            $stageStatus = 'locked';
+                            $allPreviousReleased = false;
+                        }
+                    }
 
                     return [
                         'id' => $stage->id,
                         'name' => $stage->stage_name ?? $stage->name,
-                        'status' => $userResult ? $userResult->status : 'locked',
-                        // Injeksi Nilai & Catatan ke dalam tahapan
-                        'score' => $userResult ? $userResult->score : null,
-                        'notes' => $userResult ? $userResult->notes : null,
+                        'status' => $stageStatus,
+                        // Injeksi Nilai & Catatan hanya jika sudah dirilis
+                        'score' => $isReleased ? $userResult->score : null,
+                        'notes' => $isReleased ? $userResult->notes : null,
                         'start_date' => $stage->start_date,
                         'end_date' => $stage->end_date,
-                        'download_pdf_lulus' => $pdfUrl,
+                        'download_pdf_lulus' => $isReleased ? $pdfUrl : null,
                         'total_applicants' => $totalApplicants
                     ];
                 });
@@ -111,7 +142,8 @@ class ApplicationController extends Controller
                 // Tentukan status untuk "Diajukan"
                 $firstAdminStage = $adminStages->first();
                 $diajukanStatus = 'selesai';
-                if ($app->status === 'pending' && ($firstAdminStage && $firstAdminStage['status'] === 'pending')) {
+                // Jika aplikasi baru disubmit (pending) dan belum mulai dinilai sama sekali
+                if ($app->status === 'pending' && !$app->stageResults()->exists()) {
                     $diajukanStatus = 'aktif';
                 }
 
@@ -182,11 +214,26 @@ class ApplicationController extends Controller
             // Cek apakah ini unduhan untuk Hasil Akhir (Final) atau Tahapan Seleksi Biasa
             $isFinal = $request->query('type') === 'final';
 
+            // Autentikasi Admin Bypass Check menggunakan Sanctum guard
+            $user = auth('sanctum')->user();
+            $isAdmin = $user && $user->role === 'admin';
+
             if ($isFinal) {
                 // 1a. Jika FINAL, $id adalah job_id. Ambil data lowongannya
                 $job = \DB::table('jobs')->where('id', $id)->first();
                 if (!$job) {
                     return response()->json(['status' => 'error', 'message' => 'Lowongan tidak ditemukan.'], 404);
+                }
+
+                // Proteksi untuk non-admin: pastikan tahap akhir dari lowongan ini sudah berakhir
+                if (!$isAdmin) {
+                    $lastStage = \DB::table('job_stages')
+                        ->where('job_id', $id)
+                        ->orderByDesc('stage_order')
+                        ->first();
+                    if ($lastStage && \Carbon\Carbon::parse($lastStage->end_date)->isFuture()) {
+                        return response()->json(['status' => 'error', 'message' => 'Pengumuman kelulusan final belum dibuka.'], 403);
+                    }
                 }
 
                 $titleDocument = "LAPORAN HASIL AKHIR SELEKSI SELURUH PELAMAR";
@@ -220,6 +267,13 @@ class ApplicationController extends Controller
 
                 if (!$stage) {
                     return response()->json(['status' => 'error', 'message' => 'Tahapan seleksi tidak ditemukan.'], 404);
+                }
+
+                // Proteksi untuk non-admin: pastikan tanggal berakhir tahapan ini sudah terlewati
+                if (!$isAdmin) {
+                    if ($stage->end_date && \Carbon\Carbon::parse($stage->end_date)->isFuture()) {
+                        return response()->json(['status' => 'error', 'message' => 'Pengumuman hasil tahapan ini belum dibuka.'], 403);
+                    }
                 }
 
                 $titleDocument = "LAPORAN SELURUH PESERTA PADA TAHAPAN SELEKSI";

@@ -234,6 +234,12 @@ class ApplicationService
      */
     public function initializeFirstStage(Application $application)
     {
+        // Tolak jika status aplikasi sudah final — tidak ada tahapan yang perlu dinilai lagi
+        $finalStatuses = ['Lulus', 'Tidak Lulus', 'pending_keputusan'];
+        if (in_array($application->status, $finalStatuses)) {
+            throw new \Exception('Semua tahapan seleksi untuk pelamar ini sudah selesai. Tidak ada tahap yang perlu dinilai.', 422);
+        }
+
         $existing = ApplicationStageResult::where('application_id', $application->id)
             ->where('status', 'pending')
             ->orderByDesc('id')
@@ -241,6 +247,16 @@ class ApplicationService
 
         if ($existing) {
             return $existing;
+        }
+
+        // Jika tidak ada pending result, cek apakah semua tahap sudah punya hasil
+        $totalStages = $application->job->stages->count();
+        $completedResults = ApplicationStageResult::where('application_id', $application->id)
+            ->where('status', '!=', 'pending')
+            ->count();
+
+        if ($totalStages > 0 && $completedResults >= $totalStages) {
+            throw new \Exception('Semua tahapan seleksi sudah selesai dinilai. Tidak ada tahap yang perlu dinilai lagi.', 422);
         }
 
         $firstStage = $application->job->stages->sortBy('stage_order')->first();
@@ -290,18 +306,18 @@ class ApplicationService
             $application = Application::findOrFail($stageResult->application_id);
 
             // Date validation
-            $today = Carbon::today();
+            $now = Carbon::now();
             $startDate = $currentStage->start_date ? Carbon::parse($currentStage->start_date) : null;
             $gradingEndDate = $currentStage->grading_end_date
                 ? Carbon::parse($currentStage->grading_end_date)
                 : ($currentStage->end_date ? Carbon::parse($currentStage->end_date) : null);
 
-            if ($startDate && $today->lt($startDate)) {
-                throw new \Exception('Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . $startDate->format('d/m/Y'), 403);
+            if ($startDate && $now->lt($startDate)) {
+                throw new \Exception('Tahap "' . $currentStage->name . '" belum dapat dinilai. Penilaian dibuka mulai ' . $startDate->format('d/m/Y H:i'), 403);
             }
 
-            if ($gradingEndDate && $today->gt($gradingEndDate)) {
-                throw new \Exception('Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $gradingEndDate->format('d/m/Y'), 403);
+            if ($gradingEndDate && $now->gt($gradingEndDate)) {
+                throw new \Exception('Masa penilaian untuk tahap "' . $currentStage->name . '" sudah berakhir pada ' . $gradingEndDate->format('d/m/Y H:i'), 403);
             }
 
             // Update stage result
@@ -313,14 +329,39 @@ class ApplicationService
                 'reviewed_by' => auth()->id()
             ]);
 
-            // Handle Failure
-            if ($data['status'] === 'tidak_lulus') {
-                $this->handleStageFailure($application, $currentStage, $data['notes'] ?? '');
+            // Langsung rilis hasil dan perbarui status pelamar setelah penilaian disimpan.
+            // Penyeleksi yang menyimpan nilai berarti sudah membuat keputusan definitif,
+            // sehingga tidak perlu menunggu end_date untuk merilis hasil dan mengirim notifikasi.
+            $this->releaseResultsForStage($stageResult);
+
+            return $stageResult;
+        });
+    }
+
+    /**
+     * Rilis hasil penilaian satu tahapan (transisi status aplikasi & kirim email).
+     * Dipanggil otomatis ketika end_date sudah lewat atau lewat cron job/command.
+     */
+    public function releaseResultsForStage(ApplicationStageResult $stageResult)
+    {
+        return DB::transaction(function () use ($stageResult) {
+            // Hanya rilis jika sudah dinilai dan belum dirilis sebelumnya
+            if ($stageResult->status === 'pending' || $stageResult->released_at !== null) {
                 return $stageResult;
             }
 
-            // Handle Success
-            if ($data['status'] === 'lulus') {
+            $currentStage = \App\Models\JobStage::findOrFail($stageResult->job_stage_id);
+            $application = Application::findOrFail($stageResult->application_id);
+
+            // Update status rilis
+            $stageResult->update([
+                'released_at' => now(),
+            ]);
+
+            // Jalankan transisi status & kirim email
+            if ($stageResult->status === 'tidak_lulus') {
+                $this->handleStageFailure($application, $currentStage, $stageResult->notes ?? '');
+            } elseif ($stageResult->status === 'lulus') {
                 $this->handleStageSuccess($application, $currentStage);
             }
 
@@ -391,24 +432,130 @@ class ApplicationService
 
     protected function finalizeApplication(Application $application)
     {
+        // Hitung dan simpan final score terlebih dahulu
         $application->load(['stageResults', 'job.stages']);
         $finalScore = $application->calculated_final_score;
 
+        // Set status sementara "menunggu keputusan" — belum tentu lulus, tergantung kuota
         $application->update([
-            'status' => 'Lulus',
-            'final_score' => $finalScore
+            'status'      => 'pending_keputusan',
+            'final_score' => $finalScore,
         ]);
 
         ApplicationStatusHistory::create([
             'application_id' => $application->id,
-            'status' => 'Lulus',
-            'notes' => 'Pelamar diterima dengan skor akhir: ' . $finalScore,
-            'created_at' => now(),
+            'status'         => 'pending_keputusan',
+            'notes'          => 'Pelamar telah menyelesaikan seluruh tahap seleksi. Menunggu penentuan keputusan final berdasarkan kuota.',
+            'created_at'     => now(),
         ]);
 
-        $message = 'Anda telah menyelesaikan seluruh rangkaian tahapan seleksi dengan skor akhir **' . $finalScore . '**. Selamat bergabung!';
-
+        $message = 'Anda telah menyelesaikan seluruh tahapan seleksi. Status Anda saat ini adalah menunggu keputusan akhir dari panitia rekrutmen.';
         $this->sendStatusNotification($application, $message);
+    }
+
+    /**
+     * Tentukan siapa yang Lulus/Tidak Lulus berdasarkan kuota lowongan.
+     * Dipanggil ketika pengumuman diterbitkan.
+     * Hanya akan eksekusi ranking jika SEMUA pelamar di tahap terakhir sudah selesai dinilai.
+     */
+    public function resolveJobQuota(int $jobId)
+    {
+        $job = \App\Models\Job::with('stages')->find($jobId);
+        if (!$job) return;
+
+        // Ambil tahap terakhir
+        $lastStage = $job->stages->sortBy('stage_order')->last();
+        if (!$lastStage) return;
+
+        // Cek apakah masih ada pelamar di tahap terakhir yang belum selesai dinilai (status pending)
+        $pendingInLastStage = ApplicationStageResult::where('job_stage_id', $lastStage->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($pendingInLastStage) {
+            // Masih ada yang belum dinilai — tunggu dulu, jangan putuskan sekarang
+            Log::info("resolveJobQuota: Job #{$jobId} masih ada pelamar pending di tahap terakhir. Menunggu.");
+            return;
+        }
+
+        // Semua sudah dinilai di tahap terakhir.
+        // Ambil semua pelamar yang statusnya pending_keputusan untuk lowongan ini
+        // (withoutGlobalScopes() diperlukan agar tidak terkena filter ApplicationDataScope
+        // yang membatasi berdasarkan admin level — proses ini berjalan server-side tanpa konteks admin)
+        $finalists = Application::withoutGlobalScopes()
+            ->where('job_id', $jobId)
+            ->where('status', 'pending_keputusan')
+            ->with(['stageResults', 'job.stages'])
+            ->get();
+
+        if ($finalists->isEmpty()) return;
+
+        $this->rankAndAssignQuota($job, $finalists);
+    }
+
+    /**
+     * Lakukan ranking dan tetapkan status Lulus/Tidak Lulus berdasarkan kuota.
+     * Tiebreaker: jika final_score sama, bandingkan skor di tahap dengan bobot tertinggi.
+     */
+    protected function rankAndAssignQuota(\App\Models\Job $job, $finalists)
+    {
+        $kuota = $job->kuota ?? null;
+
+        // Jika kuota tidak diisi, semua yang selesai seluruh tahap dinyatakan Lulus
+        if (is_null($kuota) || $kuota <= 0) {
+            foreach ($finalists as $app) {
+                $this->setFinalStatus($app, 'Lulus', 'Pelamar diterima. Selamat bergabung!');
+            }
+            return;
+        }
+
+        // Temukan tahap dengan bobot tertinggi (untuk tiebreaker)
+        $highestWeightStage = $job->stages->sortByDesc('weight')->first();
+
+        // Sort: final_score DESC, lalu score di tahap bobot tertinggi DESC sebagai tiebreaker
+        $ranked = $finalists->sortByDesc(function ($app) use ($highestWeightStage) {
+            $tiebreaker = 0;
+            if ($highestWeightStage) {
+                $result = $app->stageResults->where('job_stage_id', $highestWeightStage->id)->first();
+                $tiebreaker = $result ? ($result->score ?? 0) : 0;
+            }
+            // Primary sort: final_score (×1000 agar presisi, tiebreaker di belakang koma)
+            return ($app->final_score * 1000) + ($tiebreaker / 1000);
+        })->values();
+
+        foreach ($ranked as $index => $app) {
+            $rank = $index + 1;
+            if ($rank <= $kuota) {
+                $this->setFinalStatus(
+                    $app,
+                    'Lulus',
+                    'Selamat! Anda dinyatakan **lulus** dan masuk dalam kuota penerimaan (peringkat #' . $rank . ' dari ' . $finalists->count() . ' pelamar). Skor akhir: ' . $app->final_score
+                );
+            } else {
+                $this->setFinalStatus(
+                    $app,
+                    'Tidak Lulus',
+                    'Anda telah menyelesaikan seluruh tahap seleksi dengan skor akhir **' . $app->final_score . '**, namun tidak masuk dalam kuota penerimaan (peringkat #' . $rank . ' dari ' . $finalists->count() . ' pelamar). Terima kasih atas partisipasi Anda.'
+                );
+            }
+        }
+    }
+
+    /**
+     * Tetapkan status final (Lulus/Tidak Lulus) pada satu aplikasi dan kirim notifikasi.
+     */
+    protected function setFinalStatus(Application $app, string $status, string $message)
+    {
+        $app->update(['status' => $status]);
+
+        ApplicationStatusHistory::create([
+            'application_id' => $app->id,
+            'status'         => $status,
+            'notes'          => strip_tags($message),
+            'created_at'     => now(),
+        ]);
+
+        $this->sendStatusNotification($app, $message);
     }
 
     /**

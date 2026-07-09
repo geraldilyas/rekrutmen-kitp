@@ -41,6 +41,11 @@ const statusConfig: Record<
     color: "bg-red-50 text-red-600 border-red-200",
     dot: "bg-red-500",
   },
+  pending_keputusan: {
+    label: "Menunggu Keputusan",
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+    dot: "bg-purple-500",
+  },
 };
 
 const fmt = (d: string | null) =>

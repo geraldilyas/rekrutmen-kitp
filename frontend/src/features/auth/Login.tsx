@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, LogIn, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, LogIn, ArrowLeft, Eye, EyeOff, X, KeyRound, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { api } from "../../services/api";
 
 // Impor Aset Logo
@@ -15,6 +15,57 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotStep, setForgotStep] = useState(1); // 1 = email, 2 = OTP + password, 3 = success
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError("");
+    setForgotSuccess("");
+    try {
+      const res = await api.post("/auth/forgot-password", { email: forgotEmail });
+      setForgotSuccess(res.data.message || "Kode verifikasi berhasil dikirim.");
+      setForgotStep(2);
+    } catch (err: any) {
+      setForgotError(err?.response?.data?.message || "Gagal mengirim kode verifikasi.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setForgotError("Konfirmasi kata sandi baru tidak cocok.");
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError("");
+    try {
+      await api.post("/auth/reset-password", {
+        email: forgotEmail,
+        code: otpCode,
+        password: newPassword,
+        password_confirmation: confirmPassword
+      });
+      setForgotStep(3);
+    } catch (err: any) {
+      setForgotError(err?.response?.data?.message || "Gagal mengubah kata sandi.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -168,7 +219,21 @@ export default function Login() {
                 <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] tracking-wide">
                   Kata Sandi
                 </label>
-                <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 hover:text-[#0D278D] cursor-pointer transition-colors">
+                <span 
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotStep(1);
+                    setForgotError("");
+                    setForgotSuccess("");
+                    setOtpCode("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    setShowNewPassword(false);
+                    setShowConfirmPassword(false);
+                    setShowForgotModal(true);
+                  }}
+                  className="text-[10px] sm:text-[11px] font-semibold text-gray-400 hover:text-[#0D278D] cursor-pointer transition-colors"
+                >
                   Lupa Sandi?
                 </span>
               </div>
@@ -223,6 +288,224 @@ export default function Login() {
         </motion.div>
       </div>
 
+      <AnimatePresence>
+        {showForgotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!forgotLoading) setShowForgotModal(false);
+              }}
+              className="absolute inset-0 bg-[#08185A]/40 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden border border-gray-100 p-6 sm:p-8"
+            >
+              {/* Close Button */}
+              <button
+                type="button"
+                disabled={forgotLoading}
+                onClick={() => setShowForgotModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+
+              {forgotStep === 1 && (
+                <div>
+                  <div className="text-center mb-6">
+                    <div className="w-12 h-12 bg-blue-50 text-[#0D278D] rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <KeyRound size={24} />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-[#0D278D]">Lupa Kata Sandi?</h3>
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                      Masukkan alamat email terdaftar Anda. Kami akan mengirimkan 6-digit kode verifikasi untuk mereset kata sandi Anda.
+                    </p>
+                  </div>
+
+                  {forgotError && (
+                    <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-xl">
+                      <p className="text-red-600 text-[11px] font-bold leading-relaxed">{forgotError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleRequestOtp} className="space-y-4">
+                    <div className="group/input">
+                      <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
+                        Alamat Email
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within/input:text-[#0D278D] transition-colors">
+                          <Mail size={16} strokeWidth={2.2} />
+                        </span>
+                        <input
+                          type="email"
+                          placeholder="nama@email.com"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          className="w-full bg-gray-50/50 border-2 border-gray-100/80 text-xs sm:text-sm font-medium rounded-xl pl-12 pr-4 py-3 sm:py-3.5 outline-none transition-all duration-300 focus:bg-white focus:border-[#0D278D]"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="w-full bg-[#0D278D] text-white py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer hover:bg-opacity-95 transition-all disabled:opacity-50"
+                    >
+                      {forgotLoading ? "Mengirim Kode..." : "Kirim Kode Verifikasi"}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {forgotStep === 2 && (
+                <div>
+                  <div className="text-center mb-6">
+                    <div className="w-12 h-12 bg-amber-50 text-[#FEB700] rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-[#0D278D]">Verifikasi & Reset</h3>
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                      Kode verifikasi 6-digit telah dikirim ke <span className="text-[#0D278D] font-semibold">{forgotEmail}</span>. Silakan masukkan kode dan kata sandi baru Anda.
+                    </p>
+                  </div>
+
+                  {forgotError && (
+                    <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-xl">
+                      <p className="text-red-600 text-[11px] font-bold leading-relaxed">{forgotError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="group/input">
+                      <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
+                        Kode Verifikasi (6 Digit)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="123456"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        className="w-full bg-gray-50/50 border-2 border-gray-100/80 text-center tracking-[0.3em] font-extrabold text-sm sm:text-base rounded-xl py-3 outline-none transition-all duration-300 focus:bg-white focus:border-[#0D278D]"
+                        required
+                        autoComplete="one-time-code"
+                        name="verification_code"
+                      />
+                    </div>
+
+                    <div className="group/input">
+                      <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
+                        Kata Sandi Baru
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within/input:text-[#0D278D] transition-colors">
+                          <Lock size={16} strokeWidth={2.2} />
+                        </span>
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full bg-gray-50/50 border-2 border-gray-100/80 text-xs sm:text-sm font-medium rounded-xl pl-12 pr-12 py-3 outline-none transition-all duration-300 focus:bg-white focus:border-[#0D278D]"
+                          required
+                          autoComplete="new-password"
+                          name="new_password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-[#0D278D] transition-colors"
+                        >
+                          {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="group/input">
+                      <label className="text-[10px] sm:text-[11px] font-bold text-[#0D278D] block mb-1 tracking-wide pl-1">
+                        Konfirmasi Kata Sandi Baru
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within/input:text-[#0D278D] transition-colors">
+                          <Lock size={16} strokeWidth={2.2} />
+                        </span>
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full bg-gray-50/50 border-2 border-gray-100/80 text-xs sm:text-sm font-medium rounded-xl pl-12 pr-12 py-3 outline-none transition-all duration-300 focus:bg-white focus:border-[#0D278D]"
+                          required
+                          autoComplete="new-password"
+                          name="new_password_confirmation"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-[#0D278D] transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="w-full bg-[#0D278D] text-white py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer hover:bg-opacity-95 transition-all disabled:opacity-50"
+                    >
+                      {forgotLoading ? "Memproses..." : "Reset Kata Sandi"}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      disabled={forgotLoading}
+                      onClick={() => setForgotStep(1)}
+                      className="w-full text-center text-xs text-gray-400 hover:text-[#0D278D] font-bold transition-colors block py-1 cursor-pointer disabled:opacity-50"
+                    >
+                      Kembali ke pengisian email
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {forgotStep === 3 && (
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 size={24} />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-[#0D278D]">Reset Berhasil!</h3>
+                  <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                    Kata sandi Anda telah berhasil diubah. Silakan masuk kembali menggunakan kata sandi baru Anda.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotModal(false);
+                      setEmail(forgotEmail);
+                    }}
+                    className="w-full bg-[#0D278D] text-white py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 mt-6 cursor-pointer hover:bg-opacity-95 transition-all"
+                  >
+                    Tutup & Login
+                  </button>
+                </div>
+              )}
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
