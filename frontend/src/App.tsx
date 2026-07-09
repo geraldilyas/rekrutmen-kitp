@@ -8,6 +8,7 @@ import Lowongan from "./features/user/Lowongan";
 import DetailLowongan from "./features/user/DetailLowongan";
 import Status from "./features/user/Status";
 import Pengumuman from "./features/public/Pengumuman";
+import FAQ from "./features/public/FAQ";
 import Arsip from "./features/user/Arsip"; // 🚀 Sudah terimpor aman di sini bro
 import UserProfile from "./features/user/Profile";
 import AdminLayout from "./features/admin/AdminLayout";
@@ -85,6 +86,16 @@ function App() {
             <>
               <Navbar />
               <Pengumuman />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/faq"
+          element={
+            <>
+              <Navbar />
+              <FAQ />
               <Footer />
             </>
           }

@@ -1,10 +1,12 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { MapPin, Mail, Phone } from "lucide-react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Mail, Phone, X, MessageSquare, ExternalLink } from "lucide-react";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
 
 const Footer: React.FC = () => {
+  const [showContactModal, setShowContactModal] = useState(false);
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -102,11 +104,11 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
                 <Phone size={16} className="text-[#FEB700] shrink-0" />
-                <span>(0721) 484 212</span>
+                <span>0811-7215-700</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 group cursor-pointer hover:text-[#0D278D] transition-colors">
                 <Mail size={16} className="text-[#FEB700] shrink-0" />
-                <span className="break-all">rekrutmen.bbwsms@pu.go.id</span>
+                <span className="break-all">rekruitmentbbwsms@gmail.com</span>
               </div>
             </div>
 
@@ -282,19 +284,59 @@ const Footer: React.FC = () => {
               Bantuan & Kontak
             </h5>
             <ul className="space-y-4 text-sm font-medium text-gray-500 mb-8">
-              {["Panduan Aplikasi", "Hubungi Panitia", "Lokasi Tes", "FAQ"].map(
-                (item) => (
-                  <li
-                    key={item}
-                    className="group flex items-center cursor-pointer"
-                  >
-                    <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
-                    <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
-                      {item}
-                    </span>
-                  </li>
-                ),
-              )}
+              {/* Panduan Aplikasi */}
+              <li className="group flex items-center">
+                <a
+                  href="https://drive.google.com/drive/folders/13rrZqs-FJilJxSqdAesR7AIQEQhPHYH_?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center w-full cursor-pointer"
+                >
+                  <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
+                  <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
+                    Panduan Aplikasi
+                  </span>
+                </a>
+              </li>
+
+              {/* Hubungi Panitia */}
+              <li
+                onClick={() => setShowContactModal(true)}
+                className="group flex items-center cursor-pointer"
+              >
+                <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
+                <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
+                  Hubungi Panitia
+                </span>
+              </li>
+
+              {/* Lokasi Tes */}
+              <li className="group flex items-center">
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Balai+Besar+Wilayah+Sungai+Mesuji+Sekampung"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center w-full cursor-pointer"
+                >
+                  <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
+                  <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
+                    Lokasi Tes
+                  </span>
+                </a>
+              </li>
+
+              {/* FAQ */}
+              <li className="group flex items-center">
+                <Link
+                  to="/faq"
+                  className="flex items-center w-full cursor-pointer"
+                >
+                  <span className="w-0 h-[2px] bg-[#FEB700] mr-0 group-hover:w-3 group-hover:mr-2 transition-all duration-300 ease-out" />
+                  <span className="group-hover:text-[#0D278D] group-hover:translate-x-1 transition-all duration-300">
+                    FAQ
+                  </span>
+                </Link>
+              </li>
             </ul>
           </motion.div>
         </motion.div>
@@ -321,6 +363,91 @@ const Footer: React.FC = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Hubungi Panitia Modal */}
+      <AnimatePresence>
+        {showContactModal && (
+          <div className="fixed inset-0 w-screen h-screen top-0 left-0 z-[99999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 w-full h-full bg-black/40 backdrop-blur-[5px]"
+              onClick={() => setShowContactModal(false)}
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative z-10 border border-[#0D278D]/20 font-['Poppins'] text-center overflow-hidden"
+            >
+              {/* Decorative gradient top bar */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#0D278D] via-[#FEB700] to-[#0D278D]" />
+              
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="w-14 h-14 bg-blue-50 text-[#0D278D] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
+                <Phone size={24} />
+              </div>
+
+              <h3 className="text-xl font-extrabold text-[#0D278D] tracking-tight mb-2">
+                Hubungi Panitia Rekrutmen
+              </h3>
+              
+              <p className="text-xs text-gray-400 font-medium leading-relaxed mb-6">
+                Silakan hubungi panitia melalui kontak di bawah ini pada jam kerja aktif (Senin - Jumat, 08:00 - 16:00 WIB).
+              </p>
+
+              <div className="space-y-3 mb-8">
+                {/* Phone Call / WhatsApp Row */}
+                <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="flex items-center justify-between text-xs text-gray-500 font-bold px-1">
+                    <span className="flex items-center gap-1.5"><MessageSquare size={13} className="text-[#FEB700]" /> Telepon / WhatsApp</span>
+                    <span>0811-7215-700</span>
+                  </div>
+                  <a
+                    href="https://wa.me/628117215700"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 bg-[#25D366] text-white font-bold text-xs rounded-xl hover:bg-[#20ba5a] transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    Chat via WhatsApp <ExternalLink size={12} />
+                  </a>
+                </div>
+
+                {/* Email Row */}
+                <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="flex items-center justify-between text-xs text-gray-500 font-bold px-1">
+                    <span className="flex items-center gap-1.5"><Mail size={13} className="text-[#FEB700]" /> Email Panitia</span>
+                    <span className="truncate max-w-[200px]">rekruitmentbbwsms@gmail.com</span>
+                  </div>
+                  <a
+                    href="mailto:rekruitmentbbwsms@gmail.com"
+                    className="w-full py-2.5 bg-[#0D278D] text-white font-bold text-xs rounded-xl hover:bg-blue-950 transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    Kirim Email Resmi <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowContactModal(false)}
+                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </footer>
   );
 };
