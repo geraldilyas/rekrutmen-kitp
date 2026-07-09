@@ -11,3 +11,8 @@ Artisan::command('inspire', function () {
 // Remind applicants once a day whose application has been stuck without a
 // status update for 7+ days (email deduplicated via last_reminder_at).
 Schedule::command('app:send-application-reminders')->daily();
+
+// Rilis hasil penilaian tahapan seleksi secara otomatis ke pelamar dan kirim email
+// notifikasi secara serentak ketika tanggal tahapan telah berakhir.
+Schedule::command('app:release-stage-results')->hourly();
+

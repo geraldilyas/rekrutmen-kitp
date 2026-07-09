@@ -17,6 +17,7 @@ import {
   Briefcase,
   Lock,
   Layers,
+  Megaphone,
 } from "lucide-react";
 import { api } from "../../services/api";
 
@@ -40,7 +41,7 @@ interface TimelineStep {
 
 interface Application {
   id: number;
-  status: string; 
+  status: string;
   applied_at: string;
   created_at?: string;
   job?: {
@@ -55,7 +56,7 @@ interface Application {
     category: string;
     qualification: string;
   };
-  timeline?: TimelineStep[]; 
+  timeline?: TimelineStep[];
 }
 
 const mainContainerVariants = {
@@ -120,7 +121,7 @@ export const StatusLamaran: React.FC = () => {
       const res = await api.get(`/applications/my?t=${new Date().getTime()}`);
       const responseData = res.data;
       const rawList = responseData.data || (Array.isArray(responseData) ? responseData : []);
-      
+
       setApplications(rawList);
     } catch (err) {
       console.error("Error fetching applications:", err);
@@ -151,12 +152,26 @@ export const StatusLamaran: React.FC = () => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  const isSameDay = (d1Str: string | null, d2Str: string | null): boolean => {
+    if (!d1Str || !d2Str) return false;
+    const d1 = new Date(d1Str);
+    const d2 = new Date(d2Str);
+    return (
+      d1.getDate() === d2.getDate() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear()
+    );
+  };
+
   // Untuk tahapan yang belum diproses (status 'locked'), tampilkan jadwalnya
   // saja sesuai yang ditentukan admin — bukan berarti pelamar sudah pasti
   // lolos/gugur, murni informasi "kapan tahapan ini akan berlangsung".
   const formatStageSchedule = (step: TimelineStep) => {
     if (!step.start_date && !step.end_date) return null;
     if (step.start_date && step.end_date) {
+      if (isSameDay(step.start_date, step.end_date)) {
+        return formatDate(step.start_date);
+      }
       return `${formatDate(step.start_date)} - ${formatDate(step.end_date)}`;
     }
     return formatDate(step.start_date || step.end_date || "");
@@ -165,7 +180,7 @@ export const StatusLamaran: React.FC = () => {
   const getTimelineProgress = (timeline: TimelineStep[]) => {
     if (!timeline || timeline.length === 0) return 0;
     const activeOrDoneIndex = timeline.findLastIndex(
-      step => step.status === 'selesai' || step.status === 'aktif' || step.status === 'Lulus' || step.status === 'Tidak Lulus'
+      step => step.status === 'selesai' || step.status === 'aktif' || step.status === 'Lulus' || step.status === 'Tidak Lulus' || step.status === 'pending_keputusan'
     );
     if (activeOrDoneIndex <= 0) return 0;
     return (activeOrDoneIndex / (timeline.length - 1)) * 100;
@@ -248,7 +263,7 @@ export const StatusLamaran: React.FC = () => {
       </div>
 
       <motion.main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-0" variants={mainContainerVariants} initial="hidden" animate="visible">
-        
+
         {/* Riwayat Lamaran Title & Dropdown Filter */}
         <motion.div variants={mainItemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-8">
           <div>
@@ -265,9 +280,8 @@ export const StatusLamaran: React.FC = () => {
             <div className="relative w-full sm:w-[180px]">
               <button
                 onClick={() => toggleDropdown("category")}
-                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
-                  openDropdown === "category" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
-                }`}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "category" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                  }`}
               >
                 <Layers size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">
@@ -301,9 +315,8 @@ export const StatusLamaran: React.FC = () => {
             <div className="relative w-full sm:w-[160px]">
               <button
                 onClick={() => toggleDropdown("month")}
-                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
-                  openDropdown === "month" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
-                }`}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "month" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                  }`}
               >
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">
@@ -337,9 +350,8 @@ export const StatusLamaran: React.FC = () => {
             <div className="relative w-full sm:w-[140px]">
               <button
                 onClick={() => toggleDropdown("year")}
-                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${
-                  openDropdown === "year" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
-                }`}
+                className={`group w-full bg-white text-[#0D278D] font-bold text-xs pl-10 pr-4 h-[46px] rounded-xl border transition-all duration-300 hover:bg-[#0D278D] hover:text-white flex items-center justify-between cursor-pointer ${openDropdown === "year" ? "border-[#0D278D] ring-4 ring-blue-50/50" : "border-[#0D278D]/20"
+                  }`}
               >
                 <Calendar size={14} className="absolute left-3.5 text-[#0D278D] group-hover:text-white transition-colors" />
                 <span className="truncate mr-1">{yearFilter === "all" ? "Semua Tahun" : yearFilter}</span>
@@ -413,12 +425,29 @@ export const StatusLamaran: React.FC = () => {
                         <span className="text-[13px] font-medium text-gray-600">{targetJob.qualification}</span>
                       </div>
                     </div>
-
                     <div className="flex items-center justify-between w-full md:w-auto gap-6 mt-4 md:mt-0">
-                      <div className={`px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border ${app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? "bg-red-50 text-red-600 border-red-100" : app.status === 'Lulus' || app.status === 'lulus' ? "bg-green-50 text-green-600 border-green-100" : "bg-white text-[#0D278D] border-[#0D278D]"}`}>
-                        {app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? <XCircle size={16} /> : app.status === 'Lulus' || app.status === 'lulus' ? <CheckCircle2 size={16} /> : <Clock size={16} className="text-[#FEB700]" />}
-                        {app.status === 'pending' || app.status === 'seleksi' ? 'Sedang Proses' : app.status}
-                      </div>
+                      {['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(app.status) ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/pengumuman?job_id=${targetJob.id}`);
+                          }}
+                          className="px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border bg-white text-[#0D278D] border-gray-200 hover:bg-[#0D278D] hover:text-white transition-all cursor-pointer s hover:shadow group"
+                        >
+                          <Megaphone size={16} className="text-[#FEB700] group-hover:scale-110 transition-transform" />
+                          <span>Lihat Hasil</span>
+                        </button>
+                      ) : app.status === 'pending_keputusan' ? (
+                        <div className="px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border bg-purple-50 text-purple-700 border-purple-200">
+                          <Clock size={16} className="text-purple-400" />
+                          <span>Menunggu Keputusan</span>
+                        </div>
+                      ) : (
+                        <div className="px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 border bg-white text-[#0D278D] border-gray-200">
+                          <Clock size={16} className="text-[#FEB700]" />
+                          <span>Sedang Berlangsung</span>
+                        </div>
+                      )}
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${expandedId === app.id ? "rotate-180 bg-[#0D278D] text-white shadow-md" : "text-gray-400 group-hover:bg-white group-hover:text-[#0D278D] group-hover:shadow-sm"}`}>
                         <ChevronDown size={22} />
                       </div>
@@ -439,10 +468,10 @@ export const StatusLamaran: React.FC = () => {
                             <div className="hidden md:block absolute top-[22px] left-[4%] right-[4%] z-0">
                               <div className="h-[2px] w-full bg-gray-100" />
                               {timeline.length > 1 && (
-                                <motion.div 
-                                  initial={{ width: 0 }} 
-                                  animate={{ width: `${getTimelineProgress(timeline)}%` }} 
-                                  className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${app.status === 'Tidak Lulus' || app.status === 'tidak_lulus' ? "bg-red-500" : app.status === 'Lulus' || app.status === 'lulus' ? "bg-green-500" : "bg-[#0D278D]"}`} 
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${getTimelineProgress(timeline)}%` }}
+                                  className={`absolute top-0 left-0 h-[2px] transition-all duration-700 ease-out ${app.status === 'pending_keputusan' ? "bg-purple-400" : "bg-[#0D278D]"}`}
                                 />
                               )}
                             </div>
@@ -452,13 +481,14 @@ export const StatusLamaran: React.FC = () => {
                                 let circleClass = "bg-white border-[2px] border-gray-200 text-gray-300";
                                 let titleClass = "text-gray-400 font-medium";
                                 let IconComponent = CircleDot;
+                                const isEndStageAndProcessed = step.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(step.status);
 
-                                if (step.status === 'selesai') {
+                                if (step.status === 'selesai' || isEndStageAndProcessed) {
                                   circleClass = "bg-[#0D278D] border-[#0D278D] text-white shadow-[0_4px_15px_rgba(13,39,141,0.2)] cursor-pointer hover:scale-110";
                                   titleClass = "text-[#0D278D] font-bold";
                                   IconComponent = CheckCircle2;
                                 } else if (step.status === 'aktif') {
-                                  circleClass = "bg-white border-[#FEB700] text-[#FEB700] ring-4 ring-yellow-50 cursor-pointer hover:scale-110";
+                                  circleClass = "bg-white border-[4px] border-[#FEB700] text-[#FEB700] cursor-pointer hover:scale-110 shadow-sm";
                                   titleClass = "text-[#0D278D] font-bold";
                                   IconComponent = Clock;
                                 } else if (step.status === 'tidak_lulus' || step.status === 'Tidak Lulus') {
@@ -494,7 +524,15 @@ export const StatusLamaran: React.FC = () => {
                                         {step.name}
                                       </h3>
                                       <p className="text-[11px] md:text-[12px] text-gray-400 font-medium mt-0.5 capitalize">
-                                        {step.status === 'locked' ? 'Akan Datang' : step.status === 'tidak_lulus' ? 'Gugur' : step.status}
+                                        {step.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(step.status)
+                                          ? 'Selesai'
+                                          : step.status === 'locked'
+                                            ? 'Akan Datang'
+                                            : step.status === 'tidak_lulus' || step.status === 'Tidak Lulus'
+                                              ? 'Gugur'
+                                              : step.status === 'aktif'
+                                                ? 'sedang berlangsung'
+                                                : step.status}
                                       </p>
                                       {step.status === 'locked' && formatStageSchedule(step) && (
                                         <p className="text-[10px] text-gray-400 mt-1 normal-case">
@@ -529,31 +567,37 @@ export const StatusLamaran: React.FC = () => {
                                         <h5 className="text-sm font-bold text-[#0D278D] tracking-tight">
                                           Rincian Alur: {activeStageDetail.name}
                                         </h5>
-                                        
+
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[12px] font-bold uppercase tracking-wider">
                                           {/* INFO NILAI */}
                                           <span className="text-gray-500">
                                             Nilai : {" "}
                                             <span className="text-[#0D278D]">
-                                              {activeStageDetail.score !== null && activeStageDetail.score !== undefined 
-                                                ? activeStageDetail.score 
+                                              {activeStageDetail.score !== null && activeStageDetail.score !== undefined
+                                                ? activeStageDetail.score
                                                 : "-"}
-                                              </span>
+                                            </span>
                                           </span>
-                                          
+
                                           <span className="text-gray-300 hidden sm:inline">|</span>
-                                          
+
                                           {/* INFO STATUS */}
                                           <span className="text-gray-500">
                                             Status : {" "}
                                             <span className={
-                                              ['tidak_lulus', 'Tidak Lulus'].includes(activeStageDetail.status) 
-                                                ? "text-red-500" 
-                                                : ['lulus', 'Lulus', 'selesai'].includes(activeStageDetail.status) 
-                                                  ? "text-green-500" 
-                                                  : "text-amber-500"
+                                              activeStageDetail.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(activeStageDetail.status)
+                                                ? "text-blue-600"
+                                                : ['tidak_lulus', 'Tidak Lulus'].includes(activeStageDetail.status)
+                                                  ? "text-red-500"
+                                                  : ['lulus', 'Lulus', 'selesai'].includes(activeStageDetail.status)
+                                                    ? "text-green-500"
+                                                    : "text-amber-500"
                                             }>
-                                              {activeStageDetail.status}
+                                              {activeStageDetail.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(activeStageDetail.status)
+                                                ? 'Selesai'
+                                                : activeStageDetail.status === 'aktif'
+                                                  ? 'Sedang Berlangsung'
+                                                  : activeStageDetail.status}
                                             </span>
                                           </span>
 
@@ -571,19 +615,33 @@ export const StatusLamaran: React.FC = () => {
                                     </div>
 
                                     {/* TOMBOL UNDUH PDF DI SEBELAH KANAN */}
-                                    {activeStageDetail.download_pdf_lulus ? (
-                                      <a 
+                                    {activeStageDetail.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(activeStageDetail.status) ? (
+                                      <button
+                                        onClick={() => navigate(`/pengumuman?job_id=${targetJob.id}`)}
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0D278D] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FEB700] hover:text-white transition-all group cursor-pointer"
+                                      >
+                                        <Megaphone size={14} className="group-hover:scale-110 transition-transform duration-200" />
+                                        <span>Lihat Hasil Pengumuman</span>
+                                      </button>
+                                    ) : activeStageDetail.download_pdf_lulus ? (
+                                      <a
                                         href={activeStageDetail.download_pdf_lulus}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 transition-all group"
                                       >
                                         <Download size={14} className="group-hover:translate-y-0.5 transition-transform duration-200" />
-                                        <span>Unduh PDF SK Kelulusan</span>
+                                        <span>
+                                          Unduh {activeStageDetail.name.toLowerCase().includes("hasil")
+                                            ? activeStageDetail.name
+                                            : `Hasil ${activeStageDetail.name}`}
+                                        </span>
                                       </a>
                                     ) : (
                                       <span className="text-[11px] text-gray-400 italic bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                        PDF Kelulusan Belum Diunggah
+                                        PDF {activeStageDetail.name.toLowerCase().includes("hasil")
+                                          ? activeStageDetail.name
+                                          : `Hasil ${activeStageDetail.name}`} Belum Diunggah
                                       </span>
                                     )}
                                   </div>
@@ -591,10 +649,12 @@ export const StatusLamaran: React.FC = () => {
                                   {/* TAMPILAN CATATAN VERIFIKATOR */}
                                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                      Catatan / Keterangan Resmi:
+                                      Informasi:
                                     </p>
                                     <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                                      {activeStageDetail.notes || "Belum ada catatan atau instruksi tambahan resmi pada tahapan ini."}
+                                      {activeStageDetail.id === 'end' && ['Lulus', 'lulus', 'Tidak Lulus', 'tidak_lulus'].includes(activeStageDetail.status)
+                                        ? "Proses seleksi telah selesai secara keseluruhan. Silakan klik tombol 'Lihat Hasil Pengumuman' di atas untuk melihat detail pengumuman resmi dan daftar kelulusan."
+                                        : activeStageDetail.notes || "Belum ada catatan atau instruksi tambahan resmi pada tahapan ini."}
                                     </p>
                                   </div>
 
@@ -607,7 +667,7 @@ export const StatusLamaran: React.FC = () => {
                               )}
                             </AnimatePresence>
                           </div>
-                          
+
                         </div>
                       </motion.div>
                     )}

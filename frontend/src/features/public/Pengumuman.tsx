@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import {
   Megaphone,
   Users,
@@ -68,6 +69,24 @@ const Pengumuman: React.FC = () => {
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const targetJobId = searchParams.get("job_id");
+
+  useEffect(() => {
+    if (!loading && targetJobId) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`job-${targetJobId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          element.classList.add("bg-blue-50/30", "rounded-2xl");
+          setTimeout(() => {
+            element.classList.remove("bg-blue-50/30", "rounded-2xl");
+          }, 3000);
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, targetJobId]);
 
   const listMonths = [
     { value: "all", label: "Semua Bulan" },
@@ -375,8 +394,9 @@ const Pengumuman: React.FC = () => {
               <motion.div
                 layout
                 key={item.id}
+                id={`job-${item.id}`}
                 exit={{ opacity: 0, y: -10 }}
-                className="group border-b border-gray-100 py-10 relative"
+                className="group border-b border-gray-100 py-10 relative scroll-mt-28 transition-all duration-500"
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FEB700] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center rounded-r-full" />
 

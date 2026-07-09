@@ -63,6 +63,17 @@ const fmt = (d: string | null) =>
       })
     : "-";
 
+const isSameDay = (d1Str: string | null, d2Str: string | null): boolean => {
+  if (!d1Str || !d2Str) return false;
+  const d1 = new Date(d1Str);
+  const d2 = new Date(d2Str);
+  return (
+    d1.getDate() === d2.getDate() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getFullYear() === d2.getFullYear()
+  );
+};
+
 const JobRow: React.FC<{
   job: Job;
   onEdit: (job: Job) => void;
@@ -187,7 +198,9 @@ const JobRow: React.FC<{
                         Bobot: {stage.weight}%
                       </span>
                       <span className="text-[10px] text-gray-500 font-medium">
-                        {fmt(stage.start_date)} - {fmt(stage.end_date)}
+                        {isSameDay(stage.start_date, stage.end_date)
+                          ? fmt(stage.start_date)
+                          : `${fmt(stage.start_date)} - ${fmt(stage.end_date)}`}
                       </span>
                     </div>
                   </div>

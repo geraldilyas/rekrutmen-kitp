@@ -29,16 +29,21 @@ class ReportService
      */
     public function generateApplicationsPdf(Job $job, bool $passedOnly = false)
     {
-        $query = Application::with(['user', 'stageResults', 'job.stages'])->where('job_id', $job->id);
+        $allApplications = Application::with(['user', 'stageResults', 'job.stages'])
+            ->where('job_id', $job->id)
+            ->get()
+            ->sortByDesc('calculated_final_score')
+            ->values();
 
         if ($passedOnly) {
-            $query->where('status', 'Lulus');
+            $applications = $allApplications->filter(function($app) {
+                return strtolower($app->status) === 'lulus';
+            })->values();
             $title = "DAFTAR PESERTA LULUS SELEKSI AKHIR";
         } else {
+            $applications = $allApplications;
             $title = "LAPORAN HASIL SELEKSI REKRUTMEN";
         }
-
-        $applications = $query->get()->sortByDesc('calculated_final_score')->values();
 
         // Gunakan template khusus untuk laporan seleksi akhir (combine per-tahapan + rekap akhir)
         $view = $passedOnly ? 'reports.seleksi-akhir-pdf' : 'reports.applications-pdf';
@@ -46,6 +51,7 @@ class ReportService
         return Pdf::loadView($view, [
             'job' => $job,
             'applications' => $applications,
+            'all_applications' => $allApplications,
             'report_title' => $title
         ])->setPaper('a4', 'portrait');
     }
@@ -59,18 +65,24 @@ class ReportService
             throw new \Exception('Pengumuman untuk lowongan ini sudah diterbitkan dan tidak dapat diubah.', 422);
         }
 
-        if (!$this->isJobEligible($job)) {
-            throw new \Exception('Pengumuman hanya dapat diterbitkan setelah lowongan melewati deadline dan seluruh tahapan seleksi berakhir.', 422);
+        if ($job->selection_status !== 'selesai') {
+            throw new \Exception('Pengumuman hanya dapat diterbitkan setelah proses seleksi dinyatakan selesai oleh Admin (klik tombol Selesai terlebih dahulu).', 422);
         }
 
         $path = $data['file']->store('announcements', 'public');
 
-        return Announcement::create([
+        $announcement = Announcement::create([
             'job_id' => $job->id,
             'title' => $data['title'],
             'file_path' => $path,
             'published_at' => now()
         ]);
+
+        // 🚀 Pemicu Penentuan Kelulusan Akhir & Notifikasi Email ke Semua Pelamar
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $applicationService->resolveJobQuota($job->id);
+
+        return $announcement;
     }
 
     /**
@@ -82,9 +94,13 @@ class ReportService
             throw new \Exception('Pengumuman untuk lowongan ini sudah diterbitkan dan tidak dapat diubah.', 422);
         }
 
-        if (!$this->isJobEligible($job)) {
-            throw new \Exception('Pengumuman hanya dapat diterbitkan setelah lowongan melewati deadline dan seluruh tahapan seleksi berakhir.', 422);
+        if ($job->selection_status !== 'selesai') {
+            throw new \Exception('Pengumuman hanya dapat diterbitkan setelah proses seleksi dinyatakan selesai oleh Admin (klik tombol Selesai terlebih dahulu).', 422);
         }
+
+        // Jalankan penentuan kelulusan kuota & kirim email terlebih dahulu agar status terupdate menjadi Lulus sebelum PDF di-generate
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $applicationService->resolveJobQuota($job->id);
 
         $pdf = $this->generateApplicationsPdf($job, true);
 
@@ -98,6 +114,26 @@ class ReportService
             'file_path' => $path,
             'published_at' => now()
         ]);
+    }
+
+    /**
+     * Mark selection process as complete for a job.
+     */
+    public function completeSelection(Job $job)
+    {
+        if ($job->selection_status === 'selesai') {
+            throw new \Exception('Proses seleksi lowongan ini sudah dinyatakan selesai sebelumnya.', 422);
+        }
+
+        if (!$job->selection_ready) {
+            throw new \Exception('Proses seleksi belum dapat diselesaikan karena masih ada pelamar yang belum dinilai pada tahapan seleksi.', 422);
+        }
+
+        $job->update([
+            'selection_status' => 'selesai'
+        ]);
+
+        return $job;
     }
 
     /**

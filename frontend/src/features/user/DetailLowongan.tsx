@@ -86,7 +86,7 @@ const DetailLowongan: React.FC = () => {
   const [applyLoading, setApplyLoading] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState("");
-  const [showApplyForm, setShowApplyForm] = useState(false); 
+  const [showApplyForm, setShowApplyForm] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{
     [key: number]: { field_id: number; label: string; value: string; is_required: boolean; category: "data_diri" | "berkas" }
   }>({});
@@ -95,10 +95,10 @@ const DetailLowongan: React.FC = () => {
   const fetchJobDetail = async (jobId: string, token: string | null) => {
     try {
       setLoading(true);
-  
+
       const jobResponse = await api.get(`/jobs/${jobId}`);
       const responseData = jobResponse.data;
-      const jobData = responseData.data || responseData; 
+      const jobData = responseData.data || responseData;
       setJob(jobData);
 
       const stages = jobData.stages || jobData.selection_stages || [];
@@ -133,10 +133,10 @@ const DetailLowongan: React.FC = () => {
 
 
       const initialAnswersState: any = {};
-  
+
       dynamicFields.forEach((field: any, index: number) => {
         const actualFieldId = field.id || field.form_field_id || (index + 1);
-        
+
         initialAnswersState[actualFieldId] = {
           field_id: Number(actualFieldId),
           label: field.label || field.name || "Input Persyaratan",
@@ -145,31 +145,31 @@ const DetailLowongan: React.FC = () => {
           category: field.category === "berkas" ? "berkas" : "data_diri"
         };
       });
-  
+
       setUploadedFiles(initialAnswersState);
-  
+
       if (token) {
         try {
           const appsResponse = await api.get("/applications/my");
           const myApps: Application[] = Array.isArray(appsResponse.data)
             ? appsResponse.data
             : appsResponse.data.data || [];
-            
+
           setAlreadyApplied(myApps.some((a) => String(a.job_id) === jobId));
         } catch (appErr) {
           console.error("Gagal memuat status lamaran user, tetapi detail lowongan tetap ditampilkan:", appErr);
           setAlreadyApplied(false); // Default jika backend error
         }
       }
-  
+
     } catch (err) {
       console.error("Error fetching job detail (Main Job API Error):", err);
-      setJob(null); 
+      setJob(null);
     } finally {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (id) {
@@ -189,8 +189,8 @@ const DetailLowongan: React.FC = () => {
 
   const applyMasterDoc = (fieldId: number, label: string) => {
     const typeLower = label.toLowerCase();
-    const found = masterDocs.find(d => 
-      typeLower.includes(d.type.toLowerCase()) || 
+    const found = masterDocs.find(d =>
+      typeLower.includes(d.type.toLowerCase()) ||
       d.type.toLowerCase().includes(typeLower)
     );
 
@@ -251,7 +251,7 @@ const DetailLowongan: React.FC = () => {
 
   const formatDeadline = (dateStr: string | null, startDateStr?: string) => {
     const now = new Date();
-    
+
     if (startDateStr) {
       const start = new Date(startDateStr);
       if (now < start) {
@@ -280,6 +280,17 @@ const DetailLowongan: React.FC = () => {
     return new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
   };
 
+  const isSameDay = (d1Str: string | null, d2Str: string | null): boolean => {
+    if (!d1Str || !d2Str) return false;
+    const d1 = new Date(d1Str);
+    const d2 = new Date(d2Str);
+    return (
+      d1.getDate() === d2.getDate() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear()
+    );
+  };
+
   // Tahap Seleksi: data ini murni informatif, otomatis mengikuti tahapan yang
   // ditambahkan admin pada lowongan (tidak terkait progres lamaran pengguna).
   const selectionStages: JobStageInfo[] = (job?.stages || job?.selection_stages || [])
@@ -302,56 +313,56 @@ const DetailLowongan: React.FC = () => {
   };
 
   if (loading) {
-  return (
-    <div className="bg-white min-h-screen font-['Poppins'] flex items-center justify-center">
-      <div
-        className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
-        style={{
-          maskImage:
-            "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
-        }}
-      >
-        <svg
-          className="absolute w-[200%] h-full left-0"
-          viewBox="0 0 200 40"
-          preserveAspectRatio="none"
+    return (
+      <div className="bg-white min-h-screen font-['Poppins'] flex items-center justify-center">
+        <div
+          className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+          style={{
+            maskImage:
+              "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+          }}
         >
-          <defs>
-            <linearGradient
-              id="riverGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="50%" stopColor="#0D278D" />
-              <stop offset="100%" stopColor="#3B82F6" />
-            </linearGradient>
-          </defs>
+          <svg
+            className="absolute w-[200%] h-full left-0"
+            viewBox="0 0 200 40"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient
+                id="riverGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#3B82F6" />
+                <stop offset="50%" stopColor="#0D278D" />
+                <stop offset="100%" stopColor="#3B82F6" />
+              </linearGradient>
+            </defs>
 
-          <motion.path
-            d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
-            fill="none"
-            stroke="url(#riverGradient)"
-            strokeWidth="7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ x: 0 }}
-            animate={{ x: -100 }}
-            transition={{
-              duration: 4.5,
-              ease: "linear",
-              repeat: Infinity,
-            }}
-          />
-        </svg>
+            <motion.path
+              d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+              fill="none"
+              stroke="url(#riverGradient)"
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ x: 0 }}
+              animate={{ x: -100 }}
+              transition={{
+                duration: 4.5,
+                ease: "linear",
+                repeat: Infinity,
+              }}
+            />
+          </svg>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
   if (!job) {
     return (
       <div className="bg-white min-h-screen font-['Poppins'] flex flex-col items-center justify-center">
@@ -399,9 +410,9 @@ const DetailLowongan: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-0">
         {job.announcements && job.announcements.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="mb-16 p-8 rounded-[2.5rem] bg-gradient-to-br from-[#0D278D] to-blue-800 text-white shadow-2xl relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:scale-110 transition-transform duration-700" />
@@ -418,7 +429,7 @@ const DetailLowongan: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {job.announcements.map((ann) => (
-                  <a 
+                  <a
                     key={ann.id}
                     href={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/storage/${ann.file_path}`}
                     target="_blank"
@@ -443,7 +454,7 @@ const DetailLowongan: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-          
+
           {/* Left Column: Details */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="lg:col-span-8 space-y-16">
             <section>
@@ -457,7 +468,7 @@ const DetailLowongan: React.FC = () => {
             </section>
 
             {job.qualification && (
-               <section>
+              <section>
                 <h2 className="text-2xl md:text-3xl font-extrabold text-[#0D278D] mb-8 tracking-tight flex items-center gap-3">
                   <GraduationCap size={28} className="text-[#FEB700]" />
                   Kualifikasi
@@ -534,7 +545,7 @@ const DetailLowongan: React.FC = () => {
                             {(stage.start_date || stage.end_date) && (
                               <p className="text-[10px] text-gray-400 mt-1">
                                 {formatShortDate(stage.start_date)}
-                                {stage.end_date ? ` - ${formatShortDate(stage.end_date)}` : ""}
+                                {stage.end_date && !isSameDay(stage.start_date, stage.end_date) ? ` - ${formatShortDate(stage.end_date)}` : ""}
                               </p>
                             )}
                           </div>
@@ -561,7 +572,7 @@ const DetailLowongan: React.FC = () => {
                     <CalendarClock size={20} strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col justify-center">
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Batas Waktu</p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Batas Waktu Pendaftaran</p>
                     <p className="font-semibold text-gray-800 text-[15px]">
                       {job.deadline
                         ? `${new Date(job.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}, Pukul ${new Date(job.deadline).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
@@ -596,7 +607,7 @@ const DetailLowongan: React.FC = () => {
                       <User size={20} strokeWidth={1.5} />
                     </div>
                     <div className="flex flex-col justify-center">
-                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Perekrut</p>
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Perekrut / Ketua Tim Seleksi</p>
                       <p className="font-semibold text-gray-800 text-[15px]">{job.recruiter_name}</p>
                     </div>
                   </div>
@@ -661,8 +672,8 @@ const DetailLowongan: React.FC = () => {
                     }, 150);
                   }}
                   className={`w-full py-4 rounded-full font-bold text-[15px] transition-all flex items-center justify-center gap-2 group cursor-pointer border-2
-                    ${showApplyForm 
-                      ? "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200" 
+                    ${showApplyForm
+                      ? "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200"
                       : "bg-white border-[#0D278D] text-[#0D278D] hover:bg-[#0d278d] hover:text-white shadow-sm"
                     }`}
                 >
@@ -688,7 +699,7 @@ const DetailLowongan: React.FC = () => {
           >
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
               <div className="relative">
-                
+
                 <div className="text-left mb-12 border-b border-gray-900 pb-6">
                   <h3 className="text-2xl font-extrabold text-[#0D278D] font-['Poppins']">
                     Formulir Lamaran

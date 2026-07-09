@@ -217,7 +217,7 @@ const Footer: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+                  <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />x
                 </svg>
               </a>
               {/* Threads */}
@@ -252,7 +252,7 @@ const Footer: React.FC = () => {
                 { name: "Profil BBWSMS", url: "https://sda.pu.go.id/balai/bbwsmesujisekampung/" },
                 { name: "Peta Wilayah Sungai", url: "https://hydrosmart.bbwsms.com/" },
                 { name: "Berita Terkini", url: "https://sda.pu.go.id/balai/bbwsmesujisekampung/pages/category/semua" },
-                { name: "WDRC", url: "https://pdsda.sda.pu.go.id/" },
+                { name: "WRDC", url: "https://pdsda.sda.pu.go.id/" },
               ].map((item) => (
                 <li
                   key={item.name}

@@ -26,7 +26,10 @@ class Job extends Model
             'kuota',
             'category',
             'created_by',
+            'selection_status',
         ];
+
+        protected $appends = ['selection_ready'];
 
     public function createdBy()
     {
@@ -65,6 +68,27 @@ class Job extends Model
         'deadline'   => 'datetime',
     ];
 }
+
+    public function getSelectionReadyAttribute()
+    {
+        // Pastikan deadline lowongan sudah lewat
+        if (!$this->deadline || $this->deadline->isFuture()) {
+            return false;
+        }
+
+        // Ambil semua stage ID untuk lowongan ini
+        $stageIds = $this->stages->pluck('id');
+        if ($stageIds->isEmpty()) {
+            return false;
+        }
+
+        // Cek apakah ada pelamar yang masih memiliki status 'pending' pada salah satu stage
+        $hasPending = \App\Models\ApplicationStageResult::whereIn('job_stage_id', $stageIds)
+            ->where('status', 'pending')
+            ->exists();
+
+        return !$hasPending;
+    }
 
     protected static function booted()
     {

@@ -22,6 +22,8 @@ interface Job {
   deadline: string;
   applications_count: number;
   unit_kerja: string;
+  selection_status?: string;
+  selection_ready?: boolean;
 }
 
 interface Announcement {
@@ -119,6 +121,17 @@ const Reports: React.FC = () => {
       setStatus({ type: 'error', message: err.response?.data?.message || "Gagal menerbitkan pengumuman" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCompleteSelection = async (jobId: number) => {
+    if (!window.confirm("Apakah Anda yakin ingin menandai proses seleksi lowongan ini telah SELESAI?\nSetelah selesai, Anda dapat menerbitkan pengumuman hasil akhir.")) return;
+    try {
+      await api.post(`/admin/reports/${jobId}/complete-selection`);
+      setStatus({ type: 'success', message: "Proses seleksi lowongan berhasil dinyatakan SELESAI!" });
+      fetchJobs();
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err.response?.data?.message || "Gagal menyelesaikan seleksi" });
     }
   };
 
@@ -232,10 +245,26 @@ const Reports: React.FC = () => {
                     <FileText size={16} /> PDF (Lulus)
                   </button>
                   <div className="w-full h-px bg-gray-100 my-2" />
+                  
+                  {job.selection_status !== 'selesai' ? (
+                    <button
+                      onClick={() => handleCompleteSelection(job.id)}
+                      disabled={!job.selection_ready}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-100 text-white disabled:text-gray-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md"
+                    >
+                      <CheckCircle2 size={16} />
+                      {job.selection_ready ? "Selesai Seleksi" : "Tahapan Belum Selesai"}
+                    </button>
+                  ) : (
+                    <div className="w-full text-center py-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-widest">
+                      ✓ Seleksi Selesai
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setUploadJobId(job.id)}
-                    disabled={!!announcements[job.id]?.length}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0D278D] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FEB700] hover:text-[#0D278D] disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md"
+                    disabled={job.selection_status !== 'selesai' || !!announcements[job.id]?.length}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0D278D] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FEB700] hover:text-[#0D278D] disabled:bg-gray-100 disabled:text-gray-400 transition-all shadow-md animate-in fade-in duration-300"
                   >
                     <Upload size={16} /> {!!announcements[job.id]?.length ? "Sudah Terbit" : "Upload Manual"}
                   </button>

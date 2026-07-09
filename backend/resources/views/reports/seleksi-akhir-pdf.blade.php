@@ -244,8 +244,15 @@
                 </thead>
                 <tbody>
                     @php
-                        $stageApps = $applications->filter(function($app) use ($stage) {
+                        // Filter pelamar yang memiliki hasil (lulus maupun tidak lulus) di tahapan ini
+                        $stageApps = $all_applications->filter(function($app) use ($stage) {
                             return $app->stageResults->contains('job_stage_id', $stage->id);
+                        })->values();
+
+                        // Urutkan pelamar berdasarkan nilai di tahapan ini secara descending (nilai tertinggi di paling atas)
+                        $stageApps = $stageApps->sortByDesc(function($app) use ($stage) {
+                            $result = $app->stageResults->firstWhere('job_stage_id', $stage->id);
+                            return $result ? ($result->score ?? 0) : 0;
                         })->values();
                     @endphp
 

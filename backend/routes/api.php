@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\Admin\BlacklistController;
 Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Route::get('/health', function () {
@@ -120,6 +122,8 @@ Route::middleware('throttle:api')->group(function () {
                 Route::get('/export/{job_id}/pdf', [ReportController::class, 'exportPdf']);
                 Route::post('/announcements', [ReportController::class, 'createAnnouncement']);
                 Route::get('/announcements/{job_id}', [ReportController::class, 'getAnnouncements']);
+                Route::post('/{job_id}/complete-selection', [ReportController::class, 'completeSelection']);
+                Route::post('/publish-passed/{job_id}', [ReportController::class, 'publishPassedResults']);
             });
 
 

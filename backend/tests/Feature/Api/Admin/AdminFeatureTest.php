@@ -136,4 +136,113 @@ class AdminFeatureTest extends TestCase
         $response = $this->getJson("/api/admin/reports/export/999");
         $response->assertStatus(404);
     }
+
+    /** @test */
+    public function it_blocks_grading_if_stage_assessment_has_not_started_yet()
+    {
+        $job = Job::factory()->create();
+        $stage = JobStage::create([
+            'job_id' => $job->id,
+            'name' => 'Wawancara',
+            'stage_order' => 1,
+            'start_date' => Carbon::now()->addHours(2), // Starts in 2 hours
+            'end_date' => Carbon::now()->addHours(5),
+        ]);
+        
+        $user = User::factory()->create();
+        $app = Application::create([
+            'user_id' => $user->id,
+            'job_id' => $job->id,
+            'status' => 'pending',
+            'applied_at' => now()
+        ]);
+
+        $stageResult = ApplicationStageResult::create([
+            'application_id' => $app->id,
+            'job_stage_id' => $stage->id,
+            'status' => 'pending'
+        ]);
+
+        $response = $this->putJson("/api/admin/applications/stages/{$stageResult->id}", [
+            'status' => 'lulus',
+            'score' => 90,
+            'notes' => 'Good job'
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJsonPath('message', 'Tahap "Wawancara" belum dapat dinilai. Penilaian dibuka mulai ' . Carbon::parse($stage->start_date)->format('d/m/Y H:i'));
+    }
+
+    /** @test */
+    public function it_blocks_grading_if_stage_assessment_has_expired()
+    {
+        $job = Job::factory()->create();
+        $stage = JobStage::create([
+            'job_id' => $job->id,
+            'name' => 'Wawancara',
+            'stage_order' => 1,
+            'start_date' => Carbon::now()->subHours(5),
+            'end_date' => Carbon::now()->subHours(2), // Ended 2 hours ago
+        ]);
+        
+        $user = User::factory()->create();
+        $app = Application::create([
+            'user_id' => $user->id,
+            'job_id' => $job->id,
+            'status' => 'pending',
+            'applied_at' => now()
+        ]);
+
+        $stageResult = ApplicationStageResult::create([
+            'application_id' => $app->id,
+            'job_stage_id' => $stage->id,
+            'status' => 'pending'
+        ]);
+
+        $response = $this->putJson("/api/admin/applications/stages/{$stageResult->id}", [
+            'status' => 'lulus',
+            'score' => 90,
+            'notes' => 'Good job'
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJsonPath('message', 'Masa penilaian untuk tahap "Wawancara" sudah berakhir pada ' . Carbon::parse($stage->end_date)->format('d/m/Y H:i'));
+    }
+
+    /** @test */
+    public function it_allows_grading_if_stage_assessment_is_currently_active_including_same_day()
+    {
+        $job = Job::factory()->create();
+        $stage = JobStage::create([
+            'job_id' => $job->id,
+            'name' => 'Wawancara',
+            'stage_order' => 1,
+            'start_date' => Carbon::now()->subHours(1), // Started 1 hour ago
+            'end_date' => Carbon::now()->addHours(1),   // Ends in 1 hour
+        ]);
+        
+        $user = User::factory()->create();
+        $app = Application::create([
+            'user_id' => $user->id,
+            'job_id' => $job->id,
+            'status' => 'pending',
+            'applied_at' => now()
+        ]);
+
+        $stageResult = ApplicationStageResult::create([
+            'application_id' => $app->id,
+            'job_stage_id' => $stage->id,
+            'status' => 'pending'
+        ]);
+
+        $response = $this->putJson("/api/admin/applications/stages/{$stageResult->id}", [
+            'status' => 'lulus',
+            'score' => 90,
+            'notes' => 'Good job'
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEquals('lulus', $stageResult->fresh()->status);
+        $this->assertEquals(90, $stageResult->fresh()->score);
+    }
 }

@@ -39,12 +39,22 @@ const ApplicantDetail: React.FC = () => {
       setModalOpen(true);
       return;
     }
+
+    // Jika tidak ada pending stage result dan status sudah final, jangan buka modal
+    const finalStatuses = ["pending_keputusan", "Lulus", "Tidak Lulus"];
+    if (finalStatuses.includes(app.status)) {
+      alert("Semua tahapan seleksi untuk pelamar ini sudah selesai.");
+      return;
+    }
+
     try {
       const res = await api.post(`/admin/applications/${app.id}/init-stage`);
+      if (!res.data.data?.id) return;
       setSelected({ ...app, current_stage_result_id: res.data.data?.id ?? null });
       setModalOpen(true);
-    } catch (err) {
-      console.error("Failed to init stage:", err);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Gagal memulai tahapan seleksi.";
+      alert(msg);
     }
   };
 

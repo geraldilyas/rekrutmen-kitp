@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 use App\Services\UserService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage; // 🚀 WAJIB DIIMPORT UNTUK PENGELOLAAN FILE
+use App\Models\User;
+use App\Notifications\ResetPasswordCode;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -159,5 +164,88 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'File tidak ditemukan'], 400);
+    }
+
+    /**
+     * REQUEST PASSWORD RESET OTP.
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.exists' => 'Email tidak terdaftar di sistem kami.'
+        ]);
+
+        $email = $request->email;
+        $code = (string) rand(100000, 999999);
+
+        // Simpan ke database password_reset_tokens
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            [
+                'token' => Hash::make($code),
+                'created_at' => Carbon::now()
+            ]
+        );
+
+        // Kirim email
+        $user = User::where('email', $email)->first();
+        $user->notify(new ResetPasswordCode($code));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kode verifikasi berhasil dikirim ke email Anda.'
+        ]);
+    }
+
+    /**
+     * VERIFY OTP AND RESET PASSWORD.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.'
+        ]);
+
+        $resetRecord = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        if (!$resetRecord) {
+            return response()->json([
+                'message' => 'Permintaan reset tidak valid atau kode salah.'
+            ], 422);
+        }
+
+        // Cek kadaluarsa (15 menit)
+        if (Carbon::parse($resetRecord->created_at)->addMinutes(15)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return response()->json([
+                'message' => 'Kode verifikasi telah kadaluarsa. Silakan minta kode baru.'
+            ], 422);
+        }
+
+        // Cek keabsahan kode OTP
+        if (!Hash::check($request->code, $resetRecord->token)) {
+            return response()->json([
+                'message' => 'Kode verifikasi tidak cocok atau salah.'
+            ], 422);
+        }
+
+        // Update password user
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Hapus token reset dari DB
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kata sandi Anda berhasil diperbarui. Silakan login.'
+        ]);
     }
 }

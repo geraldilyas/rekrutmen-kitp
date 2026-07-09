@@ -40,6 +40,14 @@ const StageUpdateModal: React.FC<Props> = ({
   stages,
   scorerName,
 }) => {
+  const currentStage = application ? stages.find(
+    (s) => s.order === application.current_stage_order
+  ) : null;
+  const isAdminStage = currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi";
+  const bobot = currentStage?.weight || 0;
+  const stageDocuments = currentStage?.documents || [];
+  const hasDocumentChecklist = isAdminStage && stageDocuments.length > 0;
+
   const [decision, setDecision] = useState<"lulus" | "tidak_lulus">("lulus");
   const [note, setNote] = useState("");
   const [score, setScore] = useState<number | null>(null);
@@ -50,10 +58,10 @@ const StageUpdateModal: React.FC<Props> = ({
     if (isOpen) {
       setDecision("lulus");
       setNote("");
-      setScore(null);
+      setScore(hasDocumentChecklist ? 0 : null);
       setCheckedDocs(new Set());
     }
-  }, [isOpen]);
+  }, [isOpen, hasDocumentChecklist]);
 
   useEffect(() => {
     if (!isOpen || !application) {
@@ -68,23 +76,24 @@ const StageUpdateModal: React.FC<Props> = ({
 
   if (!isOpen || !application) return null;
 
-  const currentStage = stages.find(
-    (s) => s.order === application.current_stage_order,
-  );
-  const bobot = currentStage?.weight || 0;
-  const stageDocuments = currentStage?.documents || [];
-  const hasDocumentChecklist = stageDocuments.length > 0;
-
   const toggleDoc = (formFieldId: number) => {
     setCheckedDocs((prev) => {
       const next = new Set(prev);
       if (next.has(formFieldId)) next.delete(formFieldId);
       else next.add(formFieldId);
 
-      const checkedWeight = stageDocuments
-        .filter((d) => next.has(d.form_field_id))
-        .reduce((s, d) => s + (Number(d.weight) || 0), 0);
-      setScore(bobot > 0 ? Math.round((checkedWeight / bobot) * 100) : 0);
+      const totalDocs = stageDocuments.length;
+      const isAdminStage = currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi";
+
+      if (isAdminStage) {
+        const checkedCount = stageDocuments.filter((d) => next.has(d.form_field_id)).length;
+        setScore(totalDocs > 0 ? Math.round((checkedCount / totalDocs) * 100) : 0);
+      } else {
+        const checkedWeight = stageDocuments
+          .filter((d) => next.has(d.form_field_id))
+          .reduce((s, d) => s + (Number(d.weight) || 0), 0);
+        setScore(bobot > 0 ? Math.round((checkedWeight / bobot) * 100) : 0);
+      }
 
       return next;
     });
@@ -132,20 +141,25 @@ const StageUpdateModal: React.FC<Props> = ({
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
-            <h2 className="font-bold text-gray-900">Input Penilaian</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {application.user_name} — {application.current_stage}
+            <h2 className="text-xl font-extrabold text-gray-900">Input Penilaian</h2>
+            <div className="text-base text-gray-500 mt-2">
+              <span className="font-extrabold text-gray-900">{application.user_name}</span>
+              <span className="mx-2 text-gray-300">|</span>
+              <span className="font-semibold text-gray-600">{application.user_email}</span>
+            </div>
+            <p className="text-sm font-bold text-[#0D278D] mt-2">
+              Tahap Seleksi: {application.current_stage}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors self-start"
           >
-            <X size={20} />
+            <X size={22} />
           </button>
         </div>
 
@@ -190,7 +204,7 @@ const StageUpdateModal: React.FC<Props> = ({
           </div>
 
           {/* Pertanyaan & Jawaban Pelamar (di luar dokumen tahapan ini) */}
-          {(() => {
+          {isAdminStage && (() => {
             const docFieldIds = new Set(stageDocuments.map((d) => d.form_field_id));
             const questionAnswers = answers.filter((a) => !docFieldIds.has(a.form_field_id));
             return questionAnswers.length > 0 ? (
@@ -248,9 +262,15 @@ const StageUpdateModal: React.FC<Props> = ({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-xs font-bold text-gray-700">{doc.label}</p>
-                          <span className="text-[10px] font-bold text-[#0D278D] bg-blue-100 px-1.5 py-0.5 rounded shrink-0">
-                            {doc.weight}%
-                          </span>
+                          {currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi" ? (
+                            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">
+                              Rata
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-[#0D278D] bg-blue-100 px-1.5 py-0.5 rounded shrink-0">
+                              {doc.weight}%
+                            </span>
+                          )}
                         </div>
                         {ans?.answer ? (
                           isLikelyUrl(ans.answer) ? (
@@ -275,7 +295,11 @@ const StageUpdateModal: React.FC<Props> = ({
                 })}
               </div>
               <p className="text-[11px] text-gray-400 mt-1.5">
-                Skor otomatis dihitung dari jumlah bobot dokumen yang dicentang terhadap bobot tahapan ({bobot}%).
+                {currentStage && currentStage.name && currentStage.name.trim().toLowerCase() === "seleksi administrasi" ? (
+                  `Skor otomatis dihitung berdasarkan persentase berkas yang dicentang (${checkedDocs.size} dari ${stageDocuments.length} berkas).`
+                ) : (
+                  `Skor otomatis dihitung dari jumlah bobot dokumen yang dicentang terhadap bobot tahapan (${bobot}%).`
+                )}
               </p>
             </div>
           )}

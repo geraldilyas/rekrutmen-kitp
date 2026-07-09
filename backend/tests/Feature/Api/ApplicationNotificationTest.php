@@ -165,7 +165,7 @@ class ApplicationNotificationTest extends TestCase
                 'score' => 90,
             ])->assertStatus(200);
 
-        $this->assertEquals('Lulus', $application->fresh()->status);
+        $this->assertEquals('pending_keputusan', $application->fresh()->status);
         Notification::assertSentTo($applicant, ApplicationStatusUpdated::class);
     }
 

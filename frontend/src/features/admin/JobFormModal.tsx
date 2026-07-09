@@ -202,12 +202,28 @@ const JobFormModal: React.FC<Props> = ({
     }));
 
   const updateStage = (id: string | number, key: keyof SelectionStage, value: any) => {
-    setForm((p) => ({
-      ...p,
-      selection_stages: p.selection_stages.map((s) =>
+    setForm((p) => {
+      const updatedStages = p.selection_stages.map((s) =>
         String(s.id) === String(id) ? { ...s, [key]: value } : s
-      ),
-    }));
+      );
+
+      // 🔄 SINKRONISASI DWIRAH: Jika tahap Seleksi Administrasi diubah tanggalnya,
+      // otomatis perbarui juga tanggal buka/tutup lowongan utama.
+      const changedStage = updatedStages.find((s) => String(s.id) === String(id));
+      let newStartDate = p.start_date;
+      let newEndDate = p.end_date;
+      if (changedStage && isAdminStage(changedStage.name)) {
+        if (key === "start_date") newStartDate = value;
+        if (key === "end_date") newEndDate = value;
+      }
+
+      return {
+        ...p,
+        start_date: newStartDate,
+        end_date: newEndDate,
+        selection_stages: updatedStages,
+      };
+    });
   };
 
   const toggleStageDocument = (stageId: string | number, doc: { id: number; label: string }) => {
@@ -301,7 +317,7 @@ const JobFormModal: React.FC<Props> = ({
     if (!form.unit_kerja.trim()) e.unit_kerja = "Unit kerja wajib diisi";
     if (!form.duration.trim()) e.duration = "Durasi kontrak wajib diisi";
     if (!form.qualification.trim()) e.qualification = "Kualifikasi wajib diisi";
-    if (!form.recruiter_name.trim()) e.recruiter_name = "Nama perekrut wajib diisi";
+    if (!form.recruiter_name.trim()) e.recruiter_name = "Nama Perekrut / Ketua Tim Seleksi wajib diisi";
     if (form.kuota === "" || form.kuota === undefined || form.kuota === null || Number(form.kuota) <= 0)
       e.kuota = "Kuota wajib diisi";
     setErrors(e);
@@ -362,7 +378,7 @@ const JobFormModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-5 border-b border-gray-100">
           <div>
@@ -438,17 +454,18 @@ const JobFormModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Perekrut + Durasi */}
+          {/* Perekrut / Ketua Tim Seleksi + Durasi */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Perekrut</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Perekrut / Ketua Tim Seleksi</label>
               <input
                 type="text"
                 value={form.recruiter_name}
                 onChange={(e) => setForm({ ...form, recruiter_name: e.target.value })}
-                placeholder="Nama perekrut"
+                placeholder="Nama lengkap perekrut / ketua tim seleksi"
                 className={inputClass("recruiter_name")}
               />
+              <p className="text-[11px] text-gray-400 mt-1">Nama ini akan tercantum sebagai penandatangan pada surat resmi seleksi.</p>
               {errors.recruiter_name && <p className="text-red-500 text-xs mt-1">{errors.recruiter_name}</p>}
             </div>
             <div>
@@ -471,10 +488,20 @@ const JobFormModal: React.FC<Props> = ({
               <input
                 type="datetime-local"
                 value={form.start_date}
-                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // 🔄 Sinkronisasi ke tahap Seleksi Administrasi
+                  setForm((p) => ({
+                    ...p,
+                    start_date: val,
+                    selection_stages: p.selection_stages.map((s) =>
+                      isAdminStage(s.name) ? { ...s, start_date: val } : s
+                    ),
+                  }));
+                }}
                 className={inputClass("start_date")}
               />
-              <p className="text-[11px] text-gray-400 mt-1">Lowongan otomatis terbuka pada tanggal &amp; jam ini.</p>
+              <p className="text-[11px] text-gray-400 mt-1">Otomatis sinkron dengan periode Seleksi Administrasi.</p>
               {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
             </div>
             <div>
@@ -483,13 +510,26 @@ const JobFormModal: React.FC<Props> = ({
                 type="datetime-local"
                 value={form.end_date}
                 min={form.start_date || undefined}
-                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // 🔄 Sinkronisasi ke tahap Seleksi Administrasi
+                  setForm((p) => ({
+                    ...p,
+                    end_date: val,
+                    selection_stages: p.selection_stages.map((s) =>
+                      isAdminStage(s.name) ? { ...s, end_date: val } : s
+                    ),
+                  }));
+                }}
                 className={inputClass("end_date")}
               />
-              <p className="text-[11px] text-gray-400 mt-1">Batas akhir pendaftaran (deadline) mengikuti tanggal &amp; jam ini.</p>
+              <p className="text-[11px] text-gray-400 mt-1">Otomatis sinkron dengan periode Seleksi Administrasi.</p>
               {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
             </div>
           </div>
+          <p className="text-[11px] text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 -mt-1">
+            💡 Periode lowongan & Seleksi Administrasi selalu sinkron otomatis. Mengubah salah satu akan memperbarui yang lain.
+          </p>
 
           {/* 🚀 FORM INPUT KUOTA LOWONGAN (SINKRON KE DATABASE) */}
           <div>
@@ -667,7 +707,8 @@ const JobFormModal: React.FC<Props> = ({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        {/* Grid 1: Penilaian & Link */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-[11px] font-semibold text-gray-500 mb-1">Bobot Penilaian (%)</label>
                             <div className="relative">
@@ -697,17 +738,17 @@ const JobFormModal: React.FC<Props> = ({
                               />
                             </div>
                           )}
+                        </div>
+
+                        {/* Grid 2: Waktu Pelaksanaan */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                           <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal Mulai</label>
-                            <input
-                              type="date"
-                              value={stage.start_date || ""}
-                              onChange={(e) => updateStage(stage.id, "start_date", e.target.value)}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Mulai</label>
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1 flex items-center justify-between h-4">
+                              <span>Tanggal &amp; Jam Mulai</span>
+                              {isAdminStage(stage.name) && (
+                                <span className="text-[9px] text-[#0D278D] bg-blue-50/80 px-1.5 py-0.5 rounded font-bold">Sinkron Lowongan</span>
+                              )}
+                            </label>
                             <input
                               type="datetime-local"
                               value={stage.start_date || ""}
@@ -716,7 +757,12 @@ const JobFormModal: React.FC<Props> = ({
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Berakhir</label>
+                            <label className="block text-[11px] font-semibold text-gray-500 mb-1 flex items-center justify-between h-4">
+                              <span>Tanggal &amp; Jam Berakhir</span>
+                              {isAdminStage(stage.name) && (
+                                <span className="text-[9px] text-[#0D278D] bg-blue-50/80 px-1.5 py-0.5 rounded font-bold">Sinkron Lowongan</span>
+                              )}
+                            </label>
                             <input
                               type="datetime-local"
                               value={stage.end_date || ""}
@@ -725,19 +771,21 @@ const JobFormModal: React.FC<Props> = ({
                               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
                             />
                           </div>
-                          <div>
-                            <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Berakhir Penilaian</label>
-                            <input
-                              type="datetime-local"
-                              value={stage.grading_end_date || ""}
-                              min={stage.end_date || undefined}
-                              onChange={(e) => updateStage(stage.id, "grading_end_date", e.target.value)}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
-                            />
-                            <p className="text-[10px] text-gray-400 mt-1">
-                              Batas akhir admin dan penyeleksi memberikan nilai untuk tahapan ini. Jika kosong, maka berakhir sesuai tanggal &amp; jam berakhir tahapan.
-                            </p>
-                          </div>
+                        </div>
+
+                        {/* Row 3: Penilaian End Date */}
+                        <div className="pt-1">
+                          <label className="block text-[11px] font-semibold text-gray-500 mb-1">Tanggal &amp; Jam Berakhir Penilaian</label>
+                          <input
+                            type="datetime-local"
+                            value={stage.grading_end_date || ""}
+                            min={stage.end_date || undefined}
+                            onChange={(e) => updateStage(stage.id, "grading_end_date", e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white outline-none focus:border-[#0D278D] text-gray-600"
+                          />
+                          <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+                            Batas akhir admin dan penyeleksi memberikan nilai untuk tahapan ini. Jika kosong, maka berakhir sesuai tanggal &amp; jam berakhir tahapan.
+                          </p>
                         </div>
 
                         {isAdminStage(stage.name) && (

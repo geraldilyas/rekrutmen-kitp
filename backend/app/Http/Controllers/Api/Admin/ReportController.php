@@ -103,5 +103,23 @@ class ReportController extends Controller
         $announcements = Announcement::where('job_id', $job_id)->get();
         return response()->json(['data' => $announcements]);
     }
+
+    /**
+     * Mark selection process as completed.
+     */
+    public function completeSelection($job_id)
+    {
+        $job = Job::with('stages')->findOrFail($job_id);
+
+        try {
+            $updatedJob = $this->reportService->completeSelection($job);
+            return response()->json([
+                'message' => 'Proses seleksi berhasil dinyatakan selesai.',
+                'data' => $updatedJob
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
 }
 

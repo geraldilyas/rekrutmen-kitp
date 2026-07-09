@@ -53,12 +53,13 @@ const fmtDateTime = (d: string | null) =>
 const GRADEABLE = new Set(["pending", "seleksi"]);
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  pending:      { label: "Proses",      color: "bg-amber-50 text-amber-700 border-amber-200" },
-  seleksi:      { label: "Seleksi",     color: "bg-blue-50 text-blue-700 border-blue-200" },
-  lulus:        { label: "Lulus",       color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  Lulus:        { label: "Lulus",       color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  tidak_lulus:  { label: "Tidak Lulus", color: "bg-red-50 text-red-600 border-red-200" },
-  "Tidak Lulus":{ label: "Tidak Lulus", color: "bg-red-50 text-red-600 border-red-200" },
+  pending:              { label: "Proses",              color: "bg-amber-50 text-amber-700 border-amber-200" },
+  seleksi:              { label: "Seleksi",             color: "bg-blue-50 text-blue-700 border-blue-200" },
+  lulus:                { label: "Lulus",               color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  Lulus:                { label: "Lulus",               color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  tidak_lulus:          { label: "Tidak Lulus",         color: "bg-red-50 text-red-600 border-red-200" },
+  "Tidak Lulus":        { label: "Tidak Lulus",         color: "bg-red-50 text-red-600 border-red-200" },
+  pending_keputusan:    { label: "Menunggu Keputusan",  color: "bg-purple-50 text-purple-700 border-purple-200" },
 };
 
 const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }) => {
@@ -91,7 +92,7 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
   const isTooLate = end ? today > end : false;
   const isStageActive = !isTooEarly && !isTooLate;
 
-  const canGrade = GRADEABLE.has(application.status) && isStageActive;
+  const canGrade = GRADEABLE.has(application.status) && isStageActive && !!application.current_stage_result_id;
 
   const initials = application.user_name
     .split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -103,7 +104,7 @@ const ApplicantDetailModal: React.FC<Props> = ({ application, onClose, onGrade }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">

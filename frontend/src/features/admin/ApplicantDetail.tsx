@@ -48,6 +48,14 @@ const ApplicantDetail: React.FC = () => {
       setModalOpen(true);
       return;
     }
+
+    // Jika tidak ada pending stage result dan status sudah final, jangan buka modal
+    const finalStatuses = ["pending_keputusan", "Lulus", "Tidak Lulus"];
+    if (finalStatuses.includes(app.status)) {
+      alert("Semua tahapan seleksi untuk pelamar ini sudah selesai.");
+      return;
+    }
+
     // No pending stage result yet — create it first
     try {
       const newId = await startApplicationStage(app.id);
@@ -55,8 +63,9 @@ const ApplicantDetail: React.FC = () => {
         setSelected({ ...app, current_stage_result_id: newId });
         setModalOpen(true);
       }
-    } finally {
-      // no-op
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Gagal memulai tahapan seleksi.";
+      alert(msg);
     }
   };
 
@@ -74,6 +83,7 @@ const ApplicantDetail: React.FC = () => {
     { key: "all", label: "Semua" },
     { key: "pending", label: "Proses" },
     { key: "seleksi", label: "Seleksi" },
+    { key: "pending_keputusan", label: "Menunggu Keputusan" },
     { key: "Lulus", label: "Lulus" },
     { key: "Tidak Lulus", label: "Tidak Lulus" },
   ];
