@@ -391,8 +391,44 @@ export const StatusLamaran: React.FC = () => {
         <motion.div layout className="flex flex-col" variants={mainItemVariants}>
           <AnimatePresence mode="popLayout">
             {loading ? (
-              <div className="text-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0D278D] mx-auto"></div>
+              <div className="text-center py-24 flex flex-col items-center justify-center select-none">
+                <div 
+                  className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
+                  style={{
+                    maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+                    WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
+                  }}
+                >
+                  <svg 
+                    className="absolute w-[200%] h-full left-0" 
+                    viewBox="0 0 200 40" 
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="50%" stopColor="#0D278D" />
+                        <stop offset="100%" stopColor="#3B82F6" />
+                      </linearGradient>
+                    </defs>
+                    <motion.path
+                      d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
+                      fill="none"
+                      stroke="url(#riverGradient)"
+                      strokeWidth="7" 
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      
+                      initial={{ x: 0 }}
+                      animate={{ x: -100 }} 
+                      transition={{
+                        duration: 4.5, 
+                        ease: "linear",
+                        repeat: Infinity,
+                      }}
+                    />
+                  </svg>
+                </div>
               </div>
             ) : filteredJobs.map((app) => {
 

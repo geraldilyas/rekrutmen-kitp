@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; 
+import { motion, AnimatePresence } from "framer-motion";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
 import { api } from "../../services/api";
@@ -9,8 +9,8 @@ import { api } from "../../services/api";
 const Navbar: React.FC = () => {
   const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
-  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const BACKEND_URL = "http://localhost:8000";
 
 
@@ -22,7 +22,7 @@ const Navbar: React.FC = () => {
 
   const [userData, setUserData] = useState<any>(() => {
     const cached = localStorage.getItem("user");
-    return cached ? JSON.parse(cached) : null;  
+    return cached ? JSON.parse(cached) : null;
   });
 
   const [imageError, setImageError] = useState<boolean>(false);
@@ -34,9 +34,9 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     const currentToken = localStorage.getItem("token");
     const cachedUser = localStorage.getItem("user");
-    
+
     const hasValidToken = !!currentToken && currentToken !== "undefined" && currentToken !== "null";
-    
+
     setIsLoggedIn(hasValidToken);
 
     if (!hasValidToken) {
@@ -64,7 +64,7 @@ const Navbar: React.FC = () => {
       })
       .catch((err: any) => {
         console.warn("Background profile fetch skipped/failed:", err.message);
-        
+
         if (err.response?.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -73,7 +73,7 @@ const Navbar: React.FC = () => {
           window.location.replace("/beranda");
         }
       });
-  }, [location.pathname]); 
+  }, [location.pathname]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -82,6 +82,7 @@ const Navbar: React.FC = () => {
   const publicMenu = [
     { name: "Beranda", path: "/beranda" },
     { name: "Pengumuman", path: "/pengumuman" },
+    { name: "FAQ", path: "/faq" },
   ];
 
   const privateMenu = [
@@ -89,6 +90,7 @@ const Navbar: React.FC = () => {
     { name: "Lowongan", path: "/lowongan" },
     { name: "Status Lamaran", path: "/status" },
     { name: "Pengumuman", path: "/pengumuman" },
+    { name: "FAQ", path: "/faq" },
     { name: "Profil", path: "/profil" },
   ];
 
@@ -108,8 +110,8 @@ const Navbar: React.FC = () => {
     <>
       <nav className="fixed top-0 w-full z-50 bg-white backdrop-blur-xl border-b border-gray-100 shadow-inner font-['Poppins']">
         <div className="w-full px-4 sm:px-8 md:px-12">
-          <div className="flex justify-between h-20 items-center">
-            
+          <div className="flex justify-between h-23 items-center">
+
             {/* Brand Logo Group */}
             <Link to="/beranda" className="flex items-center gap-2 sm:gap-3 group shrink-0">
               <img
@@ -134,17 +136,15 @@ const Navbar: React.FC = () => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`group relative text-sm font-semibold transition-all duration-300 px-1 py-0.5 ${
-                      isActive
-                        ? "text-[#FEB700]"
-                        : "text-[#0D278D] hover:text-[#FEB700]"
-                    }`}
+                    className={`group relative text-sm font-semibold transition-all duration-300 px-1 py-0.5 ${isActive
+                      ? "text-[#FEB700]"
+                      : "text-[#0D278D] hover:text-[#FEB700]"
+                      }`}
                   >
                     {item.name}
                     <span
-                      className={`absolute left-0 -bottom-1 h-[2.5px] w-full bg-[#FEB700] rounded-full transition-transform duration-300 origin-left ${
-                        isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                      }`}
+                      className={`absolute left-0 -bottom-1 h-[2.5px] w-full bg-[#FEB700] rounded-full transition-transform duration-300 origin-left ${isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                        }`}
                     />
                   </Link>
                 );
@@ -183,9 +183,9 @@ const Navbar: React.FC = () => {
                   <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-gray-50/60 transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider overflow-hidden shrink-0 border border-blue-100">
                       {userData?.avatar_path && !imageError ? (
-                        <img 
-                          src={`${BACKEND_URL}/storage/${userData.avatar_path}`} 
-                          alt="Profil" 
+                        <img
+                          src={`${BACKEND_URL}/storage/${userData.avatar_path}`}
+                          alt="Profil"
                           className="w-full h-full object-cover"
                           onError={() => setImageError(true)}
                         />
@@ -250,7 +250,7 @@ const Navbar: React.FC = () => {
         {/* Mobile Dropdown Panel */}
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -269,9 +269,8 @@ const Navbar: React.FC = () => {
                     >
                       <Link
                         to={item.path}
-                        className={`block py-2 text-sm font-bold transition-all rounded-lg pl-2 ${
-                          isActive ? "text-[#FEB700] bg-amber-50/50" : "text-[#0D278D] hover:text-[#FEB700]"
-                        }`}
+                        className={`block py-2 text-sm font-bold transition-all rounded-lg pl-2 ${isActive ? "text-[#FEB700] bg-amber-50/50" : "text-[#0D278D] hover:text-[#FEB700]"
+                          }`}
                       >
                         {item.name}
                       </Link>
@@ -302,9 +301,9 @@ const Navbar: React.FC = () => {
                       <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0 overflow-hidden border border-blue-100">
                           {userData?.avatar_path && !imageError ? (
-                            <img 
-                              src={`${BACKEND_URL}/storage/${userData.avatar_path}`} 
-                              alt="Profil" 
+                            <img
+                              src={`${BACKEND_URL}/storage/${userData.avatar_path}`}
+                              alt="Profil"
                               className="w-full h-full object-cover"
                               onError={() => setImageError(true)}
                             />
@@ -321,7 +320,7 @@ const Navbar: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                      
+
                       <button
                         onClick={() => {
                           setIsMobileMenuOpen(false);
@@ -343,7 +342,8 @@ const Navbar: React.FC = () => {
 
       {showLogoutModal && (
         <div className="fixed inset-0 w-screen h-screen top-0 left-0 z-[99999] flex items-center justify-center p-4">
-          <style dangerouslySetInnerHTML={{__html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @keyframes modalBorderSpin {
               0% { transform: translate(-50%, -50%) rotate(0deg); }
               100% { transform: translate(-50%, -50%) rotate(360deg); }
@@ -353,7 +353,7 @@ const Navbar: React.FC = () => {
             }
           `}} />
 
-          <div 
+          <div
             className="fixed inset-0 w-full h-full bg-black/30 backdrop-blur-[5px] transition-all duration-300"
             onClick={() => setShowLogoutModal(false)}
           />
@@ -374,7 +374,7 @@ const Navbar: React.FC = () => {
                 <h3 className="text-xl font-black text-[#0D278D] tracking-tight mb-1.5">
                   Keluar dari Akun?
                 </h3>
-                
+
                 <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[280px] mx-auto mb-6">
                   Anda akan mengakhiri sesi pelamar ini. Pastikan semua progres pengisian berkas Anda telah tersimpan.
                 </p>
@@ -387,7 +387,7 @@ const Navbar: React.FC = () => {
                   >
                     Batal
                   </button>
-                  
+
                   <button
                     type="button"
                     onClick={handleLogout}
