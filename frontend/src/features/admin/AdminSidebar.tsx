@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import { api } from "../../services/api";
+import { clearAllDrafts } from "../../hooks/useModalDraft";
 
 interface Props {
   isOpen: boolean;
@@ -51,6 +52,7 @@ const AdminSidebar: React.FC<Props> = ({ isOpen, onClose }) => {
     } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      clearAllDrafts();
       navigate("/beranda");
     }
   };

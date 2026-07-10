@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Job, JobFormData, SelectionStage, User } from "../shared/types";
 import { api } from "../../services/api";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
 
 const ADMIN_STAGE_NAME = "Seleksi Administrasi";
 const isAdminStage = (name: string) => name.trim().toLowerCase() === ADMIN_STAGE_NAME.toLowerCase();
@@ -26,6 +27,29 @@ interface Props {
 
 const formatForInputDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "";
+
+  // The backend serializes cast datetimes as UTC ISO strings (e.g.
+  // "2026-07-10T09:00:00.000000Z"), while it interprets the naive
+  // "YYYY-MM-DDTHH:mm" strings this form submits as Asia/Jakarta wall-clock
+  // time. Convert UTC-tagged values back to Asia/Jakarta before displaying
+  // them in a <input type="datetime-local">, which expects local time with
+  // no timezone suffix — otherwise the shown time drifts by the UTC offset.
+  if (/[Zz]|[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return "";
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(date);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+  }
+
   const normalized = dateStr.replace(" ", "T");
   const [datePart, timePart] = normalized.split("T");
   if (!datePart) return "";
@@ -83,6 +107,10 @@ const JobFormModal: React.FC<Props> = ({
   const [newDocLabel, setNewDocLabel] = useState("");
   const [addingDoc, setAddingDoc] = useState(false);
 
+  const draftId = mode === "edit" ? initialData?.id ?? null : "add";
+  const formDraftKey = draftKey("job-form", draftId);
+  useDraftPersist(formDraftKey, form, isOpen);
+
   const loadDocuments = () => {
     api
       .get("/admin/form-fields")
@@ -138,6 +166,12 @@ const JobFormModal: React.FC<Props> = ({
   useEffect(() => {
     if (!isOpen) return;
 
+    const draft = loadDraft<JobFormData>(formDraftKey);
+    if (draft) {
+      setForm(draft);
+      return;
+    }
+
     if (mode === "edit" && initialData) {
       setForm({
         title: initialData.title || "",
@@ -175,7 +209,7 @@ const JobFormModal: React.FC<Props> = ({
     } else {
       setForm(emptyForm);
     }
-  }, [isOpen, initialData, mode]);
+  }, [isOpen, initialData, mode, formDraftKey]);
 
   const totalWeight = form.selection_stages.reduce((s, st) => s + (Number(st.weight) || 0), 0);
   
@@ -354,7 +388,8 @@ const JobFormModal: React.FC<Props> = ({
       };
 
       // 🚀 PENTING: Kirim 'payload' ke onSubmit, BUKAN 'form' mentah!
-      await onSubmit(payload as any); 
+      await onSubmit(payload as any);
+      clearDraft(formDraftKey);
       onClose();
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message || "Terjadi kesalahan");
@@ -855,7 +890,7 @@ const JobFormModal: React.FC<Props> = ({
           {/* Buttons */}
           {errorMsg && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">{errorMsg}</div>}
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all">
+            <button type="button" onClick={() => { clearDraft(formDraftKey); onClose(); }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all">
               Batal
             </button>
             <button

@@ -4,15 +4,13 @@ import { LogOut, User, AlertTriangle, LogIn, UserPlus, Menu, X } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 import logoRekrutmen from "../../assets/img/rekrutmenbaru.png";
-import { api } from "../../services/api";
+import { api, storageUrl } from "../../services/api";
+import { clearAllDrafts } from "../../hooks/useModalDraft";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const BACKEND_URL = "http://localhost:8000";
-
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const token = localStorage.getItem("token");
@@ -99,6 +97,7 @@ const Navbar: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearAllDrafts();
     setUserData(null);
     setIsLoggedIn(false);
     setShowLogoutModal(false);
@@ -184,7 +183,7 @@ const Navbar: React.FC = () => {
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm tracking-wider overflow-hidden shrink-0 border border-blue-100">
                       {userData?.avatar_path && !imageError ? (
                         <img
-                          src={`${BACKEND_URL}/storage/${userData.avatar_path}`}
+                          src={storageUrl(userData.avatar_path)}
                           alt="Profil"
                           className="w-full h-full object-cover"
                           onError={() => setImageError(true)}
@@ -302,7 +301,7 @@ const Navbar: React.FC = () => {
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0D278D] to-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0 overflow-hidden border border-blue-100">
                           {userData?.avatar_path && !imageError ? (
                             <img
-                              src={`${BACKEND_URL}/storage/${userData.avatar_path}`}
+                              src={storageUrl(userData.avatar_path)}
                               alt="Profil"
                               className="w-full h-full object-cover"
                               onError={() => setImageError(true)}

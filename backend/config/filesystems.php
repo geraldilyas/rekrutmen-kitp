@@ -33,7 +33,12 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Laravel auto-registers a "storage.local" route at storage/{path}
+            // when this is true, which collides with (and wins over) our own
+            // routes/web.php route for PublicFileController and denies every
+            // request by default. This disk holds private files that were
+            // never meant to be publicly served anyway.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

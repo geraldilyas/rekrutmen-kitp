@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Briefcase, User, X, LogOut, AlertTriangle } from "lucide-react";
 import { api } from "../../services/api";
+import { clearAllDrafts } from "../../hooks/useModalDraft";
 import logoBbwsms from "../../assets/img/logobbwsms.png";
 
 interface Props {
@@ -33,6 +34,7 @@ const PenyeleksiSidebar: React.FC<Props> = ({ isOpen, onClose }) => {
     } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      clearAllDrafts();
       setShowLogoutModal(false);
       navigate("/beranda");
     }

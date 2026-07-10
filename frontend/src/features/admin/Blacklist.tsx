@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ShieldOff, Plus, Search, Trash2, X } from "lucide-react";
 import { api } from "../../services/api";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
+
+const BLACKLIST_DRAFT_KEY = draftKey("blacklist-add");
 
 interface BlacklistedNik {
   id: number;
@@ -21,6 +24,28 @@ const Blacklist: React.FC = () => {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useDraftPersist(BLACKLIST_DRAFT_KEY, { nik, name, reason }, modalOpen);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const draft = loadDraft<{ nik: string; name: string; reason: string }>(BLACKLIST_DRAFT_KEY);
+    if (draft) {
+      setNik(draft.nik);
+      setName(draft.name);
+      setReason(draft.reason);
+    }
+  }, [modalOpen]);
+
+  const closeModal = () => setModalOpen(false);
+
+  const cancelModal = () => {
+    clearDraft(BLACKLIST_DRAFT_KEY);
+    setNik("");
+    setName("");
+    setReason("");
+    setModalOpen(false);
+  };
 
   const fetchItems = useCallback(async () => {
     try {
@@ -52,6 +77,7 @@ const Blacklist: React.FC = () => {
     setSubmitting(true);
     try {
       await api.post("/admin/blacklist", { nik, name: name || undefined, reason: reason || undefined });
+      clearDraft(BLACKLIST_DRAFT_KEY);
       setModalOpen(false);
       setNik("");
       setName("");
@@ -151,11 +177,11 @@ const Blacklist: React.FC = () => {
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeModal} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-50">
               <h2 className="font-bold text-gray-900">Blokir NIK</h2>
-              <button onClick={() => setModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl">
+              <button onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl">
                 <X size={20} />
               </button>
             </div>
@@ -196,7 +222,7 @@ const Blacklist: React.FC = () => {
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={cancelModal}
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100"
                 >
                   Batal

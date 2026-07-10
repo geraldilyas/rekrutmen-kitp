@@ -14,6 +14,7 @@ import {
   Send,
 } from "lucide-react";
 import { api, storageUrl } from "../../services/api";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
 
 interface Job {
   id: number;
@@ -45,6 +46,18 @@ const Reports: React.FC = () => {
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, must match backend's max:5120
+
+  // Only the title is persisted — a selected File object can't be
+  // serialized into sessionStorage, so the file must be reselected after a
+  // draft restore.
+  const uploadDraftKey = draftKey("report-announcement", uploadJobId);
+  useDraftPersist(uploadDraftKey, { uploadTitle }, uploadJobId !== null);
+
+  useEffect(() => {
+    if (uploadJobId === null) return;
+    const draft = loadDraft<{ uploadTitle: string }>(uploadDraftKey);
+    if (draft) setUploadTitle(draft.uploadTitle);
+  }, [uploadJobId, uploadDraftKey]);
 
   useEffect(() => {
     fetchJobs();
@@ -111,6 +124,7 @@ const Reports: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setStatus({ type: 'success', message: "Pengumuman berhasil diterbitkan!" });
+      clearDraft(uploadDraftKey);
       setUploadJobId(null);
       setUploadTitle("");
       setUploadFile(null);
@@ -148,7 +162,18 @@ const Reports: React.FC = () => {
     setUploadFile(file);
   };
 
+  // Backdrop click just closes — the title draft is kept so reopening this
+  // job's upload modal restores it (the file selection is lost either way,
+  // since File objects aren't persistable).
   const closeUploadModal = () => {
+    setUploadJobId(null);
+    setUploadFile(null);
+    setUploadError("");
+  };
+
+  // Explicit Cancel discards the draft entirely.
+  const cancelUploadModal = () => {
+    clearDraft(uploadDraftKey);
     setUploadJobId(null);
     setUploadTitle("");
     setUploadFile(null);
@@ -336,9 +361,9 @@ const Reports: React.FC = () => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button 
+                <button
                   type="button"
-                  onClick={closeUploadModal}
+                  onClick={cancelUploadModal}
                   className="flex-1 px-6 py-4 rounded-full text-sm font-black uppercase tracking-widest text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all"
                 >
                   Batal

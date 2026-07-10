@@ -11,6 +11,9 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import type { User, UserFormData } from "../shared/types";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
+
+type UserFormDraft = Omit<UserFormData, "password" | "password_confirmation">;
 
 interface Props {
   isOpen: boolean;
@@ -60,9 +63,17 @@ const UserFormModal: React.FC<Props> = ({
   const [showConfirm, setShowConfirm] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const userDraftId = mode === "edit" ? initialData?.id ?? null : "add";
+  const formDraftKey = draftKey("user-form", userDraftId);
+  const { password, password_confirmation, ...draftableForm } = form;
+  useDraftPersist(formDraftKey, draftableForm, isOpen);
+
   useEffect(() => {
     if (isOpen) {
-      if (initialData && mode === "edit") {
+      const draft = loadDraft<UserFormDraft>(formDraftKey);
+      if (draft) {
+        setForm({ ...draft, password: "", password_confirmation: "" });
+      } else if (initialData && mode === "edit") {
         setForm({
           name: initialData.name,
           email: initialData.email,
@@ -80,7 +91,7 @@ const UserFormModal: React.FC<Props> = ({
       setShowConfirm(false);
       setIsSubmitting(false);
     }
-  }, [isOpen, initialData, mode]);
+  }, [isOpen, initialData, mode, formDraftKey]);
 
   const validate = (): boolean => {
     const e: Partial<Record<keyof UserFormData, string>> = {};
@@ -103,6 +114,7 @@ const UserFormModal: React.FC<Props> = ({
       setIsSubmitting(true);
       try {
         await onSubmit(form);
+        clearDraft(formDraftKey);
         onClose();
       } catch (err: any) {
         if (err.response?.data?.errors) {
@@ -329,7 +341,7 @@ const UserFormModal: React.FC<Props> = ({
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { clearDraft(formDraftKey); onClose(); }}
               className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100"
             >
               Batal

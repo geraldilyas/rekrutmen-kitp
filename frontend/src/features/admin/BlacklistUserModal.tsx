@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, ShieldOff, AlertTriangle, CreditCard } from "lucide-react";
 import type { User } from "../shared/types";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
 
 interface Props {
   isOpen: boolean;
@@ -14,13 +15,17 @@ const BlacklistUserModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, user }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const reasonDraftKey = draftKey("blacklist-user", user?.id ?? null);
+  useDraftPersist(reasonDraftKey, { reason }, isOpen && !!user);
+
   useEffect(() => {
     if (isOpen) {
-      setReason("");
+      const draft = loadDraft<{ reason: string }>(reasonDraftKey);
+      setReason(draft?.reason ?? "");
       setErrorMsg("");
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, reasonDraftKey]);
 
   if (!isOpen || !user) return null;
 
@@ -30,6 +35,7 @@ const BlacklistUserModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, user }
     setErrorMsg("");
     try {
       await onSubmit(reason.trim());
+      clearDraft(reasonDraftKey);
       onClose();
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || "Gagal memblokir user");
@@ -99,7 +105,7 @@ const BlacklistUserModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, user }
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { clearDraft(reasonDraftKey); onClose(); }}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all"
             >
               Batal

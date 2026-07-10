@@ -14,6 +14,13 @@ import type {
   SelectionStage,
   UpdateStageData,
 } from "../shared/types";
+import { clearDraft, draftKey, loadDraft, useDraftPersist } from "../../hooks/useModalDraft";
+
+interface StageUpdateDraft {
+  decision: "lulus" | "tidak_lulus";
+  score: number | null;
+  docScores: Record<number, number>;
+}
 
 const isLikelyUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
 
@@ -54,14 +61,27 @@ const StageUpdateModal: React.FC<Props> = ({
   const [docScores, setDocScores] = useState<Record<number, number>>({});
   const [submitError, setSubmitError] = useState("");
 
+  const stageDraftKey = draftKey(
+    "stage-update",
+    application?.current_stage_result_id ?? application?.id ?? null
+  );
+  useDraftPersist(stageDraftKey, { decision, score, docScores }, isOpen && !!application);
+
   useEffect(() => {
     if (isOpen) {
-      setDecision("lulus");
-      setScore(hasDocumentChecklist ? 0 : null);
-      setDocScores({});
+      const draft = loadDraft<StageUpdateDraft>(stageDraftKey);
+      if (draft) {
+        setDecision(draft.decision);
+        setScore(draft.score);
+        setDocScores(draft.docScores || {});
+      } else {
+        setDecision("lulus");
+        setScore(hasDocumentChecklist ? 0 : null);
+        setDocScores({});
+      }
       setSubmitError("");
     }
-  }, [isOpen, hasDocumentChecklist]);
+  }, [isOpen, hasDocumentChecklist, stageDraftKey]);
 
   useEffect(() => {
     if (!isOpen || !application) {
@@ -121,6 +141,7 @@ const StageUpdateModal: React.FC<Props> = ({
         score: score,
         scored_by: scorerName,
       });
+      clearDraft(stageDraftKey);
       onClose();
     } catch (err: any) {
       setSubmitError(err?.response?.data?.message || "Gagal menyimpan penilaian.");
@@ -429,7 +450,7 @@ const StageUpdateModal: React.FC<Props> = ({
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { clearDraft(stageDraftKey); onClose(); }}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all"
             >
               Batal
