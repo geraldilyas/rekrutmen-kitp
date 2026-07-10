@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion,  } from "framer-motion";
-import { 
-  User, 
-  Phone, 
-  MapPin, 
-  Mail, 
-  CreditCard, 
-  Save, 
-  AlertCircle, 
-  CheckCircle2, 
-  FileText, 
-  Trash2, 
-  Eye, 
-  Lock, 
-  Camera, 
-  Loader2, 
+import { motion, } from "framer-motion";
+import {
+  User,
+  Phone,
+  MapPin,
+  Mail,
+  CreditCard,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Trash2,
+  Eye,
+  Lock,
+  Camera,
+  Loader2,
   Calendar,
   KeyRound,
   Link as LinkIcon
@@ -48,7 +48,7 @@ const scrollSectionVariants = {
 const UserProfile: React.FC = () => {
   const { user, loading: profileLoading, updateProfile, changePassword } = useProfile();
   const { documents, saveDocumentLink, deleteDocument } = useUserDocuments();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -72,7 +72,7 @@ const UserProfile: React.FC = () => {
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [pwdStatus, setPwdStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [docStatus, setDocStatus] = useState<{ type: 'success' | 'error', message: string, key?: string } | null>(null);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPwd, setIsChangingPwd] = useState(false);
   const [isSavingDoc, setIsSavingDoc] = useState<string | null>(null);
@@ -205,7 +205,7 @@ const UserProfile: React.FC = () => {
       if (res.data && res.data.avatar_url) {
         setAvatarUrl(res.data.avatar_url);
         if (user) {
-          user.avatar_path = res.data.avatar_url; 
+          user.avatar_path = res.data.avatar_url;
         }
         alert("Pasfoto profil berhasil disinkronkan ke server, bro!");
       }
@@ -219,19 +219,19 @@ const UserProfile: React.FC = () => {
     }
   };
 
- if (profileLoading && !user) {
+  if (profileLoading && !user) {
     return (
       <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
-        <div 
+        <div
           className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
           style={{
             maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
           }}
         >
-          <svg 
-            className="absolute w-[200%] h-full left-0" 
-            viewBox="0 0 200 40" 
+          <svg
+            className="absolute w-[200%] h-full left-0"
+            viewBox="0 0 200 40"
             preserveAspectRatio="none"
           >
             <defs>
@@ -246,11 +246,11 @@ const UserProfile: React.FC = () => {
               d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
               fill="none"
               stroke="url(#profileRiverGradient)"
-              strokeWidth="7" 
+              strokeWidth="7"
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ x: 0 }}
-              animate={{ x: -100 }} 
+              animate={{ x: -100 }}
               transition={{
                 duration: 4.5, // Lambat, tenang, dan rileks seperti sungai asli
                 ease: "linear",
@@ -259,22 +259,22 @@ const UserProfile: React.FC = () => {
             />
           </svg>
         </div>
-        
+
       </div>
     );
-  }if (profileLoading && !user) {
+  } if (profileLoading && !user) {
     return (
       <div className="bg-white min-h-screen flex flex-col items-center justify-center select-none">
-        <div 
+        <div
           className="w-28 h-8 flex items-center justify-center overflow-hidden relative"
           style={{
             maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)"
           }}
         >
-          <svg 
-            className="absolute w-[200%] h-full left-0" 
-            viewBox="0 0 200 40" 
+          <svg
+            className="absolute w-[200%] h-full left-0"
+            viewBox="0 0 200 40"
             preserveAspectRatio="none"
           >
             <defs>
@@ -289,13 +289,13 @@ const UserProfile: React.FC = () => {
               d="M 0 20 Q 12.5 8, 25 20 T 50 20 T 75 20 T 100 20 T 125 20 T 150 20 T 175 20 T 200 20"
               fill="none"
               stroke="url(#profileRiverGradient)"
-              strokeWidth="7" 
+              strokeWidth="7"
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ x: 0 }}
-              animate={{ x: -100 }} 
+              animate={{ x: -100 }}
               transition={{
-                duration: 4.5, 
+                duration: 4.5,
                 ease: "linear",
                 repeat: Infinity,
               }}
@@ -315,22 +315,22 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-36 pb-24 font-['Poppins'] text-gray-900 selection:bg-[#FEB700]/30 relative overflow-hidden">
-      
+
       <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
 
-      <motion.main 
+      <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start" 
+        className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start"
       >
-        <motion.div 
-          variants={itemVariants} 
-          className="lg:col-span-4 lg:sticky lg:top-1 flex flex-col justify-start" 
+        <motion.div
+          variants={itemVariants}
+          className="lg:col-span-4 lg:sticky lg:top-1 flex flex-col justify-start"
         >
           <div className="p-8 rounded-[2rem] bg-white border border-gray-100 flex flex-col items-center text-center relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
-            
-            <motion.div 
+
+            <motion.div
               className="absolute top-0 left-0 w-full h-[4px]"
               style={{
                 background: "linear-gradient(90deg, #0D278D, #FEB700, #0D278D)",
@@ -345,7 +345,7 @@ const UserProfile: React.FC = () => {
                 repeat: Infinity,
               }}
             />
-            
+
             <div className="relative cursor-pointer group/avatar mb-6 mt-4 shrink-0" onClick={handleAvatarClick}>
               <div className="w-24 h-24 rounded-full bg-slate-50 border border-gray-100 overflow-hidden flex items-center justify-center text-[#0D278D] text-2xl font-black relative transition-all duration-300 group-hover/avatar:ring-4 group-hover/avatar:ring-slate-100">
                 {avatarUrl ? (
@@ -368,11 +368,11 @@ const UserProfile: React.FC = () => {
                   {formData.name || "User Akun"}
                 </h2>
               </div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-[-10]">Pelamar Swadaya</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-[-10]">Pelamar</p>
             </div>
-            
+
             <div className="w-full border-t border-gray-100 my-6" />
-            
+
             <div className="w-full space-y-4 text-xs text-gray-500 font-medium">
               <div className="flex items-center gap-3">
                 <Mail size={14} className="text-gray-400 shrink-0" />
@@ -398,8 +398,8 @@ const UserProfile: React.FC = () => {
         </motion.div>
 
         <div className="lg:col-span-8 space-y-14 pl-0 lg:pl-4">
-          <motion.section 
-            variants={scrollSectionVariants} 
+          <motion.section
+            variants={scrollSectionVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
@@ -420,17 +420,17 @@ const UserProfile: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
-                
+
                 {/* Kolom NIK */}
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Induk Kependudukan (NIK)</span>
                   <div className="relative flex items-center">
                     <CreditCard size={14} className="absolute left-4 text-gray-300 pointer-events-none z-10" />
-                    <input 
-                      type="text" 
-                      value={user?.nik || "Internal System Locked"} 
-                      disabled 
-                      className="w-full pl-11 pr-4 h-[46px] bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-bold text-gray-400 outline-none italic cursor-not-allowed" 
+                    <input
+                      type="text"
+                      value={user?.nik || "Internal System Locked"}
+                      disabled
+                      className="w-full pl-11 pr-4 h-[46px] bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-bold text-gray-400 outline-none italic cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -440,12 +440,12 @@ const UserProfile: React.FC = () => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Email Korespondensi</span>
                   <div className="relative flex items-center">
                     <Mail size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
-                    <input 
-                      type="email" 
-                      value={formData.email} 
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
-                      required 
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
+                      required
                     />
                   </div>
                 </div>
@@ -455,12 +455,12 @@ const UserProfile: React.FC = () => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap Sesuai KTP</span>
                   <div className="relative flex items-center">
                     <User size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
-                    <input 
-                      type="text" 
-                      value={formData.name} 
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
-                      required 
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
+                      required
                     />
                   </div>
                 </div>
@@ -470,11 +470,11 @@ const UserProfile: React.FC = () => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Kontak Seluler (WhatsApp)</span>
                   <div className="relative flex items-center">
                     <Phone size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
-                    <input 
-                      type="text" 
-                      value={formData.phone} 
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -485,19 +485,19 @@ const UserProfile: React.FC = () => {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili Rumah Lengkap</span>
                 <div className="relative flex items-center">
                   <MapPin size={14} className="absolute left-4 text-[#0D278D] pointer-events-none z-10" />
-                  <input 
-                    type="text" 
-                    value={formData.address} 
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
-                    className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full pl-11 pr-4 h-[46px] bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
                   />
                 </div>
               </div>
 
               <div className="flex justify-end pt-2">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
                   className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
@@ -507,8 +507,8 @@ const UserProfile: React.FC = () => {
             </form>
           </motion.section>
 
-          <motion.section 
-            variants={scrollSectionVariants} 
+          <motion.section
+            variants={scrollSectionVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
@@ -530,42 +530,42 @@ const UserProfile: React.FC = () => {
             <form onSubmit={handlePasswordSubmit} className="space-y-6">
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Kata Sandi Akun Saat Ini</span>
-                <input 
-                  type="password" 
-                  value={passwordData.current_password} 
-                  onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })} 
-                  className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
-                  required 
+                <input
+                  type="password"
+                  value={passwordData.current_password}
+                  onChange={(e) => setFormDataPassword({ ...passwordData, current_password: e.target.value })}
+                  className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
+                  required
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Input Kata Sandi Baru</span>
-                  <input 
-                    type="password" 
-                    value={passwordData.new_password} 
-                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })} 
-                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
-                    required 
+                  <input
+                    type="password"
+                    value={passwordData.new_password}
+                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password: e.target.value })}
+                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Ulangi Konfirmasi Sandi Baru</span>
-                  <input 
-                    type="password" 
-                    value={passwordData.new_password_confirmation} 
-                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })} 
-                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200" 
-                    required 
+                  <input
+                    type="password"
+                    value={passwordData.new_password_confirmation}
+                    onChange={(e) => setFormDataPassword({ ...passwordData, new_password_confirmation: e.target.value })}
+                    className="w-full h-[46px] px-4 bg-white border border-gray-200 rounded-xl focus:border-[#0D278D] focus:ring-4 focus:ring-blue-50/50 text-xs font-bold text-gray-800 outline-none transition-all duration-200"
+                    required
                   />
                 </div>
               </div>
 
               <div className="flex justify-end pt-2">
-                <button 
-                  type="submit" 
-                  disabled={isChangingPwd} 
+                <button
+                  type="submit"
+                  disabled={isChangingPwd}
                   className="px-5 py-2.5 rounded-xl border border-[#0D278D] text-[#0D278D] text-xs font-bold uppercase tracking-wider hover:bg-[#0D278D] hover:text-white transition-all duration-300 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {isChangingPwd ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
@@ -575,8 +575,8 @@ const UserProfile: React.FC = () => {
             </form>
           </motion.section>
 
-          <motion.section 
-            variants={scrollSectionVariants} 
+          <motion.section
+            variants={scrollSectionVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
@@ -601,8 +601,8 @@ const UserProfile: React.FC = () => {
                 const isSaving = isSavingDoc === type.key;
 
                 return (
-                  <div 
-                    key={type.key} 
+                  <div
+                    key={type.key}
                     className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 rounded-xl transition-colors duration-200 hover:bg-slate-50/40"
                   >
                     <div className="w-full sm:w-[38%] min-w-[280px] flex items-center gap-4 shrink-0">
@@ -625,7 +625,7 @@ const UserProfile: React.FC = () => {
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/input:text-[#0D278D] transition-colors">
                           <LinkIcon size={13} />
                         </div>
-                        <input 
+                        <input
                           type="url"
                           value={docLinks[type.key] || ""}
                           onChange={(e) => setDocLinks({ ...docLinks, [type.key]: e.target.value })}
@@ -649,15 +649,15 @@ const UserProfile: React.FC = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {existing && (
                           <>
-                            <a 
-                              href={existing.file_path} 
-                              target="_blank" 
+                            <a
+                              href={existing.file_path}
+                              target="_blank"
                               rel="noreferrer"
                               className="h-[44px] px-4 rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-[#0D278D] hover:text-[#0D278D] text-[11px] font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 shadow-sm"
                             >
                               <Eye size={13} /> <span>Buka</span>
                             </a>
-                            <button 
+                            <button
                               type="button"
                               onClick={() => handleRemoveDoc(type.key, existing.id)}
                               className="h-[44px] w-[44px] rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 cursor-pointer flex items-center justify-center shadow-sm"
@@ -673,12 +673,12 @@ const UserProfile: React.FC = () => {
                 );
               })}
             </div>
-            
+
             <div className="p-4 bg-slate-50/80 rounded-2xl border border-gray-100 flex gap-3">
-               <AlertCircle size={16} className="text-gray-400 shrink-0 mt-0.5" />
-               <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
-                 Pastikan tautan Google Drive Anda diatur ke <strong>"Siapa saja yang memiliki link"</strong> dengan akses <strong>"Pelihat"</strong> agar panitia seleksi dapat memverifikasi berkas Anda.
-               </p>
+              <AlertCircle size={16} className="text-gray-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+                Pastikan tautan Google Drive Anda diatur ke <strong>"Siapa saja yang memiliki link"</strong> dengan akses <strong>"Pelihat"</strong> agar panitia seleksi dapat memverifikasi berkas Anda.
+              </p>
             </div>
           </motion.section>
 

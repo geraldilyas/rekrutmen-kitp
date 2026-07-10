@@ -69,28 +69,20 @@ const Footer: React.FC = () => {
             className="md:col-span-12 lg:col-span-5 space-y-8"
           >
             {" "}
-            <div className="flex items-center gap-4 h-fit">
-              {" "}
-
-              <div className="flex flex-wrap items-center gap-4 sm:gap-5 md:gap-6">
-
-                <div className="w-24 sm:w-28 md:w-32 lg:w-28 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
-                  <img
-                    src={logoBbwsms}
-                    alt="PUPR"
-                    className="w-full object-contain block"
-                  />
-                </div>
-                <div className="hidden sm:block h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
-                <div className="w-24 sm:w-28 md:w-32 lg:w-45 h-fit flex items-center justify-center overflow-hidden shrink-0 transition-all duration-300">
-                  <img
-                    src={logoRekrutmen}
-                    alt="Rekrutmen KITP"
-                    className="w-full object-contain block"
-                  />
-                </div>
+            <div className="flex items-center gap-3 sm:gap-4 h-fit">
+              <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
+                <img
+                  src={logoBbwsms}
+                  alt="PUPR"
+                  className="h-8 sm:h-10 md:h-12 w-auto object-contain block transition-all duration-300"
+                />
+                <div className="h-8 sm:h-10 md:h-12 w-[2px] bg-[#0D278D] self-center shrink-0" />
+                <img
+                  src={logoRekrutmen}
+                  alt="Rekrutmen KITP"
+                  className="h-7 sm:h-9 md:h-11 w-auto object-contain block transition-all duration-300"
+                />
               </div>
-
             </div>
             <p className="text-gray-500 text-sm leading-relaxed max-w-sm pt-1">
               Direktorat Jenderal Sumber Daya Air. <br />

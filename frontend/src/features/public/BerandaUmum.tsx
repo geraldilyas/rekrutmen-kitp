@@ -771,12 +771,12 @@ export const BerandaUmum: React.FC = () => {
           </div>
 
           <div className="relative w-full">
-            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-[5.5px] -translate-x-1/2 z-0">
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-[4px] md:w-[5.5px] -translate-x-1/2 z-0">
               <div className="absolute inset-0 bg-gray-200 rounded-full" />
               <motion.div className="absolute top-0 left-0 right-0 bg-[#0D278D] origin-top rounded-full" style={{ height: lineHeight }} />
             </div>
 
-            <div className="space-y-32 relative z-10 w-full">
+            <div className="space-y-20 md:space-y-32 relative z-10 w-full">
               {alurRekrutmenSempurna.map((alur, index) => {
                 const isEven = index % 2 === 0;
                 const stepStart = index / (alurRekrutmenSempurna.length - 0.7);
@@ -808,21 +808,21 @@ const ScrollStepItem: React.FC<StepItemProps> = ({ alur, isEven, smoothProgress,
 
   return (
     <div className={`flex flex-col md:flex-row items-start md:items-center w-full relative ${isEven ? "md:flex-row-reverse" : ""}`}>
-      <div className="w-full md:w-1/2 pl-6 md:pl-20 md:px-20 flex flex-col justify-center">
+      <div className="w-full md:w-1/2 pl-12 md:pl-20 md:px-20 flex flex-col justify-center">
         <motion.div style={{ opacity: contentOpacity }} className={`space-y-3 max-w-md ${isEven ? "md:text-right md:ml-auto" : "md:text-left md:mr-auto"}`}>
           <motion.div style={{ backgroundColor: numberBg, color: numberText }} className={`w-9 h-9 rounded-full font-mono text-md font-bold flex items-center justify-center shadow-md border-2 border-white select-none ${isEven ? "md:ml-auto" : "md:mr-auto"}`}>{alur.id}</motion.div>
           <h4 className="text-2xl font-extrabold text-[#0D278D] tracking-tight">{alur.title}</h4>
           <p className="text-gray-500 text-s sm:text-[14px] leading-relaxed font-normal">{alur.desc}</p>
         </motion.div>
       </div>
-      <div className={`w-full md:w-1/2 pl-6 flex items-center justify-center mt-6 md:mt-0 ${isEven ? "md:pr-2" : "md:pl-2"}`}>
-        <motion.div style={{ opacity: contentOpacity }} whileHover={{ scale: 1.05, rotate: isEven ? 5 : -5 }} className="w-32 h-32 rounded-[2rem] border bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.02)] border-[#0D278D] flex items-center justify-center relative group">
-          <div className="absolute inset-2 rounded-[1.5rem] bg-[#0D278D]/[0.02] border border-[#0D278D]/5" />
-          <motion.div style={{ color: iconColor }} className="flex items-center justify-center relative z-10 transition-transform duration-300 group-hover:scale-110"><alur.icon size={36} className="stroke-[1.6]" /></motion.div>
+      <div className={`w-full md:w-1/2 pl-12 md:pl-6 flex items-center justify-start md:justify-center mt-4 md:mt-0 ${isEven ? "md:pr-2" : "md:pl-2"}`}>
+        <motion.div style={{ opacity: contentOpacity }} whileHover={{ scale: 1.05, rotate: isEven ? 5 : -5 }} className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2rem] border bg-white shadow-[0_15px_35px_-12px_rgba(0,0,0,0.02)] border-[#0D278D] flex items-center justify-center relative group">
+          <div className="absolute inset-1 md:inset-2 rounded-xl md:rounded-[1.5rem] bg-[#0D278D]/[0.02] border border-[#0D278D]/5" />
+          <motion.div style={{ color: iconColor }} className="flex items-center justify-center relative z-10 transition-transform duration-300 group-hover:scale-110"><alur.icon className="w-6 h-6 md:w-9 md:h-9 stroke-[1.6]" /></motion.div>
         </motion.div>
       </div>
-      <div className="absolute left-4 md:left-1/2 top-4 md:top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-        <motion.div style={{ backgroundColor: pinBg }} className="w-5 h-5 rounded-full shadow-md pointer-events-none" />
+      <div className="absolute left-6 md:left-1/2 top-5 md:top-1/2 -translate-x-1/2 md:-translate-y-1/2 z-20">
+        <motion.div style={{ backgroundColor: pinBg }} className="w-4 h-4 md:w-5 md:h-5 rounded-full shadow-md pointer-events-none" />
       </div>
     </div>
   );
