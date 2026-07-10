@@ -15,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'staff' => \App\Http\Middleware\StaffMiddleware::class,
             ]);
-        
+
+        // Trust the reverse proxy that terminates TLS in front of this container,
+        // so Request::isSecure() (and every url()/route() built from it) reflects
+        // the real https:// connection instead of the plain-http hop behind the proxy.
+        $middleware->trustProxies(at: '*');
 
         $middleware->append(\App\Http\Middleware\SecureHeaderMiddleware::class);
     })
