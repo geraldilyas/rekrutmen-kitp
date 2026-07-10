@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
+    supervisor \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         gd \
@@ -32,6 +33,8 @@ COPY . .
 
 RUN chmod -R 775 storage bootstrap/cache
 
+RUN mkdir -p /var/log/supervisor
+
 EXPOSE 8000
 
-CMD ["bash", "-c", "php artisan migrate --force; php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["bash", "-c", "php artisan migrate --force; exec supervisord -c /var/www/docker/supervisord.conf"]

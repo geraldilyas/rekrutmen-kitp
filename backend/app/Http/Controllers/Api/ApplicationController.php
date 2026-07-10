@@ -266,7 +266,8 @@ class ApplicationController extends Controller
                         ->where('job_id', $id)
                         ->orderByDesc('stage_order')
                         ->first();
-                    if ($lastStage && \Carbon\Carbon::parse($lastStage->end_date)->isFuture()) {
+                    $lastStageDeadline = $lastStage ? ($lastStage->grading_end_date ?? $lastStage->end_date) : null;
+                    if ($lastStageDeadline && \Carbon\Carbon::parse($lastStageDeadline)->isFuture()) {
                         return response()->json(['status' => 'error', 'message' => 'Pengumuman kelulusan final belum dibuka.'], 403);
                     }
                 }
@@ -306,7 +307,8 @@ class ApplicationController extends Controller
 
                 // Proteksi untuk non-admin: pastikan tanggal berakhir tahapan ini sudah terlewati
                 if (!$isAdmin) {
-                    if ($stage->end_date && \Carbon\Carbon::parse($stage->end_date)->isFuture()) {
+                    $stageDeadline = $stage->grading_end_date ?? $stage->end_date;
+                    if ($stageDeadline && \Carbon\Carbon::parse($stageDeadline)->isFuture()) {
                         return response()->json(['status' => 'error', 'message' => 'Pengumuman hasil tahapan ini belum dibuka.'], 403);
                     }
                 }
